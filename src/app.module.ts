@@ -1,0 +1,30 @@
+import { Module } from '@nestjs/common';
+import { CrudModule } from './crud/crud.module';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import { MongooseModule } from '@nestjs/mongoose';
+import { ServeStaticModule } from '@nestjs/serve-static';
+import { join } from 'path';
+
+@Module({
+  imports: [
+    MongooseModule.forRootAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: async (configService: ConfigService) => {
+        const uri = configService.get('MONGO_LINK');
+        return {
+          uri,
+          dbName: 'sviata-db',
+        };
+      },
+    }),
+    ServeStaticModule.forRoot({
+      rootPath: join(__dirname, '..', 'client', 'out'),
+      exclude: ['/api*'],
+    }),
+    CrudModule,
+  ],
+  controllers: [],
+  providers: [],
+})
+export class AppModule {}
