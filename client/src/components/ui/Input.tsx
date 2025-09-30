@@ -7,6 +7,7 @@ export default function Input({
   placeholder = '',
   value,
   onChange,
+  onBlur,
   error,
 }: {
   id: string;
@@ -15,6 +16,7 @@ export default function Input({
   placeholder?: string;
   value: string;
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onBlur?: (e: React.FocusEvent<HTMLInputElement>) => void;
   error?: string;
 }) {
   return (
@@ -29,6 +31,7 @@ export default function Input({
         placeholder={placeholder}
         value={value}
         onChange={onChange}
+        onBlur={onBlur}
         className={`px-3 py-2 rounded-lg border focus:outline-none focus:ring-2 text-primary bg-surface
           ${error ? 'border-red-500 focus:ring-red-500' : 'border-border focus:ring-primary'}`}
       />

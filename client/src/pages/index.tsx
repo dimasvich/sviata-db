@@ -47,7 +47,7 @@ export default function Home() {
             + Нове свято
           </Button>
         </div>
-        <div className="my-4">
+        <div className="my-4 flex flex-col gap-2">
           {list.map(
             (item: { name: string; timestamp: string; _id: string }) => (
               <SviatoCard

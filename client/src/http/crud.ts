@@ -14,20 +14,38 @@ export const getOne = async (id: string) => {
   return res;
 };
 
-export const createSviato = async (body: {
-  name: string;
-  seoText: string;
-  timestamp: string;
-}) => {
+export async function createSviato(payload: any) {
   const res = await fetch(`${baseUrl}/api/crud`, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(body),
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
   });
-  return res;
-};
+
+  if (!res.ok) return { ok: false };
+  return { ok: true, data: await res.json() };
+}
+
+export async function createSviatoArticle(payload: any) {
+  const res = await fetch(`${baseUrl}/api/crud/add-article`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+
+  if (!res.ok) return { ok: false };
+  return { ok: true, data: await res.json() };
+}
+
+export async function updateSviatoArticle(payload: any) {
+  const res = await fetch(`${baseUrl}/api/crud/update-article`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+
+  if (!res.ok) return { ok: false };
+  return { ok: true, data: await res.json() };
+}
 
 export const updateSviato = async (body: {
   id: string;
