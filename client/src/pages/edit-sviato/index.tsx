@@ -47,7 +47,7 @@ export default function EditSviato() {
 
       if (json.articles?.length) {
         setArticles(
-          json.articles.map((art: any) => ({
+          json.articles.map((art: any) => ({ // eslint-disable-line @typescript-eslint/no-explicit-any
             id: art._id,
             title: art.title,
             blocks: art.blocks || [],
