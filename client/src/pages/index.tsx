@@ -5,6 +5,7 @@ import Layout from '@/components/ui/Layout';
 import Pagination from '@/components/ui/Pagination';
 import SviatoCard from '@/components/ui/sviato/SviatoCard';
 import Typography from '@/components/ui/Typography';
+import { baseUrl } from '@/http';
 import { getList } from '@/http/crud';
 import dayjs from 'dayjs';
 import Head from 'next/head';

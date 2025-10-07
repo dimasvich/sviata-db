@@ -39,7 +39,10 @@ export default function AddInfo() {
     name: '',
     teaser: '',
     tags: [] as string[],
-    sources: [] as any[],
+    sources: [] as {
+      title: string;
+      link: string;
+    }[],
     omens: [] as string[],
     seoText: '',
     type: '',
