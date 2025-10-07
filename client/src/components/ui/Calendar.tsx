@@ -38,7 +38,7 @@ export default function Calendar({
   const handleChange = (newDate: Dayjs | null) => {
     setSelectedDate(newDate);
     if (newDate) {
-      onChange(newDate.format('YYYY-MM-DD')); // відправляємо у форматі "YYYY-MM-DD"
+      onChange(newDate.format('YYYY-MM-DD'));
     } else {
       onChange('');
     }

@@ -1,285 +1,226 @@
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import Head from 'next/head';
-import Layout from '@/components/ui/Layout';
-import Input from '@/components/ui/Input';
-import Textarea from '@/components/ui/Textarea';
-import Calendar from '@/components/ui/Calendar';
+'use client';
+
 import Button from '@/components/ui/Button';
+import Calendar from '@/components/ui/Calendar';
+import Input from '@/components/ui/Input';
+import Layout from '@/components/ui/Layout';
 import Typography from '@/components/ui/Typography';
-import { createSviato, createSviatoArticle } from '@/http/crud';
-import { Article, SviatoBlock } from '@/types';
+import Select from '@/components/ui/Select';
+import { baseUrl } from '@/http';
+import { useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
+import { SviatoType } from '@/types';
+import Textarea from '@/components/ui/Textarea';
+import Head from 'next/head';
+import dayjs from 'dayjs';
+import localeData from 'dayjs/plugin/localeData';
+import { getNthWeekdayOfMonth } from '@/utils';
 
-export default function CreateSviato() {
-  const router = useRouter();
-
+export default function CreateSviatoPage() {
   const [name, setName] = useState('');
-  const [title, setTitle] = useState('');
-  const [seoText, setSeoText] = useState('');
+  const [description, setDescription] = useState('');
   const [date, setDate] = useState('');
-  const [errors, setErrors] = useState<(string | undefined)[]>([
-    undefined,
-    undefined,
-    undefined,
-  ]);
+  const [type, setType] = useState<string>('');
+  const [errors, setErrors] = useState<{ [key: string]: string }>({});
+  const [loading, setLoading] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
+  const [id, setId] = useState<string | null>(null);
+  const [alternativeDate, setAlternativeDate] = useState(false);
+  const options = Object.keys(SviatoType).filter((k) => isNaN(Number(k)));
+  const router = useRouter();
+  const [dayOfWeek, setDayOfWeek] = useState('');
+  const [week, setWeek] = useState('');
+  const [month, setMonth] = useState('');
 
-  const [articles, setArticles] = useState<Article[]>([]);
-  const [staticInputs, setStaticInputs] = useState<string[][]>([]);
-
-  const validateSviato = () => {
-    const newErrors: (string | undefined)[] = [undefined, undefined, undefined];
-    if (!name.trim()) newErrors[0] = 'Name is required';
-    if (!seoText.trim()) newErrors[1] = 'SEO text is required';
-    if (!date.trim()) newErrors[2] = 'Date is required';
-    setErrors(newErrors);
-    return newErrors.every((err) => err === undefined);
-  };
-
-  const addArticle = () => {
-    setArticles([...articles, { title: '', blocks: [] }]);
-    setStaticInputs([...staticInputs, []]);
-  };
-
-  const updateArticleTitle = (index: number, value: string) => {
-    const updated = [...articles];
-    updated[index].title = value;
-    setArticles(updated);
-  };
-
-  const removeArticle = (index: number) => {
-    setArticles(articles.filter((_, i) => i !== index));
-    setStaticInputs(staticInputs.filter((_, i) => i !== index));
-  };
-
-  const addBlock = (articleIndex: number) => {
-    const updated = [...articles];
-    updated[articleIndex].blocks.push({});
-    setArticles(updated);
-  };
-
-  const updateBlock = (
-    articleIndex: number,
-    blockIndex: number,
-    field: keyof SviatoBlock,
-    value: string,
-  ) => {
-    const updated = [...articles];
-    updated[articleIndex].blocks[blockIndex] = {
-      ...updated[articleIndex].blocks[blockIndex],
-      [field]: value || undefined,
-    };
-    setArticles(updated);
-  };
-
-  const removeBlock = (articleIndex: number, blockIndex: number) => {
-    const updated = [...articles];
-    updated[articleIndex].blocks.splice(blockIndex, 1);
-    setArticles(updated);
-  };
-
-  const addStaticItem = (
-    articleIndex: number,
-    blockIndex: number,
-    value: string,
-  ) => {
-    if (!value.trim()) return;
-    const updated = [...articles];
-    const block = updated[articleIndex].blocks[blockIndex];
-    if (!block.staticList) block.staticList = [];
-    block.staticList.push(value.trim());
-    setArticles(updated);
-  };
-
-  const removeStaticItem = (
-    articleIndex: number,
-    blockIndex: number,
-    itemIndex: number,
-  ) => {
-    const updated = [...articles];
-    updated[articleIndex].blocks[blockIndex].staticList?.splice(itemIndex, 1);
-    setArticles(updated);
-  };
+  dayjs.extend(localeData);
 
   const handleSubmit = async () => {
-    if (!validateSviato()) return;
-    if (articles.some((a) => !a.title.trim())) {
-      alert('Всі статті повинні мати заголовок');
+    const newErrors: { [key: string]: string } = {};
+    if (!name) newErrors.title = 'Заповніть назву';
+    if (!description) newErrors.description = 'Заповніть опис';
+    if (!date) newErrors.date = 'Виберіть дату';
+    if (!type) newErrors.type = 'Оберіть тип свята';
+
+    if (Object.keys(newErrors).length) {
+      setErrors(newErrors);
       return;
     }
 
-    const res = await createSviato({ name, title, seoText, timestamp: date });
-    if (!res.ok) {
-      alert('Виникла помилка під час створення свята');
-      return;
-    }
+    setLoading(true);
+    setErrors({});
+    setSuccessMessage('');
 
-    const sviatoId = res.data?.sviatoId;
-    if (!sviatoId) {
-      alert('Не отримано id свята з бекенду');
-      return;
-    }
+    try {
+      const res = await fetch(`${baseUrl}/api/crud`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, description, date, type }),
+      });
 
-    for (const art of articles) {
-      const payload = {
-        sviatoId,
-        title: art.title,
-        blocks: art.blocks.length > 0 ? art.blocks : undefined,
-      };
-      const resArticle = await createSviatoArticle(payload);
-      if (!resArticle.ok) {
-        alert(`Помилка під час збереження статті "${art.title}"`);
-        return;
-      }
+      if (!res.ok) throw new Error('Помилка при створенні свята');
+      const data = await res.json();
+      setId(data._id);
+      setSuccessMessage('Свято успішно створено!');
+    } catch (err) {
+      setErrors({ submit: (err as Error).message });
+    } finally {
+      setLoading(false);
     }
-
-    router.replace('/');
   };
+
+  useEffect(() => {
+    if (!id) return;
+    const redirect = async () => {
+      try {
+        const [imagesRes, rulesRes] = await Promise.all([
+          fetch(`${baseUrl}/api/crud/sviato-images/${date}`, {
+            method: 'GET',
+            headers: { 'Content-Type': 'application/json' },
+          }),
+          fetch(`${baseUrl}/api/crud/day-rules/${date}`, {
+            method: 'GET',
+            headers: { 'Content-Type': 'application/json' },
+          }),
+        ]);
+
+        if (!imagesRes.ok || !rulesRes.ok) return;
+
+        const imagesData = await imagesRes.json();
+        const rulesData = await rulesRes.json();
+
+        if (!imagesData || imagesData.length === 0) {
+          router.replace(`/add-images?id=${id}`);
+        } else if (!rulesData || rulesData.length === 0) {
+          router.replace(`/add-rules?id=${id}`);
+        } else {
+          router.replace(`/add-info?id=${id}`);
+        }
+      } catch (err) {
+        console.error('Fetch error:', err);
+      }
+    };
+
+    redirect();
+  }, [id, date, router]);
+
+  useEffect(() => {
+    if (dayOfWeek.length && month.length && week.length) {
+      const d = getNthWeekdayOfMonth({ dayOfWeek, weekOrder: week, month });
+      setDate(d);
+    }
+  }, [dayOfWeek, month, week]);
 
   return (
     <>
       <Head>
-        <title>Sviato-db | Add Sviato</title>
+        <title>Sviato-db | Створити нове свято</title>
+        <meta name="description" content="Generated by create next app" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <link rel="icon" href="/favicon.ico" />
       </Head>
       <Layout>
-        <div className="flex flex-col gap-6 w-full">
-          <Typography type="title">Додати свято до БД</Typography>
+        <div className="max-w-4xl mx-auto bg-surface p-6 rounded-lg shadow-md">
+          <Typography type="title">Створити нове свято</Typography>
 
-          <Input
-            id="name"
-            label="Назва*"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            error={errors[0]}
-          />
-          <Input
-            id="title"
-            label="Title*"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            error={errors[0]}
-          />
-          <Textarea
-            id="seoText"
-            label="SEO текст*"
-            value={seoText}
-            onChange={(e) => setSeoText(e.target.value)}
-            error={errors[1]}
-          />
-          <Calendar
-            id="date"
-            label="Дата*"
-            value={date}
-            onChange={(d) => setDate(d)}
-            error={errors[2]}
-          />
+          <div
+            className={
+              !alternativeDate
+                ? 'grid grid-cols-2 gap-6 mt-6'
+                : 'flex gap-2 flex-col'
+            }
+          >
+            <Input
+              id="title"
+              label="Назва свята*"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              error={errors.title}
+            />
 
-          <div className="flex flex-col gap-4">
-            <Typography type="text">Статті</Typography>
-            {articles.map((article, i) => (
-              <div
-                key={i}
-                className="border rounded-lg p-4 flex flex-col gap-4"
-              >
-                <Input
-                  id={`article-title-${i}`}
-                  label="Заголовок статті*"
-                  value={article.title}
-                  onChange={(e) => updateArticleTitle(i, e.target.value)}
+            <div className="flex gap-2 items-end flex-col">
+              {!alternativeDate && (
+                <Calendar
+                  id="date"
+                  label="Дата свята*"
+                  value={date}
+                  onChange={(d) => setDate(d)}
+                  error={errors.date}
                 />
-
-                <div>
-                  <Typography type="text">Блоки</Typography>
-                  {article.blocks.map((block, j) => (
-                    <div
-                      key={j}
-                      className="border rounded-lg p-4 flex flex-col gap-2 mt-2"
-                    >
-                      <Input
-                        id={`block-title-${i}-${j}`}
-                        label="Заголовок"
-                        value={block.title ?? ''}
-                        onChange={(e) =>
-                          updateBlock(i, j, 'title', e.target.value)
-                        }
-                      />
-                      <Textarea
-                        id={`block-description-${i}-${j}`}
-                        label="Опис"
-                        value={block.description ?? ''}
-                        onChange={(e) =>
-                          updateBlock(i, j, 'description', e.target.value)
-                        }
-                      />
-                      <Input
-                        id={`block-image-${i}-${j}`}
-                        label="URL зображення"
-                        value={block.image ?? ''}
-                        onChange={(e) =>
-                          updateBlock(i, j, 'image', e.target.value)
-                        }
-                      />
-                      <Input
-                        id={`block-alt-${i}-${j}`}
-                        label="Alt текст"
-                        value={block.alt ?? ''}
-                        onChange={(e) =>
-                          updateBlock(i, j, 'alt', e.target.value)
-                        }
-                      />
-                      <div>
-                        <Typography type="text">Static List</Typography>
-                        <div className="flex gap-2 items-end">
-                          <Input
-                            id={`block-list-${i}-${j}`}
-                            label="Новий елемент"
-                            value={staticInputs[i]?.[j] || ''}
-                            onChange={(e) => {
-                              const newInputs = [...staticInputs];
-                              if (!newInputs[i]) newInputs[i] = [];
-                              newInputs[i][j] = e.target.value;
-                              setStaticInputs(newInputs);
-                            }}
-                          />
-                          <Button
-                            onClick={() => {
-                              addStaticItem(i, j, staticInputs[i]?.[j] || '');
-                              const newInputs = [...staticInputs];
-                              newInputs[i][j] = '';
-                              setStaticInputs(newInputs);
-                            }}
-                          >
-                            +
-                          </Button>
-                        </div>
-                        {block.staticList?.map((item, k) => (
-                          <div
-                            key={k}
-                            className="flex justify-between items-center border rounded p-2 mt-2"
-                          >
-                            <span>{item}</span>
-                            <Button onClick={() => removeStaticItem(i, j, k)}>
-                              Видалити
-                            </Button>
-                          </div>
-                        ))}
-                      </div>
-                      <Button onClick={() => removeBlock(i, j)}>
-                        Видалити блок
-                      </Button>
-                    </div>
-                  ))}
-                  <Button onClick={() => addBlock(i)}>Додати блок</Button>
+              )}
+              {alternativeDate && (
+                <div className="flex gap-1">
+                  <Select
+                    id="dayOfWeek"
+                    value={dayOfWeek}
+                    onChange={setDayOfWeek}
+                    label="День тижня"
+                    options={dayjs.weekdays()}
+                    error=""
+                  />
+                  <Select
+                    id="weekOrder"
+                    value={week}
+                    onChange={setWeek}
+                    label="Порядок у місяці"
+                    options={['1', '2', '3', '4', '5']}
+                    error=""
+                  />
+                  <Select
+                    id="month"
+                    value={month}
+                    onChange={setMonth}
+                    label="Місяць"
+                    options={dayjs.months()}
+                    error=""
+                  />
                 </div>
-
-                <Button onClick={() => removeArticle(i)}>
-                  Видалити статтю
+              )}
+              {!alternativeDate ? (
+                <Button onClick={() => setAlternativeDate(true)} type="default">
+                  Немає точної дати?
                 </Button>
-              </div>
-            ))}
-            <Button onClick={addArticle}>Додати статтю</Button>
+              ) : (
+                <Button
+                  onClick={() => setAlternativeDate(false)}
+                  type="default"
+                >
+                  Є точна дата?
+                </Button>
+              )}
+            </div>
+
+            <div className="col-span-2">
+              <Textarea
+                id="description"
+                label="Опис (HTML)*"
+                maxLength={1000}
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                error={errors.description}
+              />
+            </div>
+            <Select
+              id="type"
+              label="Тип свята*"
+              value={type}
+              onChange={setType}
+              options={options}
+              error={errors.type}
+            />
           </div>
 
-          <Button onClick={handleSubmit}>Зберегти свято</Button>
+          {errors.submit && (
+            <p className="text-red-500 mt-4">{errors.submit}</p>
+          )}
+          {successMessage && (
+            <p className="text-green-600 mt-4">{successMessage}</p>
+          )}
+
+          <div className="mt-6 flex gap-4">
+            <Button onClick={handleSubmit}>
+              {loading ? 'Зберігаємо...' : 'Створити'}
+            </Button>
+          </div>
         </div>
       </Layout>
     </>

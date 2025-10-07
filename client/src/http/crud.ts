@@ -1,13 +1,13 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import dayjs from 'dayjs';
 import { baseUrl } from '.';
 
-export const getList = async (page: number) => {
-  const res = await fetch(`${baseUrl}/api/crud/list/${page}`, {
+export const getList = async (date: string) => {
+  const res = await fetch(`${baseUrl}/api/crud/date/${date}`, {
     method: 'GET',
   });
   return res;
 };
-
 export const getOne = async (id: string) => {
   const res = await fetch(`${baseUrl}/api/crud/one/${id}`, {
     method: 'GET',

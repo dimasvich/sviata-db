@@ -8,36 +8,18 @@ export class CreateSviatoDto {
   title: string;
 
   @IsString()
+  description: string;
+
+  @IsString()
+  teaser: string;
+
+  @IsString()
   seoText: string;
 
   @IsString()
-  timestamp: string;
+  date: string;
 }
 export class UpdateSviatoDto extends CreateSviatoDto {
-  @IsString()
-  id: string;
-}
-export class AddArticlesToSviatoDto {
-  @IsString()
-  sviatoId: string;
-
-  @IsString()
-  title: string;
-
-  @IsOptional()
-  @IsArray()
-  blocks: Array<{
-    title?: string;
-    description?: string;
-    image: string;
-    alt?: string;
-  }>;
-
-  @IsOptional()
-  @IsArray()
-  staticList?: string[];
-}
-export class UpdateSviatoArticleDto extends AddArticlesToSviatoDto {
   @IsString()
   id: string;
 }

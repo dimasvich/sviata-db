@@ -1,9 +1,12 @@
+'use client';
 import Button from '@/components/ui/Button';
+import Calendar from '@/components/ui/Calendar';
 import Layout from '@/components/ui/Layout';
 import Pagination from '@/components/ui/Pagination';
 import SviatoCard from '@/components/ui/sviato/SviatoCard';
 import Typography from '@/components/ui/Typography';
 import { getList } from '@/http/crud';
+import dayjs from 'dayjs';
 import Head from 'next/head';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
@@ -11,22 +14,25 @@ import { useEffect, useState } from 'react';
 export default function Home() {
   const router = useRouter();
   const [list, setList] = useState([]);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
 
+  const [date, setDate] = useState(dayjs().format('YYYY-MM-DD'));
   useEffect(() => {
-    const fetch = async () => {
-      const res = await getList(currentPage);
-      if (!res.ok) {
-        alert('Виникла помилка під час отримання даних з БД');
-        return;
+    const fetchData = async () => {
+      try {
+        const res = await getList(date);
+        if (!res.ok) {
+          console.error('Fetch error:', res.status);
+          alert('Виникла помилка під час отримання даних з БД');
+          return;
+        }
+        const json = await res.json();
+        setList(json || []);
+      } catch (error) {
+        console.error('Unexpected error:', error);
       }
-      const json = await res.json();
-      setList(json.data);
-      setTotalPages(json.totalPages);
     };
-    fetch();
-  }, [currentPage]);
+    fetchData();
+  }, [date]);
 
   return (
     <>
@@ -37,8 +43,19 @@ export default function Home() {
         <link rel="icon" href="/favicon.ico" />
       </Head>
       <Layout>
-        <div className="flex w-full justify-between">
-          <Typography type="title">Всі свята</Typography>
+        <Typography type="title">Всі свята</Typography>
+        <div className="flex w-full justify-between items-center">
+          <div className="flex gap-4 items-center">
+            <div className="max-w-[150px]">
+              <Calendar
+                id="date"
+                label="Дата свята*"
+                value={date}
+                onChange={(d) => setDate(d)}
+                error={''}
+              />
+            </div>
+          </div>
           <Button
             onClick={() => {
               router.push('/create-sviato');
@@ -49,23 +66,29 @@ export default function Home() {
         </div>
         <div className="my-4 flex flex-col gap-2">
           {list.map(
-            (item: { name: string; timestamp: string; _id: string }) => (
+            (item: {
+              name: string;
+              date: string;
+              _id: string;
+              teaser: string;
+            }) => (
               <SviatoCard
                 key={item._id}
                 id={item._id}
                 name={item.name}
-                date={item.timestamp}
+                date={item.date}
+                teaser={item.teaser}
               />
             ),
           )}
         </div>
-        {totalPages > 1 && (
+        {/* {totalPages > 1 && (
           <Pagination
             totalPages={totalPages}
             currentPage={currentPage}
             onChange={(p) => setCurrentPage(p)}
           />
-        )}
+        )} */}
       </Layout>
     </>
   );

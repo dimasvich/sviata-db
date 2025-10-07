@@ -4,6 +4,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
+import { RelatedArticlesModule } from './related-articles/related-articles.module';
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { join } from 'path';
       exclude: ['/api*'],
     }),
     CrudModule,
+    RelatedArticlesModule,
   ],
   controllers: [],
   providers: [],

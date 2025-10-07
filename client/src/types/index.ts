@@ -11,3 +11,13 @@ export interface Article {
   title: string;
   blocks: SviatoBlock[];
 }
+export enum SviatoType {
+  'Державні свята',
+  'Свята в Україні',
+  'Свята в світі',
+  'Церковні свята',
+}
+export enum DayRulesEnum {
+  'ALLOWED' = 'Що можна робити сьогоді?',
+  'FORBIDDEN' = 'Що не можна робити сьогоді?',
+}
