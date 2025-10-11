@@ -1,4 +1,3 @@
-import { SviatoType } from '@/types';
 import Typography from './Typography';
 
 export default function Select({

@@ -17,6 +17,7 @@ import dayjs from 'dayjs';
 import { getNextThreeYearsForecast, getNthWeekdayOfMonth } from '@/utils';
 import SviatoDeleteModal from '@/components/ui/sviato/SviatoDeleteModal';
 import { deleteSviato } from '@/http/crud';
+import Gallery from '@/components/ui/Gallery';
 
 export default function AddInfo() {
   const searchParams = useSearchParams();
@@ -38,7 +39,7 @@ export default function AddInfo() {
     description: '',
     name: '',
     teaser: '',
-    tags: [] as string[],
+    tag: 'Оберіть тег',
     sources: [] as {
       title: string;
       link: string;
@@ -48,7 +49,6 @@ export default function AddInfo() {
     type: '',
     date: '',
   });
-  const [newTag, setNewTag] = useState('');
   const [newOmen, setNewOmen] = useState('');
   const [selectedRule1, setSelectedRule1] = useState('');
   const [selectedRule2, setSelectedRule2] = useState('');
@@ -60,22 +60,29 @@ export default function AddInfo() {
   const [isOpenModal, setIsOpenModal] = useState(false);
   const [newSourceTitle, setNewSourceTitle] = useState('');
   const [newSourceLink, setNewSourceLink] = useState('');
+  const [tags, setTags] = useState([]);
+  const [newFiles, setNewFiles] = useState<File[]>([]);
+  const [images, setImages] = useState<string[]>([]);
 
   useEffect(() => {
     if (!id) return;
     const fetchData = async () => {
       const res = await fetch(`${baseUrl}/api/crud/${id}`);
+      const resTags = await fetch(`${baseUrl}/api/crud/tags`);
       if (!res.ok) {
         alert('Не вдалося завантажити дані');
         return;
       }
       const json = await res.json();
+      const tagsJson = await resTags.json();
+      setTags(tagsJson);
       setSviato({
         ...json,
-        tags: json.tags || [],
+        tag: json.tag || '',
         omens: json.omens || [],
         sources: json.sources || [],
       });
+      setImages(json.images || []);
       const rulesRes = await fetch(
         `${baseUrl}/api/crud/day-rules/${json.date}`,
       );
@@ -108,19 +115,7 @@ export default function AddInfo() {
     setSviato((prev) => ({ ...prev, [field]: value }));
   };
 
-  const handleAddTag = () => {
-    if (newTag.trim() && !sviato.tags.includes(newTag.trim())) {
-      setSviato((prev) => ({ ...prev, tags: [...prev.tags, newTag.trim()] }));
-      setNewTag('');
-    }
-  };
   const enumOptions = Object.values(DayRulesEnum);
-  const handleRemoveTag = (tag: string) => {
-    setSviato((prev) => ({
-      ...prev,
-      tags: prev.tags.filter((t) => t !== tag),
-    }));
-  };
 
   const handleAddOmen = () => {
     if (newOmen.trim() && !sviato.omens.includes(newOmen.trim())) {
@@ -190,6 +185,18 @@ export default function AddInfo() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(sviato),
       });
+      if (newFiles.length > 0) {
+        const formData = new FormData();
+        newFiles.forEach((f) => formData.append('images', f));
+        const res = await fetch(`${baseUrl}/api/crud/sviato-images/${id}`, {
+          method: 'POST',
+          body: formData,
+        });
+        if (!res.ok) throw new Error('Помилка завантаження зображень');
+        const uploaded = await res.json();
+        setImages((prev) => [...prev, ...uploaded]);
+        setNewFiles([]);
+      }
 
       if (!res.ok) {
         alert('Помилка при оновленні даних');
@@ -273,37 +280,13 @@ export default function AddInfo() {
             value={sviato.teaser || ''}
             onChange={(e) => handleChange('teaser', e.target.value)}
           />
-
-          <div className="flex flex-col gap-2">
-            <Typography type="text">Теги</Typography>
-            <div className="flex gap-2">
-              <Input
-                id="newTag"
-                label=""
-                placeholder="Додайте тег"
-                value={newTag}
-                onChange={(e) => setNewTag(e.target.value)}
-              />
-              <Button onClick={handleAddTag}>+</Button>
-            </div>
-
-            <div className="flex flex-wrap gap-2 mt-1">
-              {sviato.tags.map((tag) => (
-                <div
-                  key={tag}
-                  className="flex items-center gap-1 bg-border text-primary px-3 py-1 rounded-full text-sm"
-                >
-                  <span>{tag}</span>
-                  <button
-                    onClick={() => handleRemoveTag(tag)}
-                    className="text-red-500 hover:text-red-700"
-                  >
-                    ✕
-                  </button>
-                </div>
-              ))}
-            </div>
-          </div>
+          <Select
+            id="newTag"
+            label="Тег"
+            value={sviato.tag}
+            options={tags}
+            onChange={(value) => handleChange('tag', value)}
+          />
 
           <div className="flex flex-col gap-2">
             <Typography type="text">Прикмети</Typography>
@@ -418,6 +401,17 @@ export default function AddInfo() {
             options={options}
             error=""
           />
+          <div className="flex flex-col gap-2">
+            <Typography type="text">Картинки свята</Typography>
+            <Gallery
+              existingImages={images}
+              onImagesChange={setNewFiles}
+              onRemoveExisting={(img: string) =>
+                setImages((prev) => prev.filter((i) => i !== img))
+              }
+              maxImages={10}
+            />
+          </div>
 
           <div className="flex gap-2 items-end flex-col">
             {!alternativeDate && (

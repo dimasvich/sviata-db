@@ -1,11 +1,7 @@
 'use client';
-import Button from '@/components/ui/Button';
-import Calendar from '@/components/ui/Calendar';
+import DashboardMonth from '@/components/ui/Dashboard/DashboardMonth';
+import DashBoardNav from '@/components/ui/Dashboard/DashboardNav';
 import Layout from '@/components/ui/Layout';
-import Pagination from '@/components/ui/Pagination';
-import SviatoCard from '@/components/ui/sviato/SviatoCard';
-import Typography from '@/components/ui/Typography';
-import { baseUrl } from '@/http';
 import { getList } from '@/http/crud';
 import dayjs from 'dayjs';
 import Head from 'next/head';
@@ -14,27 +10,8 @@ import { useEffect, useState } from 'react';
 
 export default function Home() {
   const router = useRouter();
-  const [list, setList] = useState([]);
 
   const [date, setDate] = useState(dayjs().format('YYYY-MM-DD'));
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const res = await getList(date);
-        if (!res.ok) {
-          console.error('Fetch error:', res.status);
-          alert('Виникла помилка під час отримання даних з БД');
-          return;
-        }
-        const json = await res.json();
-        setList(json || []);
-      } catch (error) {
-        console.error('Unexpected error:', error);
-      }
-    };
-    fetchData();
-  }, [date]);
-
   return (
     <>
       <Head>
@@ -44,52 +21,11 @@ export default function Home() {
         <link rel="icon" href="/favicon.ico" />
       </Head>
       <Layout>
-        <Typography type="title">Всі свята</Typography>
-        <div className="flex w-full justify-between items-center">
-          <div className="flex gap-4 items-center">
-            <div className="max-w-[150px]">
-              <Calendar
-                id="date"
-                label="Дата свята*"
-                value={date}
-                onChange={(d) => setDate(d)}
-                error={''}
-              />
-            </div>
-          </div>
-          <Button
-            onClick={() => {
-              router.push('/create-sviato');
-            }}
-          >
-            + Нове свято
-          </Button>
-        </div>
-        <div className="my-4 flex flex-col gap-2">
-          {list.map(
-            (item: {
-              name: string;
-              date: string;
-              _id: string;
-              teaser: string;
-            }) => (
-              <SviatoCard
-                key={item._id}
-                id={item._id}
-                name={item.name}
-                date={item.date}
-                teaser={item.teaser}
-              />
-            ),
-          )}
-        </div>
-        {/* {totalPages > 1 && (
-          <Pagination
-            totalPages={totalPages}
-            currentPage={currentPage}
-            onChange={(p) => setCurrentPage(p)}
-          />
-        )} */}
+        <DashBoardNav setCurrentDate={setDate} year={2025} />
+        <DashboardMonth
+          day={dayjs(date).date()}
+          month={dayjs(date).month() + 1}
+        />
       </Layout>
     </>
   );

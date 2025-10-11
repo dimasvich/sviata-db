@@ -31,11 +31,13 @@ export default function CreateSviatoPage() {
   const [dayOfWeek, setDayOfWeek] = useState('');
   const [week, setWeek] = useState('');
   const [month, setMonth] = useState('');
+  const [doc, setDoc] = useState('');
 
   dayjs.extend(localeData);
 
   const handleSubmit = async () => {
     const newErrors: { [key: string]: string } = {};
+    if (!doc) newErrors.doc = 'Заповніть Google Doc';
     if (!name) newErrors.title = 'Заповніть назву';
     if (!description) newErrors.description = 'Заповніть опис';
     if (!date) newErrors.date = 'Виберіть дату';
@@ -54,7 +56,7 @@ export default function CreateSviatoPage() {
       const res = await fetch(`${baseUrl}/api/crud`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, description, date, type }),
+        body: JSON.stringify({ name, description, date, type, doc }),
       });
 
       if (!res.ok) throw new Error('Помилка при створенні свята');
@@ -135,6 +137,13 @@ export default function CreateSviatoPage() {
               value={name}
               onChange={(e) => setName(e.target.value)}
               error={errors.title}
+            />
+            <Input
+              id="doc"
+              label="Google Doc*"
+              value={doc}
+              onChange={(e) => setDoc(e.target.value)}
+              error={errors.doc}
             />
 
             <div className="flex gap-2 items-end flex-col">

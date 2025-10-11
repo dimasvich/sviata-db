@@ -6,6 +6,7 @@ import { Sviato, SviatoDocument } from './schema/sviato.schema';
 import * as crypto from 'crypto';
 import { SviatoImages } from './schema/sviatoimages.schema';
 import { DayRules, DayRulesDocument } from './schema/dayrules.schema';
+import { DayInfo, SviatoTag } from 'src/types';
 
 @Injectable()
 @Injectable()
@@ -25,6 +26,7 @@ export class CrudService {
     sviato.dayOfMonth = date.dayOfMonth();
     sviato.dayOfYear = date.dayOfYear();
     sviato.dayOfWeek = date.dayOfWeek().toString();
+    sviato.month = date.monthValue();
 
     return sviato.save();
   }
@@ -44,6 +46,27 @@ export class CrudService {
 
     Object.assign(sviato, sviatoData);
 
+    return sviato.save();
+  }
+
+  async updateDescriptionByDate(
+    date: string,
+    description: string,
+  ): Promise<{ modifiedCount: number }> {
+    const result = await this.sviatoModel.updateMany({ date }, { description });
+
+    if (result.matchedCount === 0) {
+      throw new NotFoundException(`Свята з датою ${date} не знайдено`);
+    }
+
+    return { modifiedCount: result.modifiedCount };
+  }
+
+  async addImagesToSviato(id: string, paths: string[]): Promise<Sviato> {
+    const sviato = await this.sviatoModel.findById(id);
+    if (!sviato) throw new NotFoundException('Свято не знайдено');
+
+    sviato.images = [...sviato.images, ...paths];
     return sviato.save();
   }
 
@@ -99,5 +122,121 @@ export class CrudService {
     Object.assign(dayrule, dayRule);
 
     return dayrule.save();
+  }
+  async getByMonth(month: number): Promise<
+    {
+      date: string;
+      description: string;
+      sviata: {
+        id: string;
+        name: string;
+        document: string;
+        tag: SviatoTag | '';
+      }[];
+    }[]
+  > {
+    const sviata = await this.sviatoModel
+      .find({ month })
+      .sort({ date: 1 })
+      .exec();
+
+    const grouped: Record<
+      string,
+      {
+        description: string;
+        sviata: {
+          name: string;
+          document: string;
+          tag: SviatoTag | '';
+          id: string;
+        }[];
+      }
+    > = {};
+
+    sviata.forEach((item) => {
+      const dateKey = item.date;
+
+      if (!grouped[dateKey]) {
+        grouped[dateKey] = {
+          description: item.description || '-',
+          sviata: [],
+        };
+      }
+
+      if (item.name) {
+        grouped[dateKey].sviata.push({
+          name: item.name,
+          document: item.doc || '',
+          tag: item.tag || '',
+          id: item._id as string,
+        });
+      }
+    });
+
+    return Object.entries(grouped).map(([date, value]) => ({
+      date,
+      description: value.description,
+      sviata: value.sviata,
+    }));
+  }
+  async getDayInfo(
+    start: string,
+    end: string,
+    year: number,
+  ): Promise<DayInfo[]> {
+    const sviata = await this.sviatoModel
+      .find({
+        date: { $gte: start, $lte: end },
+      })
+      .exec();
+
+    const filledDates = new Set(
+      sviata
+        .filter(
+          (s) =>
+            s.description &&
+            s.description.trim() !== '' &&
+            s.name &&
+            s.name.trim() !== '' &&
+            s.seoText &&
+            s.seoText.trim() !== '',
+        )
+        .map((s) => s.date),
+    );
+
+    const startDate = new Date(start);
+    const endDate = new Date(end);
+    const result: DayInfo[] = [];
+
+    for (
+      let d = new Date(startDate);
+      d <= endDate;
+      d.setDate(d.getDate() + 1)
+    ) {
+      const yyyy = d.getFullYear();
+      const mm = String(d.getMonth() + 1).padStart(2, '0');
+      const dd = String(d.getDate()).padStart(2, '0');
+      const dateStr = `${yyyy}-${mm}-${dd}`;
+
+      const dayOfYear = Math.floor(
+        (d.getTime() - new Date(d.getFullYear(), 0, 0).getTime()) /
+          (1000 * 60 * 60 * 24),
+      );
+
+      result.push({
+        dayOfMonth: d.getDate(),
+        month: d.getMonth() + 1,
+        year: d.getFullYear(),
+        date: dateStr,
+        dayOfYear,
+        isFilled: filledDates.has(dateStr),
+      });
+    }
+
+    return result;
+  }
+
+  async getTags() {
+    return Object.values(SviatoTag).filter((v) => typeof v === 'string');
   }
 }

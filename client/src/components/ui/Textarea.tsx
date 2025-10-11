@@ -21,7 +21,6 @@ export default function Textarea({
   maxLength?: number;
 }) {
   const [currentLength, setCurrentLength] = useState(value.length);
-  // useEffect(() => {}, []);
   useEffect(() => {
     setCurrentLength(value.length);
   }, [value]);
