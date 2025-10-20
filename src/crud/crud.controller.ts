@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Delete,
@@ -7,6 +8,7 @@ import {
   Post,
   Put,
   Query,
+  Req,
   UploadedFiles,
   UseInterceptors,
 } from '@nestjs/common';
@@ -78,33 +80,13 @@ export class CrudController {
   }
 
   @Post('images/:id')
-  @UseInterceptors(
-    FilesInterceptor('images', 20, {
-      storage: diskStorage({
-        destination: './uploads',
-        filename: (req, file, callback) => {
-          const hash = crypto
-            .createHash('sha256')
-            .update(file.originalname + Date.now().toString())
-            .digest('hex');
-          const ext = extname(file.originalname);
-          callback(null, `${hash}${ext}`);
-        },
-      }),
-      fileFilter: (req, file, callback) => {
-        if (!file.mimetype.match(/\/(jpg|jpeg|png|gif)$/)) {
-          return callback(new Error('Only image files are allowed!'), false);
-        }
-        callback(null, true);
-      },
-    }),
-  )
-  async uploadImages(
-    @Param('id') id: string,
-    @UploadedFiles() files: Express.Multer.File[],
-  ) {
-    const paths = files.map((file) => `${file.filename}`);
-    return this.sviatoService.setImagesForDate(id, paths);
+  async uploadImages(@Param('id') id: string, @Req() req: Request) {
+    const images = req['processedImages'];
+    if (!images || images.length === 0) {
+      throw new BadRequestException('Зображення не завантажено');
+    }
+    const filenames = images.map((img) => img.filename);
+    return this.sviatoService.setImagesForDate(id, filenames);
   }
 
   @Post()
@@ -113,33 +95,13 @@ export class CrudController {
   }
 
   @Post('sviato-images/:id')
-  @UseInterceptors(
-    FilesInterceptor('images', 20, {
-      storage: diskStorage({
-        destination: './uploads',
-        filename: (req, file, callback) => {
-          const hash = crypto
-            .createHash('sha256')
-            .update(file.originalname + Date.now().toString())
-            .digest('hex');
-          const ext = extname(file.originalname);
-          callback(null, `${hash}${ext}`);
-        },
-      }),
-      fileFilter: (req, file, callback) => {
-        if (!file.mimetype.match(/\/(jpg|jpeg|png|gif)$/)) {
-          return callback(new Error('Only image files are allowed!'), false);
-        }
-        callback(null, true);
-      },
-    }),
-  )
-  async uploadSviatoImages(
-    @Param('id') id: string,
-    @UploadedFiles() files: Express.Multer.File[],
-  ) {
-    const paths = files.map((file) => `${file.filename}`);
-    return this.sviatoService.addImagesToSviato(id, paths);
+  async uploadSviatoImage(@Param('id') id: string, @Req() req: Request) {
+    const images = req['processedImages'];
+    if (!images || images.length === 0) {
+      throw new BadRequestException('Зображення не завантажено');
+    }
+    const filenames = images.map((img) => img.filename);
+    return this.sviatoService.addImagesToSviato(id, filenames);
   }
 
   @Put('update-description')

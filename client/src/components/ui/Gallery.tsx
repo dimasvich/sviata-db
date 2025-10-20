@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import ImageUpload from './ImageUpload';
+import { baseUrl } from '@/http';
 
 type GalleryProps = {
   maxImages?: number;
@@ -54,11 +55,10 @@ export default function Gallery({
 
   return (
     <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-      {/* Існуючі картинки */}
       {existing.map((img, idx) => (
         <div key={`existing-${idx}`} className="relative">
           <img
-            src={img.startsWith('http') ? img : `/uploads/${img}`}
+            src={img.startsWith('http') ? img : `${baseUrl}/uploads/${img}`}
             alt="Existing"
             className="object-contain w-full h-40 rounded-lg border border-border"
           />

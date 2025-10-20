@@ -1,6 +1,6 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document } from 'mongoose';
-import { Source, SviatoTag, SviatoType } from 'src/types';
+import { Celebrate, Source, SviatoTag, SviatoType, TimeBlock } from 'src/types';
 
 export type SviatoDocument = Sviato & Document;
 
@@ -29,6 +29,24 @@ export class Sviato {
 
   @Prop({ type: [String], required: false })
   omens: string[];
+
+  @Prop({ type: [], required: false })
+  timeline: TimeBlock[];
+
+  @Prop({ type: [String], required: false })
+  related: string[];
+
+  @Prop({ type: [String], required: false })
+  greetings: string[];
+
+  @Prop({ type: [String], required: false })
+  ideas: string[];
+
+  @Prop({ type: [String], required: false })
+  facts: string[];
+
+  @Prop({ type: {}, required: false })
+  celebrate: Celebrate;
 
   @Prop({ type: String, required: false })
   seoText: string;

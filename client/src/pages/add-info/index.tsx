@@ -9,7 +9,7 @@ import Input from '@/components/ui/Input';
 import Textarea from '@/components/ui/Textarea';
 import Select from '@/components/ui/Select';
 import Button from '@/components/ui/Button';
-import { DayRulesEnum, SviatoType } from '@/types';
+import { Celebrate, DayRulesEnum, SviatoType } from '@/types';
 import { baseUrl } from '@/http';
 import Calendar from '@/components/ui/Calendar';
 import localeData from 'dayjs/plugin/localeData';
@@ -44,12 +44,30 @@ export default function AddInfo() {
       title: string;
       link: string;
     }[],
+    timeline: [] as {
+      year: string;
+      html: string;
+    }[],
+    related: [] as string[],
+    greetings: [] as string[],
+    ideas: [] as string[],
+    facts: [] as string[],
     omens: [] as string[],
+    celebrate: {} as Celebrate,
     seoText: '',
     type: '',
     date: '',
   });
   const [newOmen, setNewOmen] = useState('');
+  const [newGreeting, setNewGreeting] = useState('');
+  const [newIdea, setNewIdea] = useState('');
+  const [newFact, setNewFact] = useState('');
+  const [newRelated, setNewRelated] = useState('');
+
+  const [celebrateWhen, setCelebrateWhen] = useState('');
+  const [celebrateDate, setCelebrateDate] = useState('');
+  const [celebrateDayoff, setCelebrateDayoff] = useState('');
+
   const [selectedRule1, setSelectedRule1] = useState('');
   const [selectedRule2, setSelectedRule2] = useState('');
   const [html1, setHtml1] = useState('');
@@ -58,8 +76,13 @@ export default function AddInfo() {
   const [rule2Id, setRule2Id] = useState('');
   const router = useRouter();
   const [isOpenModal, setIsOpenModal] = useState(false);
+
   const [newSourceTitle, setNewSourceTitle] = useState('');
   const [newSourceLink, setNewSourceLink] = useState('');
+
+  const [newTimeBlockYear, setNewTimeBlockYear] = useState('');
+  const [newTimeBlockHtml, setNewTimeBlockHtml] = useState('');
+
   const [tags, setTags] = useState([]);
   const [newFiles, setNewFiles] = useState<File[]>([]);
   const [images, setImages] = useState<string[]>([]);
@@ -126,13 +149,77 @@ export default function AddInfo() {
       setNewOmen('');
     }
   };
-
   const handleRemoveOmen = (omen: string) => {
     setSviato((prev) => ({
       ...prev,
       omens: prev.omens.filter((t) => t !== omen),
     }));
   };
+
+  const handleAddGreeting = () => {
+    if (newGreeting.trim() && !sviato.greetings.includes(newGreeting.trim())) {
+      setSviato((prev) => ({
+        ...prev,
+        greetings: [...prev.greetings, newGreeting.trim()],
+      }));
+      setNewGreeting('');
+    }
+  };
+  const handleRemoveGreeting = (greeting: string) => {
+    setSviato((prev) => ({
+      ...prev,
+      greetings: prev.greetings.filter((t) => t !== greeting),
+    }));
+  };
+
+  const handleAddIdea = () => {
+    if (newIdea.trim() && !sviato.ideas.includes(newIdea.trim())) {
+      setSviato((prev) => ({
+        ...prev,
+        ideas: [...prev.ideas, newIdea.trim()],
+      }));
+      setNewIdea('');
+    }
+  };
+  const handleRemoveIdea = (idea: string) => {
+    setSviato((prev) => ({
+      ...prev,
+      ideas: prev.ideas.filter((t) => t !== idea),
+    }));
+  };
+
+  const handleAddFact = () => {
+    if (newFact.trim() && !sviato.facts.includes(newFact.trim())) {
+      setSviato((prev) => ({
+        ...prev,
+        facts: [...prev.facts, newFact.trim()],
+      }));
+      setNewFact('');
+    }
+  };
+  const handleRemoveFact = (fact: string) => {
+    setSviato((prev) => ({
+      ...prev,
+      facts: prev.facts.filter((t) => t !== fact),
+    }));
+  };
+
+  const handleAddRelated = () => {
+    if (newRelated.trim() && !sviato.related.includes(newRelated.trim())) {
+      setSviato((prev) => ({
+        ...prev,
+        related: [...prev.related, newRelated.trim()],
+      }));
+      setNewRelated('');
+    }
+  };
+  const handleRemoveRelated = (related: string) => {
+    setSviato((prev) => ({
+      ...prev,
+      related: prev.related.filter((t) => t !== related),
+    }));
+  };
+
   const handleSubmitRules = async () => {
     const requests = [];
 
@@ -170,6 +257,17 @@ export default function AddInfo() {
       setLoading(false);
     }
   };
+  useEffect(() => {
+    if (celebrateWhen && celebrateDate && celebrateDayoff)
+      setSviato((prev) => ({
+        ...prev,
+        celebrate: {
+          when: celebrateWhen,
+          date: celebrateDate,
+          isDayoff: celebrateDayoff === 'так' ? true : false,
+        },
+      }));
+  }, [celebrateWhen, celebrateDate, celebrateDayoff]);
 
   const handleSubmit = async () => {
     if (!id) {
@@ -251,21 +349,18 @@ export default function AddInfo() {
               </ul>
             </div>
           )}
-
           <Input
             id="title"
             label="Заголовок"
             value={sviato.title || ''}
             onChange={(e) => handleChange('title', e.target.value)}
           />
-
           <Input
             id="name"
             label="Назва"
             value={sviato.name || ''}
             onChange={(e) => handleChange('name', e.target.value)}
           />
-
           <Textarea
             id="description"
             label="Опис (HTML)"
@@ -273,7 +368,6 @@ export default function AddInfo() {
             value={sviato.description || ''}
             onChange={(e) => handleChange('description', e.target.value)}
           />
-
           <Textarea
             id="teaser"
             label="Короткий опис (teaser)"
@@ -287,7 +381,6 @@ export default function AddInfo() {
             options={tags}
             onChange={(value) => handleChange('tag', value)}
           />
-
           <div className="flex flex-col gap-2">
             <Typography type="text">Прикмети</Typography>
             <div className="flex gap-2">
@@ -318,7 +411,213 @@ export default function AddInfo() {
               ))}
             </div>
           </div>
+          <div className="flex flex-col gap-2">
+            <Typography type="text">Короткі привітання</Typography>
+            <div className="flex gap-2">
+              <Input
+                id="newGreeting"
+                label=""
+                placeholder="Додайте привітання"
+                value={newGreeting}
+                onChange={(e) => setNewGreeting(e.target.value)}
+              />
+              <Button onClick={handleAddGreeting}>+</Button>
+            </div>
 
+            <div className="flex flex-wrap gap-2 mt-1">
+              {sviato.greetings.map((greeting) => (
+                <div
+                  key={greeting}
+                  className="flex items-center gap-1 bg-border text-primary px-3 py-1 rounded-full text-sm"
+                >
+                  <span>{greeting}</span>
+                  <button
+                    onClick={() => handleRemoveGreeting(greeting)}
+                    className="text-red-500 hover:text-red-700"
+                  >
+                    ✕
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="flex flex-col gap-2">
+            <Typography type="text">Ідеї для постів і листів</Typography>
+            <div className="flex gap-2">
+              <Input
+                id="newIdea"
+                label=""
+                placeholder="Додайте ідею"
+                value={newIdea}
+                onChange={(e) => setNewIdea(e.target.value)}
+              />
+              <Button onClick={handleAddIdea}>+</Button>
+            </div>
+
+            <div className="flex flex-wrap gap-2 mt-1">
+              {sviato.ideas.map((idea) => (
+                <div
+                  key={idea}
+                  className="flex items-center gap-1 bg-border text-primary px-3 py-1 rounded-full text-sm"
+                >
+                  <span>{idea}</span>
+                  <button
+                    onClick={() => handleRemoveIdea(idea)}
+                    className="text-red-500 hover:text-red-700"
+                  >
+                    ✕
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="flex flex-col gap-2">
+            <Typography type="text">Факти</Typography>
+            <div className="flex gap-2">
+              <Textarea
+                id="newFact"
+                label=""
+                placeholder="Додайте факт"
+                value={newFact}
+                onChange={(e) => setNewFact(e.target.value)}
+              />
+              <Button onClick={handleAddFact}>+</Button>
+            </div>
+
+            <div className="flex flex-wrap gap-2 mt-1">
+              {sviato.facts.map((fact) => (
+                <div
+                  key={fact}
+                  className="flex items-center gap-1 bg-border text-primary px-3 py-1 rounded-full text-sm"
+                >
+                  <span>{fact}</span>
+                  <button
+                    onClick={() => handleRemoveFact(fact)}
+                    className="text-red-500 hover:text-red-700"
+                  >
+                    ✕
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="flex flex-col gap-2">
+            <Typography type="text">Пов'язані статті</Typography>
+            <div className="flex gap-2">
+              <Input
+                id="newRelated"
+                label=""
+                placeholder="Додайте посилання"
+                value={newRelated}
+                onChange={(e) => setNewRelated(e.target.value)}
+              />
+              <Button onClick={handleAddRelated}>+</Button>
+            </div>
+
+            <div className="flex flex-wrap gap-2 mt-1">
+              {sviato.related.map((related) => (
+                <div
+                  key={related}
+                  className="flex items-center gap-1 bg-border text-primary px-3 py-1 rounded-full text-sm"
+                >
+                  <span>{related}</span>
+                  <button
+                    onClick={() => handleRemoveRelated(related)}
+                    className="text-red-500 hover:text-red-700"
+                  >
+                    ✕
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center justify-between">
+              <Typography type="text">Timeline</Typography>
+              <Button
+                onClick={() => {
+                  const year = newTimeBlockYear.trim();
+                  const html = newTimeBlockHtml.trim();
+                  if (year && html) {
+                    setSviato((prev) => ({
+                      ...prev,
+                      timeline: [...prev.timeline, { year, html }],
+                    }));
+                    setNewTimeBlockYear('');
+                    setNewTimeBlockHtml('');
+                  }
+                }}
+              >
+                +
+              </Button>
+            </div>
+            <div className="flex flex-col gap-2">
+              <Input
+                id="newTimeBlockYear"
+                label=""
+                placeholder="Рік"
+                value={newTimeBlockYear}
+                onChange={(e) => setNewTimeBlockYear(e.target.value)}
+              />
+              <Textarea
+                id="newTimeBlockHtml"
+                label=""
+                maxLength={500}
+                placeholder="Текст (HTML)"
+                value={newTimeBlockHtml}
+                onChange={(e) => setNewTimeBlockHtml(e.target.value)}
+              />
+            </div>
+
+            <div className="flex flex-wrap gap-2 mt-1">
+              {sviato.timeline.map((timeblock, idx) => (
+                <div
+                  key={idx}
+                  className="flex items-center gap-2 bg-border text-primary px-3 py-1 rounded-full text-sm"
+                >
+                  <p>{timeblock.html}</p>
+                  <button
+                    onClick={() =>
+                      setSviato((prev) => ({
+                        ...prev,
+                        timeline: prev.timeline.filter((_, i) => i !== idx),
+                      }))
+                    }
+                    className="text-red-500 hover:text-red-700"
+                  >
+                    ✕
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="flex flex-col gap-2">
+            <Typography type="text">Святкування</Typography>
+            <div className="flex gap-1">
+              <Input
+                id="celebrateWhen"
+                label="Коли святкують?"
+                placeholder="Коли святкують"
+                value={celebrateWhen}
+                onChange={(e) => setCelebrateWhen(e.target.value)}
+              />
+              <Input
+                id="celebrateHtml"
+                label="Коли започатковано?"
+                placeholder="Коли започатковано"
+                value={celebrateDate}
+                onChange={(e) => setCelebrateDate(e.target.value)}
+              />
+              <Select
+                id="celebrateDayoff"
+                value={celebrateDayoff}
+                onChange={setCelebrateDayoff}
+                label="Вихідний"
+                options={['так', 'ні']}
+                error=""
+              />
+            </div>
+          </div>
           <div className="flex flex-col gap-2">
             <Typography type="text">Джерела</Typography>
 
@@ -384,15 +683,13 @@ export default function AddInfo() {
               ))}
             </div>
           </div>
-
           <Textarea
             id="seoText"
             label="SEO текст (HTML)"
-            maxLength={5000}
+            maxLength={8000}
             value={sviato.seoText || ''}
             onChange={(e) => handleChange('seoText', e.target.value)}
           />
-
           <Select
             id="type"
             label="Тип свята"
@@ -412,7 +709,6 @@ export default function AddInfo() {
               maxImages={10}
             />
           </div>
-
           <div className="flex gap-2 items-end flex-col">
             {!alternativeDate && (
               <Calendar
@@ -505,7 +801,6 @@ export default function AddInfo() {
               </div>
             </div>
           </div>
-
           <Button onClick={handleSubmit}>
             {loading ? 'Оновлюється...' : 'Зберегти зміни'}
           </Button>

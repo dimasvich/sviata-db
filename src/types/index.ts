@@ -13,6 +13,15 @@ export interface Source {
   title: string;
   link: string;
 }
+export interface TimeBlock {
+  year: string;
+  html: string;
+}
+export interface Celebrate {
+  when: string;
+  date: string;
+  isDayoff: boolean;
+}
 export enum SviatoType {
   'Державні свята',
   'Свята в Україні',
