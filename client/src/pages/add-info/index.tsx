@@ -502,7 +502,7 @@ export default function AddInfo() {
             </div>
           </div>
           <div className="flex flex-col gap-2">
-            <Typography type="text">Пов'язані статті</Typography>
+            <Typography type="text">Пов&apos;язані статті</Typography>
             <div className="flex gap-2">
               <Input
                 id="newRelated"
