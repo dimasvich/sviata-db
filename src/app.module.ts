@@ -5,6 +5,7 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
 import { RelatedArticlesModule } from './related-articles/related-articles.module';
+import { BuildModule } from './build/build.module';
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { RelatedArticlesModule } from './related-articles/related-articles.modul
     }),
     CrudModule,
     RelatedArticlesModule,
+    BuildModule,
   ],
   controllers: [],
   providers: [],

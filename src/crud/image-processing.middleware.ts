@@ -28,7 +28,6 @@ export class ImageProcessingMiddleware implements NestMiddleware {
         const uniqueName = crypto.randomUUID() + '.webp';
         const outputPath = path.join(uploadDir, uniqueName);
 
-        // Обробка зображення через sharp
         const image = sharp(file.buffer);
         const metadata = await image.metadata();
         const targetAspect = 16 / 9;
@@ -46,7 +45,6 @@ export class ImageProcessingMiddleware implements NestMiddleware {
           .toFormat('webp', { quality: 90 })
           .toFile(outputPath);
 
-        // Видаляємо всі метадані після збереження
         await exiftool.write(outputPath, {}, ['-all=']);
 
         processedImages.push({

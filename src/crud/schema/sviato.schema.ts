@@ -37,6 +37,9 @@ export class Sviato {
   related: string[];
 
   @Prop({ type: [String], required: false })
+  moreIdeas: string[];
+
+  @Prop({ type: [String], required: false })
   greetings: string[];
 
   @Prop({ type: [String], required: false })

@@ -6,6 +6,7 @@ import { Sviato, SviatoSchema } from './schema/sviato.schema';
 import { DayRules, DayRulesSchema } from './schema/dayrules.schema';
 import { SviatoImages, SviatoImagesSchema } from './schema/sviatoimages.schema';
 import { ImageProcessingMiddleware } from './image-processing.middleware';
+import { SviatoImageProcessingMiddleware } from './sviato-images.middleware';
 
 @Module({
   imports: [
@@ -20,8 +21,9 @@ import { ImageProcessingMiddleware } from './image-processing.middleware';
 })
 export class CrudModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
+    consumer.apply(ImageProcessingMiddleware).forRoutes('crud/images/:id');
     consumer
-      .apply(ImageProcessingMiddleware)
-      .forRoutes('crud/sviato-images/:id', 'crud/images/:id');
+      .apply(SviatoImageProcessingMiddleware)
+      .forRoutes('crud/sviato-images/:id');
   }
 }

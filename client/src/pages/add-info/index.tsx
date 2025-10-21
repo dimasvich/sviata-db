@@ -17,7 +17,7 @@ import dayjs from 'dayjs';
 import { getNextThreeYearsForecast, getNthWeekdayOfMonth } from '@/utils';
 import SviatoDeleteModal from '@/components/ui/sviato/SviatoDeleteModal';
 import { deleteSviato } from '@/http/crud';
-import Gallery from '@/components/ui/Gallery';
+import ArticleGallery from '@/components/ui/ArticleGallery';
 
 export default function AddInfo() {
   const searchParams = useSearchParams();
@@ -49,6 +49,7 @@ export default function AddInfo() {
       html: string;
     }[],
     related: [] as string[],
+    moreIdeas: [] as string[],
     greetings: [] as string[],
     ideas: [] as string[],
     facts: [] as string[],
@@ -63,6 +64,7 @@ export default function AddInfo() {
   const [newIdea, setNewIdea] = useState('');
   const [newFact, setNewFact] = useState('');
   const [newRelated, setNewRelated] = useState('');
+  const [newMore, setNewMore] = useState('');
 
   const [celebrateWhen, setCelebrateWhen] = useState('');
   const [celebrateDate, setCelebrateDate] = useState('');
@@ -217,6 +219,22 @@ export default function AddInfo() {
     setSviato((prev) => ({
       ...prev,
       related: prev.related.filter((t) => t !== related),
+    }));
+  };
+
+  const handleAddMore = () => {
+    if (newMore.trim() && !sviato.moreIdeas.includes(newMore.trim())) {
+      setSviato((prev) => ({
+        ...prev,
+        moreIdeas: [...prev.moreIdeas, newMore.trim()],
+      }));
+      setNewMore('');
+    }
+  };
+  const handleRemoveMore = (more: string) => {
+    setSviato((prev) => ({
+      ...prev,
+      moreIdeas: prev.moreIdeas.filter((t) => t !== more),
     }));
   };
 
@@ -472,11 +490,42 @@ export default function AddInfo() {
             </div>
           </div>
           <div className="flex flex-col gap-2">
+            <Typography type="text">Більше ідей для привітання</Typography>
+            <div className="flex gap-2">
+              <Input
+                id="newMore"
+                label=""
+                placeholder="Додайте id"
+                value={newMore}
+                onChange={(e) => setNewMore(e.target.value)}
+              />
+              <Button onClick={handleAddMore}>+</Button>
+            </div>
+
+            <div className="flex flex-wrap gap-2 mt-1">
+              {sviato.moreIdeas.map((more) => (
+                <div
+                  key={more}
+                  className="flex items-center gap-1 bg-border text-primary px-3 py-1 rounded-full text-sm"
+                >
+                  <span>{more}</span>
+                  <button
+                    onClick={() => handleRemoveMore(more)}
+                    className="text-red-500 hover:text-red-700"
+                  >
+                    ✕
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="flex flex-col gap-2">
             <Typography type="text">Факти</Typography>
             <div className="flex gap-2">
               <Textarea
                 id="newFact"
                 label=""
+                maxLength={1000}
                 placeholder="Додайте факт"
                 value={newFact}
                 onChange={(e) => setNewFact(e.target.value)}
@@ -507,7 +556,7 @@ export default function AddInfo() {
               <Input
                 id="newRelated"
                 label=""
-                placeholder="Додайте посилання"
+                placeholder="Додайте id"
                 value={newRelated}
                 onChange={(e) => setNewRelated(e.target.value)}
               />
@@ -531,6 +580,7 @@ export default function AddInfo() {
               ))}
             </div>
           </div>
+
           <div className="flex flex-col gap-2">
             <div className="flex items-center justify-between">
               <Typography type="text">Timeline</Typography>
@@ -686,7 +736,7 @@ export default function AddInfo() {
           <Textarea
             id="seoText"
             label="SEO текст (HTML)"
-            maxLength={8000}
+            maxLength={100000}
             value={sviato.seoText || ''}
             onChange={(e) => handleChange('seoText', e.target.value)}
           />
@@ -700,7 +750,8 @@ export default function AddInfo() {
           />
           <div className="flex flex-col gap-2">
             <Typography type="text">Картинки свята</Typography>
-            <Gallery
+            <ArticleGallery
+              id={id || ''}
               existingImages={images}
               onImagesChange={setNewFiles}
               onRemoveExisting={(img: string) =>
