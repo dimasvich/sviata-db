@@ -1,9 +1,13 @@
-import { Controller, Get, Param, Post } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Post } from '@nestjs/common';
 import { BuildService } from './build.service';
 
 @Controller('build')
 export class BuildController {
   constructor(private readonly buildService: BuildService) {}
+  @Post('update/:id')
+  async updateArticle(@Param('id') id: string) {
+    return await this.buildService.update(id);
+  }
   @Get('/:id')
   async getArticle(@Param('id') id: string) {
     return await this.buildService.buildArticle(id);
@@ -11,5 +15,9 @@ export class BuildController {
   @Post('/:id')
   async postArticle(@Param('id') id: string) {
     return await this.buildService.publish(id);
+  }
+  @Delete('/:id')
+  async deleteArticle(@Param('id') id: string) {
+    return await this.buildService.delete(id);
   }
 }

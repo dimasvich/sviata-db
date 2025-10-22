@@ -7,6 +7,9 @@ export type SviatoDocument = Sviato & Document;
 @Schema({ collection: 'sviata' })
 export class Sviato {
   @Prop({ type: String, required: false })
+  articleId: string;
+
+  @Prop({ type: String, required: false })
   title: string;
 
   @Prop({ type: String, required: false })
