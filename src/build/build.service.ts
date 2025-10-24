@@ -56,8 +56,7 @@ export class BuildService {
                             </div>
                         </div>`;
 
-      const host =
-        process.env.HOST || 'https://dev25.gosta.media/wp-content/uploads';
+      const host = process.env.HOST || 'https://gosta.ua/wp-content/uploads';
       const $ = cheerio.load(content);
       const figureStart = `<figure class="wp-block-image size-full">`;
       const figureEnd = `</figure>`;
@@ -277,11 +276,6 @@ export class BuildService {
 
       const formData = new FormData();
       formData.append('file', fs.createReadStream(fullImagePath1), imageName1);
-      console.log(
-        process.env.BASE_URL,
-        process.env.APP_USER,
-        process.env.APP_PASSWORD,
-      );
 
       const mediaResponse = await axios.post(
         `${process.env.BASE_URL}/media`,
@@ -314,7 +308,7 @@ export class BuildService {
       }
       const imageFiles = fs
         .readdirSync(imageDir2)
-        .filter((f) => /\.(jpg|jpeg|png|gif|webp)$/i.test(f));
+        .filter((f) => /\.(webp)$/i.test(f));
 
       if (imageFiles.length === 0) {
         throw new Error('Немає зображень для завантаження');
@@ -377,7 +371,6 @@ export class BuildService {
         status: 'publish',
         featured_media: mediaId,
         categories: [567],
-        author: 34,
       };
 
       const postResponse = await axios.post(
@@ -395,8 +388,6 @@ export class BuildService {
       );
 
       console.log('Post created:', postResponse.data);
-      sviato.articleId = postResponse.data.id;
-      sviato.save();
       await this.sviatoModel.updateOne({ id, articleId: postResponse.data.id });
       return postResponse.data;
     } catch (error) {

@@ -167,7 +167,7 @@ export class CrudService {
         grouped[dateKey].sviata.push({
           name: item.name,
           document: item.doc || '',
-          tag: item.tag || '',
+          tag: (item.tags.map((item) => item).join(',') as SviatoTag) || '',
           id: item._id as string,
         });
       }

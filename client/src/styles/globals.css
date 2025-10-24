@@ -19,3 +19,31 @@ body {
 a {
   text-decoration: none;
 }
+.editor-content p {
+  margin: 8px 0;
+}
+
+.editor-content h1 {
+  font-size: 2em;
+  font-weight: bold;
+  margin: 16px 0 8px 0;
+}
+
+.editor-content h2 {
+  font-size: 1.75em;
+  font-weight: bold;
+  margin: 14px 0 7px 0;
+}
+
+.editor-content h3 {
+  font-size: 1.5em;
+  font-weight: bold;
+  margin: 12px 0 6px 0;
+}
+
+.editor-content div[data-placeholder] {
+  border: 1px dashed #888;
+  padding: 8px;
+  margin: 8px 0;
+  background-color: #f9f9f9;
+}

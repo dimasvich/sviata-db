@@ -1,6 +1,7 @@
 'use client';
 import DashboardMonth from '@/components/ui/Dashboard/DashboardMonth';
 import DashBoardNav from '@/components/ui/Dashboard/DashboardNav';
+import Header from '@/components/ui/Header/Header';
 import Layout from '@/components/ui/Layout';
 import { getList } from '@/http/crud';
 import dayjs from 'dayjs';
@@ -21,6 +22,7 @@ export default function Home() {
         <link rel="icon" href="/favicon.ico" />
       </Head>
       <Layout>
+        <Header />
         <DashBoardNav setCurrentDate={setDate} year={2025} />
         <DashboardMonth
           day={dayjs(date).date()}

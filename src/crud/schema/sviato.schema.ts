@@ -21,8 +21,8 @@ export class Sviato {
   @Prop({ type: String, required: false, maxLength: 250 })
   teaser: string;
 
-  @Prop({ type: String, required: false, enum: SviatoTag })
-  tag: SviatoTag;
+  @Prop({ type: [String], required: false, enum: SviatoTag })
+  tags: SviatoTag[];
 
   @Prop({ type: [String], required: false })
   keywords: string[];
