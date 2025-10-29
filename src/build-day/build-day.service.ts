@@ -453,7 +453,7 @@ export class BuildDayService {
   }
   async publish(date: string) {
     try {
-      const day = await this.dayModel.findById(date).lean();
+      const day = await this.dayModel.findOne({ date }).lean();
       if (!day) throw new Error('Стаття не знайдена');
 
       const formData = new FormData();
@@ -533,12 +533,16 @@ export class BuildDayService {
         slug: '31-zhovtnia',
         status: 'publish',
         content: content,
-        seofo_title: `${dayjs(day.date).locale('uk').format('D MMMM YYYY')} - яке сьогодні свято, церковне свято, день янгола | Gosta`,
-        seofo_description: `${dayjs(day.date).locale('uk').format('D MMMM YYYY')} - дізнайтеся які сьогодні свята в Україні, церковні свята, міжнародні події, народні прикмети, іменини та історичні події цього дня.`,
+        template: 'template-ua/categories-ua/holiday-today-ua.php',
+        meta: {
+          holiday_date: day.date,
+        },
+        seofo_title: `Яке свято ${dayjs(day.date).locale('uk').format('D MMMM YYYY')} - церковне свято, іменини`,
+        seofo_description: `Дізнайтеся яке свято ${dayjs(day.date).locale('uk').format('D MMMM YYYY')} в Україні та світі`,
       };
 
       const postResponse = await axios.post(
-        `${process.env.BASE_URL}/posts`,
+        `${process.env.BASE_URL}/pages`,
         postData,
         {
           auth: {
@@ -555,7 +559,7 @@ export class BuildDayService {
       await this.dayModel.updateOne({ date, articleId: postResponse.data.id });
       return postResponse.data;
     } catch (error) {
-      console.error('Error publishing:', error);
+      console.error('Error publishing', error);
       throw error;
     }
   }

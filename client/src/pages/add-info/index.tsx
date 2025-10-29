@@ -112,13 +112,13 @@ export default function AddInfo() {
       const rulesRes = await fetch(
         `${baseUrl}/api/crud/day-rules/${json.date}`,
       );
-      const jsonRules = await rulesRes.json();
-      setSelectedRule1(jsonRules[0].title);
-      setSelectedRule2(jsonRules[1].title);
-      setHtml1(jsonRules[0].html);
-      setHtml2(jsonRules[1].html);
-      setRule1Id(jsonRules[0]._id);
-      setRule2Id(jsonRules[1]._id);
+      const jsonRules = (await rulesRes.json()) || [];
+      setSelectedRule1(jsonRules[0].title || '');
+      setSelectedRule2(jsonRules[1].title || '');
+      setHtml1(jsonRules[0].html || '');
+      setHtml2(jsonRules[1].html || '');
+      setRule1Id(jsonRules[0]._id || '');
+      setRule2Id(jsonRules[1]._id || '');
     };
     fetchData();
   }, [id]);
