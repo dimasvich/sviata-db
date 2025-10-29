@@ -4,10 +4,12 @@ export default function Button({
   children,
   onClick,
   type = 'default',
+  className = '',
 }: {
   children: ReactNode;
   onClick: () => void;
   type?: 'default' | 'danger';
+  className?: string;
 }) {
   const baseClasses =
     'rounded-[8px] py-[4px] px-[8px] border-[1px] transition-colors';
@@ -18,7 +20,10 @@ export default function Button({
   };
 
   return (
-    <button onClick={onClick} className={`${baseClasses} ${typeClasses[type]}`}>
+    <button
+      onClick={onClick}
+      className={`${baseClasses} ${typeClasses[type]} ${className}`}
+    >
       {children}
     </button>
   );

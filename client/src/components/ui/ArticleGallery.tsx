@@ -6,8 +6,8 @@ type GalleryProps = {
   id: string;
   maxImages?: number;
   onImagesChange?: (files: File[]) => void;
-  existingImages?: string[]; // новий проп для бекенд-картинок
-  onRemoveExisting?: (img: string) => void; // видалення існуючих картинок
+  existingImages?: string[];
+  onRemoveExisting?: (img: string) => void;
 };
 
 export default function ArticleGallery({
@@ -17,12 +17,9 @@ export default function ArticleGallery({
   onRemoveExisting,
   id,
 }: GalleryProps) {
-  // Нові файли
   const [files, setFiles] = useState<(File | null)[]>([null]);
-  // Існуючі картинки
   const [existing, setExisting] = useState<string[]>(existingImages);
 
-  // Оновлюємо існуючі картинки при зміні пропа
   useEffect(() => {
     setExisting(existingImages);
   }, [existingImages]);
@@ -31,7 +28,6 @@ export default function ArticleGallery({
     const newFiles = [...files];
     newFiles[index] = file;
 
-    // Додаємо новий слот, якщо є місце
     if (newFiles.length < maxImages && !newFiles.includes(null)) {
       newFiles.push(null);
     }
@@ -43,7 +39,6 @@ export default function ArticleGallery({
   const handleRemoveNew = (index: number) => {
     const newFiles = [...files];
     newFiles.splice(index, 1);
-    // Завжди залишаємо хоча б один слот
     if (!newFiles.includes(null)) newFiles.push(null);
     setFiles(newFiles);
     onImagesChange?.(newFiles.filter(Boolean) as File[]);
@@ -75,8 +70,6 @@ export default function ArticleGallery({
           </button>
         </div>
       ))}
-
-      {/* Нові файли */}
       {files.map((file, idx) =>
         file ? (
           <div key={`new-${idx}`} className="relative">

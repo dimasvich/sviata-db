@@ -22,6 +22,11 @@ export interface Celebrate {
   date: string;
   isDayoff: boolean;
 }
+export interface WhoWasBornToday {
+  title: string;
+  description: string;
+  image: boolean;
+}
 export enum SviatoType {
   'Державні свята',
   'Свята в Україні',

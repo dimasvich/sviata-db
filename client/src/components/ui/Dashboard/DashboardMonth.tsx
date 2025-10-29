@@ -117,6 +117,11 @@ export default function DashboardMonth({
               return (
                 <tr
                   key={currentDay}
+                  onClick={() =>
+                    router.push(
+                      `/add-info-day?date=${currentYear}-${month}-${currentDay}`,
+                    )
+                  }
                   className={`cursor-pointer hover:bg-gray-50 transition
                     ${isEmpty ? 'border-2 border-red-400' : ''} `}
                 >
@@ -132,7 +137,7 @@ export default function DashboardMonth({
                   <td className="py-2 px-4 border-b border-border text-center capitalize">
                     {getDayOfWeek(currentDay)}
                   </td>
-                  <td className="py-2 px-4 border-b border-border text-center">
+                  {/* <td className="py-2 px-4 border-b border-border text-center">
                     {sviato?.description ? (
                       <>
                         <Button
@@ -158,7 +163,7 @@ export default function DashboardMonth({
                     ) : (
                       '-'
                     )}
-                  </td>
+                  </td> */}
                   <td className="py-2 px-4 border-b border-border text-center align-top">
                     {sviato?.sviata && sviato.sviata.length > 0 ? (
                       <div className="flex flex-col items-start gap-2">

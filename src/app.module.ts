@@ -6,6 +6,9 @@ import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
 import { RelatedArticlesModule } from './related-articles/related-articles.module';
 import { BuildModule } from './build/build.module';
+import { GenerateFromCsvModule } from './generate-from-csv/generate-from-csv.module';
+import { DayModule } from './day/day.module';
+import { BuildDayModule } from './build-day/build-day.module';
 
 @Module({
   imports: [
@@ -27,6 +30,9 @@ import { BuildModule } from './build/build.module';
     CrudModule,
     RelatedArticlesModule,
     BuildModule,
+    GenerateFromCsvModule,
+    DayModule,
+    BuildDayModule,
   ],
   controllers: [],
   providers: [],

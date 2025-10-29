@@ -370,7 +370,7 @@ export class BuildService {
         excerpt: sviato.teaser,
         status: 'publish',
         featured_media: mediaId,
-        categories: [567],
+        categories: [12771],
       };
 
       const postResponse = await axios.post(
