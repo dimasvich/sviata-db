@@ -24,6 +24,9 @@ export class Day {
   @Prop({ type: [{}], required: false })
   whoWasBornToday: WhoWasBornToday[];
 
+  @Prop({ type: String, required: false })
+  mainImage: string;
+
   @Prop({ type: [String], required: false })
   keywords: string[];
 

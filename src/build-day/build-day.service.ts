@@ -311,7 +311,7 @@ export class BuildDayService {
         </div>
       </div>
       <div class="right" bis_skin_checked="1">
-<div class="who-born">
+<div class="who-born" id="who_born">
   <div class="who-born__head">Хто сьогодні народився</div>
   <div class="who-born__content">
     <div class="who-born__slider swiper">
@@ -346,7 +346,36 @@ export class BuildDayService {
 </div>
 
       `,
-        'day-rules': `<section class="second-bg"> <div class="container" bis_skin_checked="1"> <div class="info-block" bis_skin_checked="1"> <div class="block" bis_skin_checked="1"> <div class="head" bis_skin_checked="1"> Що можна робити ${dayjs(day.date).locale('uk').format('D MMMM')}? <img class="icon" src="/wp-content/themes/gosta/img/holiday/icon__top-plus.svg" width="109" height="116" alt="Icon" loading="lazy" decoding="async" /> </div> <div class="content" bis_skin_checked="1"> ${dayrules.find((item) => item.title === DayRulesEnum.ALLOWED).html} </div> </div> <div class="block minus" bis_skin_checked="1"> <div class="head" bis_skin_checked="1"> Чого не можна робити ${dayjs(day.date).locale('uk').format('D MMMM')}? <img class="icon" src="/wp-content/themes/gosta/img/holiday/icon__top-minus.svg" width="109" height="116" alt="Icon" loading="lazy" decoding="async" /> </div> <div class="content" bis_skin_checked="1"> ${dayrules.find((item) => item.title === DayRulesEnum.FORBIDDEN).html} </div> </div> </div> </div> </section>`,
+        'day-rules': `<section class="second-bg" id="permissions"> <div class="container" bis_skin_checked="1"> <div class="info-block" bis_skin_checked="1"> <div class="block" bis_skin_checked="1"> <div class="head" bis_skin_checked="1"> Що можна робити ${dayjs(day.date).locale('uk').format('D MMMM')}? <img class="icon" src="/wp-content/themes/gosta/img/holiday/icon__top-plus.svg" width="109" height="116" alt="Icon" loading="lazy" decoding="async" /> </div> <div class="content" bis_skin_checked="1"> ${dayrules.find((item) => item.title === DayRulesEnum.ALLOWED).html} </div> </div> <div class="block minus" bis_skin_checked="1"> <div class="head" bis_skin_checked="1"> Чого не можна робити ${dayjs(day.date).locale('uk').format('D MMMM')}? <img class="icon" src="/wp-content/themes/gosta/img/holiday/icon__top-minus.svg" width="109" height="116" alt="Icon" loading="lazy" decoding="async" /> </div> <div class="content" bis_skin_checked="1"> ${dayrules.find((item) => item.title === DayRulesEnum.FORBIDDEN).html} </div> </div> </div> </div> </section>`,
+        'last-block-end': `        </div>
+      </div>
+      <div class="right" bis_skin_checked="1">
+        <div class="ads-banner-1" bis_skin_checked="1">
+          <span class="h4"
+            >Бажаєте збільшити онлайн присутність вашого бренду?</span
+          >
+          <p>
+            Отримайте<br />
+            понад 5+ публікацій<br />
+            на різних платформах<br />
+            <strong>щомісяця</strong>
+          </p>
+          <a
+            href="/vedennya-blogu-na-portali/"
+            target="_blank"
+            class="btn btn-blue btn-full"
+            ><span>Замовити</span></a
+          >
+        </div>
+      </div>
+    </div>
+  </div>
+</section>`,
+        'last-block': `<section class="category-desc" bis_skin_checked="1">
+  <div class="container" bis_skin_checked="1">
+    <div class="content" bis_skin_checked="1">
+      <div class="left" bis_skin_checked="1">
+        <div class="inner" bis_skin_checked="1">`,
       };
       const topBlock = `
       <div class="top-block__top">
@@ -388,7 +417,7 @@ export class BuildDayService {
         .replaceAll('</b>', '</strong>');
 
       content = topBlock + content;
-      removeBisSkinChecked(content);
+      content = removeBisSkinChecked(content);
       content = beautifyHtml(content, {
         indent_size: 2,
         preserve_newlines: true,
@@ -453,8 +482,8 @@ export class BuildDayService {
             formData,
             {
               auth: {
-                username: process.env.APP_USER,
-                password: process.env.APP_PASSWORD,
+                username: process.env.APP_USER_PAGES,
+                password: process.env.APP_PASSWORD_PAGES,
               },
               headers: {
                 ...formData.getHeaders(),
@@ -496,14 +525,13 @@ export class BuildDayService {
         seofo_title: `Яке свято ${dayjs(day.date).locale('uk').format('D MMMM YYYY')} - церковне свято, іменини`,
         seofo_description: `Дізнайтеся яке свято ${dayjs(day.date).locale('uk').format('D MMMM YYYY')} в Україні та світі`,
       };
-
       const postResponse = await axios.post(
         `${process.env.BASE_URL}/pages`,
         postData,
         {
           auth: {
-            username: process.env.APP_USER,
-            password: process.env.APP_PASSWORD,
+            username: process.env.APP_USER_PAGES,
+            password: process.env.APP_PASSWORD_PAGES,
           },
           headers: {
             'Content-Type': 'application/json',
@@ -566,8 +594,8 @@ export class BuildDayService {
             formData,
             {
               auth: {
-                username: process.env.APP_USER,
-                password: process.env.APP_PASSWORD,
+                username: process.env.APP_USER_PAGES,
+                password: process.env.APP_PASSWORD_PAGES,
               },
               headers: {
                 ...formData.getHeaders(),
@@ -601,8 +629,8 @@ export class BuildDayService {
         postData,
         {
           auth: {
-            username: process.env.APP_USER,
-            password: process.env.APP_PASSWORD,
+            username: process.env.APP_USER_PAGES,
+            password: process.env.APP_PASSWORD_PAGES,
           },
           headers: {
             'Content-Type': 'application/json',

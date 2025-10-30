@@ -32,7 +32,9 @@ export default function AddInfoDay() {
     omens: [] as string[],
     bornNames: [] as string[],
     images: [] as string[],
+    mainImage: null,
     seoText: '',
+    articleId: null,
     timeline: [] as {
       year: string;
       html: string;
@@ -61,6 +63,15 @@ export default function AddInfoDay() {
   const [newWhoWasBornTodayHtml, setNewWhoWasBornTodayHtml] = useState('');
   const [newFiles, setNewFiles] = useState<File[]>([]);
   const [newFile, setNewFile] = useState<File | null>(null);
+  const [mainFile, setMainFile] = useState<File | null>(null);
+
+  const [mainImageUrl, setMainImageUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (day.mainImage) {
+      setMainImageUrl(`${baseUrl}/uploads/${day.date}/main/${day.mainImage}`);
+    }
+  }, [day]);
 
   useEffect(() => {
     if (newFile) setNewFiles((prev) => [...prev, newFile]);
@@ -91,6 +102,8 @@ export default function AddInfoDay() {
           timeline: json.timeline || [],
           whoWasBornToday: json.whoWasBornToday || [],
           bornNames: json.bornNames || [],
+          mainImage: json.mainImage || null,
+          articleId: json.articleId || null,
         });
 
         const rulesRes = await fetch(
@@ -117,6 +130,20 @@ export default function AddInfoDay() {
       handleChange('date', d);
     }
   }, [dayOfWeek, month, week]);
+
+  const handleUpload = async (date: string) => {
+    if (!day.articleId) {
+      await fetch(`${baseUrl}/api/build-day/${date}`, {
+        method: 'Post',
+        headers: { 'Content-Type': 'application/json' },
+      });
+    } else {
+      await fetch(`${baseUrl}/api/build-day/update/${date}`, {
+        method: 'Post',
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+  };
 
   const handleChange = (field: string, value: string) => {
     setDay((prev) => ({ ...prev, [field]: value }));
@@ -195,10 +222,11 @@ export default function AddInfoDay() {
       const formData = new FormData();
       formData.append('dayData', JSON.stringify(day));
 
-      alert(newFiles[0]);
-
-      // 👇 ключ має бути саме 'images'
       newFiles.forEach((file) => formData.append('images', file));
+
+      if (mainFile) {
+        formData.append('mainImage', mainFile);
+      }
 
       const res = await fetch(`${baseUrl}/api/day/${day.date}`, {
         method: 'PUT',
@@ -232,6 +260,17 @@ export default function AddInfoDay() {
         <Layout>
           <div className="flex flex-col gap-6 w-full max-w-3xl mx-auto">
             <Typography type="title">Редагування дня</Typography>
+            <Button onClick={() => handleUpload(day.date)}>
+              Вивантажити статтю
+            </Button>
+
+            <div className="flex flex-col gap-2">
+              <Typography type="text">Головне зображення</Typography>
+              <ImageUpload
+                previewImg={mainImageUrl}
+                onFileSelect={(file) => setMainFile(file)}
+              />
+            </div>
 
             <Textarea
               id="description"
@@ -512,10 +551,14 @@ export default function AddInfoDay() {
             </div>
 
             <Typography type="text">SEO текст</Typography>
-            <DaySeoTextEditor
-              value={day.seoText}
-              onChange={(html) => handleChange('seoText', html)}
-            />
+            {day.seoText.length ? (
+              <DaySeoTextEditor
+                value={day.seoText || ''}
+                onChange={(html) => handleChange('seoText', html)}
+              />
+            ) : (
+              ''
+            )}
 
             <Button onClick={handleSubmit}>
               {loading ? 'Збереження...' : 'Зберегти'}

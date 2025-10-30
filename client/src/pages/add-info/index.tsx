@@ -56,6 +56,7 @@ export default function AddInfo() {
     facts: [] as string[],
     omens: [] as string[],
     celebrate: {} as Celebrate,
+    articleId: null,
     seoText: null,
     type: '',
     date: '',
@@ -90,6 +91,21 @@ export default function AddInfo() {
   const [tags, setTags] = useState([]);
   const [newFiles, setNewFiles] = useState<File[]>([]);
   const [images, setImages] = useState<string[]>([]);
+
+  const handleUpload = async () => {
+    if (!id) return;
+    if (!sviato.articleId) {
+      await fetch(`${baseUrl}/api/build/${id}`, {
+        method: 'Post',
+        headers: { 'Content-Type': 'application/json' },
+      });
+    } else {
+      await fetch(`${baseUrl}/api/build/update/${id}`, {
+        method: 'Post',
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+  };
 
   useEffect(() => {
     if (!id) return;
@@ -360,8 +376,11 @@ export default function AddInfo() {
       </Head>
       <Layout>
         <div className="flex flex-col gap-6 w-full max-w-3xl mx-auto">
-          <div className="felx justify-between">
-            <Typography type="title">Редагування свята</Typography>
+          <div className="flex justify-between">
+            <div className="flex flex-col gap-2">
+              <Typography type="title">Редагування свята</Typography>
+              <Button onClick={handleUpload}>Вивантажити статтю</Button>;
+            </div>
             <Button onClick={() => setIsOpenModal(true)} type="danger">
               Видалити свято
             </Button>

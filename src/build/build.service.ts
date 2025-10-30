@@ -245,7 +245,8 @@ export class BuildService {
           return `<h2 ${newAttrs ? newAttrs + ' ' : ''}class="wp-block-heading" >${innerText}</h2>`;
         },
       );
-      removeBisSkinChecked(content);
+      content = removeBisSkinChecked(content);
+
       content = beautifyHtml(content, {
         indent_size: 2,
         preserve_newlines: true,

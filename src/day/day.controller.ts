@@ -13,7 +13,7 @@ import { DayService } from './day.service';
 @Controller('day')
 export class DayController {
   constructor(private readonly dayService: DayService) {}
-  
+
   @Post('images/:date')
   async uploadImages(@Param('date') date: string, @Req() req: Request) {
     const images = req['processedImages'];
@@ -24,7 +24,7 @@ export class DayController {
   }
   @Put(':date')
   async update(@Param('date') date: string, @Req() req, @Res() res) {
-    const { processedImages } = req;
+    const { processedImages, mainImagePath } = req;
     const dayData = JSON.parse(req.body.dayData);
 
     if (processedImages?.length) {
@@ -34,6 +34,10 @@ export class DayController {
         );
         return match ? { ...person, imagePath: match.path } : person;
       });
+    }
+
+    if (mainImagePath) {
+      dayData.mainImage = mainImagePath;
     }
 
     const updated = await this.dayService.update(date, dayData);

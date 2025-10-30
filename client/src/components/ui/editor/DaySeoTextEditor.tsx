@@ -23,6 +23,8 @@ const BLOCKS = [
   { name: 'Історичні події (верхня частина)', insert: 'day-history-top' },
   { name: 'Історичні події (внутрішня частина)', insert: 'day-history-inner' },
   { name: 'Памʼятні дні', insert: 'memory-date' },
+  { name: 'Останній блок', insert: 'last-block' },
+  { name: 'Кінець Останнього блоку', insert: 'last-block-end' },
 ];
 
 export const CustomBlock = Node.create({
@@ -43,6 +45,7 @@ export const CustomBlock = Node.create({
     return [
       {
         tag: 'div[data-placeholder]',
+        priority: 1000,
         getAttrs: (el: Element) => {
           const placeholder = el.getAttribute('data-placeholder');
           return { 'data-placeholder': placeholder };
@@ -53,10 +56,13 @@ export const CustomBlock = Node.create({
 
   renderHTML({ node }) {
     const placeholder: string = node.attrs['data-placeholder'] || '';
+    const blockName =
+      BLOCKS.find((block) => block.insert === placeholder)?.name || placeholder;
+
     return [
       'div',
       mergeAttributes({ 'data-placeholder': placeholder }),
-      `Блок ${BLOCKS.find((block) => block.insert === placeholder)?.name}`,
+      `Блок ${blockName}`,
     ];
   },
 });
@@ -71,7 +77,10 @@ const DaySeoTextEditor: React.FC<SeoTextEditorProps> = ({
   onChange,
 }) => {
   const editor = useEditor({
-    extensions: [StarterKit.configure({ heading: false }), CustomBlock],
+    extensions: [
+      StarterKit.configure({ heading: { levels: [2] } }),
+      CustomBlock,
+    ],
     content: value || '',
     editorProps: {
       attributes: {
@@ -111,7 +120,27 @@ const DaySeoTextEditor: React.FC<SeoTextEditorProps> = ({
         >
           ¶
         </button>
-
+        {([2] as const).map((level) => (
+          <button
+            key={`h${level}`}
+            onClick={() =>
+              editor
+                .chain()
+                .focus()
+                .toggleHeading({ level: level as 2 })
+                .run()
+            }
+            className={`px-2 py-1 rounded ${
+              editor.isActive('heading', {
+                level: level as 2,
+              })
+                ? 'bg-gray-200 font-bold'
+                : ''
+            }`}
+          >
+            H{level}
+          </button>
+        ))}
         {BLOCKS.map((block) => (
           <button
             key={block.name}

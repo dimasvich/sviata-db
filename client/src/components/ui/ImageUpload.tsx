@@ -3,9 +3,11 @@ import { useRef, useState } from 'react';
 export default function ImageUpload({
   onFileSelect,
   disabled = false,
+  previewImg,
 }: {
   onFileSelect: (file: File) => void;
   disabled?: boolean;
+  previewImg?: string | null;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [preview, setPreview] = useState<string | null>(null);
@@ -44,7 +46,19 @@ export default function ImageUpload({
           className="object-contain h-full w-full"
         />
       ) : (
-        <span className="text-secondary text-center">Виберіть зображення</span>
+        <>
+          {previewImg ? (
+            <img
+              src={previewImg}
+              alt="Preview"
+              className="object-contain h-full w-full"
+            />
+          ) : (
+            <span className="text-secondary text-center">
+              Виберіть зображення
+            </span>
+          )}
+        </>
       )}
       <input
         type="file"
