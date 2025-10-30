@@ -1,3 +1,4 @@
+import * as cheerio from 'cheerio';
 import * as dayjs from 'dayjs';
 import 'dayjs/locale/uk';
 
@@ -25,4 +26,17 @@ export function getNext5YearsForecast(date: string): {
 }
 export function capitalizeFirstLetter(text: string): string {
   return text.charAt(0).toUpperCase() + text.slice(1);
+}
+export function removeBisSkinChecked(html: string): string {
+  const $ = cheerio.load(html);
+
+  $('[bis_skin_checked]').each((_, el) => {
+    $(el).removeAttr('bis_skin_checked');
+  });
+  $('p').each((_, el) => {
+    if (!$(el).text().trim()) {
+      $(el).remove();
+    }
+  });
+  return $.html();
 }

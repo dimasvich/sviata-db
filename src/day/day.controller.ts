@@ -1,11 +1,27 @@
-import { Body, Controller, Get, Param, Put, Req, Res } from '@nestjs/common';
-import { Day } from './schema/day.schema';
+import {
+  BadRequestException,
+  Controller,
+  Get,
+  Param,
+  Post,
+  Put,
+  Req,
+  Res,
+} from '@nestjs/common';
 import { DayService } from './day.service';
 
 @Controller('day')
 export class DayController {
   constructor(private readonly dayService: DayService) {}
-
+  
+  @Post('images/:date')
+  async uploadImages(@Param('date') date: string, @Req() req: Request) {
+    const images = req['processedImages'];
+    if (!images || images.length === 0) {
+      throw new BadRequestException('Зображення не завантажено');
+    }
+    return { status: true };
+  }
   @Put(':date')
   async update(@Param('date') date: string, @Req() req, @Res() res) {
     const { processedImages } = req;

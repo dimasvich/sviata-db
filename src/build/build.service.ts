@@ -5,7 +5,11 @@ import { DayRules, DayRulesDocument } from 'src/crud/schema/dayrules.schema';
 import { Sviato, SviatoDocument } from 'src/crud/schema/sviato.schema';
 import { SviatoImages } from 'src/crud/schema/sviatoimages.schema';
 import { DayRulesEnum } from 'src/types';
-import { capitalizeFirstLetter, getNext5YearsForecast } from 'src/utils';
+import {
+  capitalizeFirstLetter,
+  getNext5YearsForecast,
+  removeBisSkinChecked,
+} from 'src/utils';
 import { html as beautifyHtml } from 'js-beautify';
 import * as cheerio from 'cheerio';
 import * as FormData from 'form-data';
@@ -241,6 +245,7 @@ export class BuildService {
           return `<h2 ${newAttrs ? newAttrs + ' ' : ''}class="wp-block-heading" >${innerText}</h2>`;
         },
       );
+      removeBisSkinChecked(content);
       content = beautifyHtml(content, {
         indent_size: 2,
         preserve_newlines: true,
@@ -270,7 +275,7 @@ export class BuildService {
         .exec();
       const images = record.images;
 
-      const imageDir1 = path.join(__dirname, '..', '..', 'uploads');
+      const imageDir1 = path.join(__dirname, '..', '..', 'uploads', id, 'main');
       const imageName1 = images[0];
       const fullImagePath1 = path.join(imageDir1, imageName1);
 

@@ -1,41 +1,41 @@
 import {
+  BadRequestException,
   Injectable,
   NestMiddleware,
-  BadRequestException,
 } from '@nestjs/common';
-import { Request, Response, NextFunction } from 'express';
-import * as multer from 'multer';
-import * as sharp from 'sharp';
 import * as crypto from 'crypto';
-import * as path from 'path';
-import * as fs from 'fs';
 import { exiftool } from 'exiftool-vendored';
+import { NextFunction, Request, Response } from 'express';
+import * as fs from 'fs';
+import * as multer from 'multer';
+import * as path from 'path';
+import * as sharp from 'sharp';
 
 const upload = multer({ storage: multer.memoryStorage() });
 
 @Injectable()
-export class ImageProcessingMiddleware implements NestMiddleware {
+export class MonthlyImageProcessingMiddleware implements NestMiddleware {
   use(req: Request, res: Response, next: NextFunction) {
-    upload.array('images', 20)(req, res, async (err) => {
+    upload.array('images', 100)(req, res, async (err) => {
       if (err) throw new BadRequestException('Помилка при завантаженні файлів');
       if (!req.files) return next();
 
-      const sviatoId = req.params['id'];
-      if (!sviatoId) {
-        throw new BadRequestException('Відсутній ID свята у маршруті');
+      const { date } = req.params;
+      if (!date) {
+        throw new BadRequestException('Поле "date" є обовʼязковим');
       }
 
-      // Створюємо директорію uploads/{sviatoId}/main якщо її ще немає
-      const sviatoDir = path.join(__dirname, '..', '..', 'uploads', sviatoId, 'main');
-      if (!fs.existsSync(sviatoDir)) {
-        fs.mkdirSync(sviatoDir, { recursive: true });
+      const targetDir = path.join(__dirname, '..', '..', 'uploads', date);
+
+      if (!fs.existsSync(targetDir)) {
+        fs.mkdirSync(targetDir, { recursive: true });
       }
 
       const processedImages = [];
 
       for (const file of req.files as Express.Multer.File[]) {
         const uniqueName = crypto.randomUUID() + '.webp';
-        const outputPath = path.join(sviatoDir, uniqueName);
+        const outputPath = path.join(targetDir, uniqueName);
 
         const image = sharp(file.buffer);
         const metadata = await image.metadata();
@@ -57,7 +57,6 @@ export class ImageProcessingMiddleware implements NestMiddleware {
           .toFormat('webp', { quality: 90 })
           .toFile(outputPath);
 
-        // Очищаємо EXIF-дані
         await exiftool.write(outputPath, {}, ['-all=']);
 
         processedImages.push({
