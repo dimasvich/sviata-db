@@ -118,7 +118,6 @@ export default function AddInfoDay() {
         setRule2Id(jsonRules[1]._id);
       } catch (err) {
         console.error(err);
-        alert('Помилка при завантаженні');
       }
     };
     fetchData();

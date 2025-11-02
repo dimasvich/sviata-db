@@ -54,14 +54,12 @@ export default function AddInfo() {
     greetings: [] as string[],
     ideas: [] as string[],
     facts: [] as string[],
-    omens: [] as string[],
     celebrate: {} as Celebrate,
     articleId: null,
     seoText: null,
     type: '',
     date: '',
   });
-  const [newOmen, setNewOmen] = useState('');
   const [newGreeting, setNewGreeting] = useState('');
   const [newIdea, setNewIdea] = useState('');
   const [newFact, setNewFact] = useState('');
@@ -159,21 +157,6 @@ export default function AddInfo() {
 
   const enumOptions = Object.values(DayRulesEnum);
 
-  const handleAddOmen = () => {
-    if (newOmen.trim() && !sviato.omens.includes(newOmen.trim())) {
-      setSviato((prev) => ({
-        ...prev,
-        omens: [...prev.omens, newOmen.trim()],
-      }));
-      setNewOmen('');
-    }
-  };
-  const handleRemoveOmen = (omen: string) => {
-    setSviato((prev) => ({
-      ...prev,
-      omens: prev.omens.filter((t) => t !== omen),
-    }));
-  };
 
   const handleAddGreeting = () => {
     if (newGreeting.trim() && !sviato.greetings.includes(newGreeting.trim())) {
@@ -814,36 +797,7 @@ export default function AddInfo() {
               ))}
             </div>
           </div>
-          <div className="flex flex-col gap-2">
-            <Typography type="text">Прикмети</Typography>
-            <div className="flex items-end gap-2">
-              <Input
-                id="newOmen"
-                label=""
-                placeholder="Додайте прикмету"
-                value={newOmen}
-                onChange={(e) => setNewOmen(e.target.value)}
-              />
-              <Button onClick={handleAddOmen}>+</Button>
-            </div>
 
-            <div className="flex flex-wrap gap-2 mt-1">
-              {sviato.omens.map((omen) => (
-                <div
-                  key={omen}
-                  className="flex items-center gap-1 bg-border text-primary px-3 py-1 rounded-full text-sm"
-                >
-                  <span>{omen}</span>
-                  <button
-                    onClick={() => handleRemoveOmen(omen)}
-                    className="text-red-500 hover:text-red-700"
-                  >
-                    ✕
-                  </button>
-                </div>
-              ))}
-            </div>
-          </div>
           <Select
             id="type"
             label="Тип свята"

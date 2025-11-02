@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import dayjs from 'dayjs';
 import 'dayjs/locale/uk';
-import Textarea from '../Textarea';
 import { baseUrl } from '@/http';
 import Button from '../Button';
 import Typography from '../Typography';
@@ -10,14 +9,12 @@ import Typography from '../Typography';
 interface Sviato {
   date: string;
   description: string;
-  sviata:
-    | {
-        id: string;
-        name: string;
-        document: string;
-        tag: string;
-      }[]
-    | null;
+  sviata: {
+    id: string;
+    name: string;
+    document: string;
+    tags: string[];
+  }[];
 }
 
 export default function DashboardMonth({
@@ -30,9 +27,6 @@ export default function DashboardMonth({
   const router = useRouter();
   const [data, setData] = useState<Sviato[]>([]);
   const [loading, setLoading] = useState(true);
-  const [descriptionMap, setDescriptionMap] = useState<Record<string, string>>(
-    {},
-  );
 
   dayjs.locale('uk');
 
@@ -41,23 +35,14 @@ export default function DashboardMonth({
   const monthName = dayjs(`${currentYear}-${month}-01`).format('MMMM');
 
   const getDayOfWeek = (d: number) =>
-    dayjs(`${currentYear}-${month}-${d}`).format('dddd');
-
-  const sviataMap = new Map<string, Sviato>();
+    dayjs(`${currentYear}-${month}-${d}`).format('dd');
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const res = await fetch(`${baseUrl}/api/crud/by-month?month=${month}`);
+        const res = await fetch(`${baseUrl}/api/day/by-month?month=${month}`);
         const json: Sviato[] = await res.json();
         setData(json || []);
-
-        const initialDescription: Record<string, string> = {};
-        (json || []).forEach((item) => {
-          initialDescription[item.date] = item.description || '';
-          sviataMap.set(item.date, item);
-        });
-        setDescriptionMap(initialDescription);
       } catch (err) {
         console.error('Помилка завантаження:', err);
       } finally {
@@ -66,14 +51,6 @@ export default function DashboardMonth({
     };
     fetchData();
   }, [month]);
-
-  const saveDescription = async (date: string, description: string) => {
-    await fetch(`${baseUrl}/api/crud/update-description`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ date, description }),
-    });
-  };
 
   if (loading)
     return <p className="text-center text-secondary">Завантаження...</p>;
@@ -122,48 +99,30 @@ export default function DashboardMonth({
                       `/add-info-day?date=${currentYear}-${month}-${currentDay}`,
                     )
                   }
-                  className={`cursor-pointer hover:bg-gray-50 transition
-                    ${isEmpty ? 'border-2 border-red-400' : ''} `}
+                  className={`cursor-pointer hover:bg-gray-50 transition ${
+                    isEmpty ? 'border-2 border-red-400' : ''
+                  }`}
                 >
-                  <td
-                    className={`py-2 px-4 border-b border-border text-center font-medium `}
-                  >
+                  <td className="py-2 px-4 border-b border-border text-center font-medium">
                     <div
-                      className={`${isSelected ? 'border-primary border-[1px] rounded-[50%] w-fit px-[8px]' : ''}`}
+                      className={`${
+                        isSelected
+                          ? 'border-primary border-[1px] rounded-[12px] min-w-[120px] px-[8px]'
+                          : ''
+                      }`}
                     >
-                      {currentDay}
+                      {dateStr}
                     </div>
                   </td>
+
                   <td className="py-2 px-4 border-b border-border text-center capitalize">
                     {getDayOfWeek(currentDay)}
                   </td>
-                  {/* <td className="py-2 px-4 border-b border-border text-center">
-                    {sviato?.description ? (
-                      <>
-                        <Button
-                          onClick={() =>
-                            saveDescription(dateStr, descriptionMap[dateStr])
-                          }
-                        >
-                          Зберегти опис
-                        </Button>
-                        <Textarea
-                          id={`description-${dateStr}`}
-                          label=""
-                          maxLength={1000}
-                          value={descriptionMap[dateStr] || ''}
-                          onChange={(e) =>
-                            setDescriptionMap((prev) => ({
-                              ...prev,
-                              [dateStr]: e.target.value,
-                            }))
-                          }
-                        />
-                      </>
-                    ) : (
-                      '-'
-                    )}
-                  </td> */}
+
+                  <td className="py-2 px-4 border-b border-border max-w-md h-auto text-left">
+                    {sviato?.description || '-'}
+                  </td>
+
                   <td className="py-2 px-4 border-b border-border text-center align-top">
                     {sviato?.sviata && sviato.sviata.length > 0 ? (
                       <div className="flex flex-col items-start gap-2">
@@ -171,9 +130,10 @@ export default function DashboardMonth({
                           <div
                             key={index}
                             className="bg-[#dde2ef] p-2 flex justify-between gap-2 rounded-[4px] w-full cursor-pointer hover:bg-[#cfd6e8] flex-1"
-                            onClick={() =>
-                              router.push(`/add-info?id=${item.id}`)
-                            }
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              router.push(`/add-info?id=${item.id}`);
+                            }}
                           >
                             <Typography type="text">{index + 1}.</Typography>
                             <div className="flex flex-wrap items-center gap-1">
@@ -191,7 +151,9 @@ export default function DashboardMonth({
                               >
                                 Google Doc
                               </div>
-                              <Typography type="text">| #{item.tag}</Typography>
+                              <Typography type="text">
+                                | #{item.tags.map((item) => item)}
+                              </Typography>
                             </div>
                           </div>
                         ))}

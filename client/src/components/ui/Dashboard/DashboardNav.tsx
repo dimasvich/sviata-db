@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import dayjs from 'dayjs';
 import dayOfYear from 'dayjs/plugin/dayOfYear';
 import 'dayjs/locale/uk';
-import { Tooltip, IconButton } from '@mui/material';
+import { Tooltip, IconButton, Select, MenuItem } from '@mui/material';
 import { ChevronLeft, ChevronRight } from '@mui/icons-material';
 import { baseUrl } from '@/http';
 
@@ -10,11 +10,7 @@ dayjs.extend(dayOfYear);
 dayjs.locale('uk');
 
 interface DayInfo {
-  dayOfMonth: number;
-  year: number;
-  month: number;
   date: string;
-  dayOfYear: number;
   isFilled: boolean;
 }
 
@@ -26,68 +22,54 @@ export default function DashBoardNav({
   setCurrentDate: (date: string) => void;
 }) {
   const today = dayjs();
-  const [selectedDay, setSelectedDay] = useState<string>(() =>
-    today.year() === year ? today.format('YYYY-MM-DD') : `${year}-01-01`,
+  const savedMode =
+    typeof window !== 'undefined' ? localStorage.getItem('viewMode') : null;
+
+  const [viewMode, setViewMode] = useState<'year' | 'month'>(
+    savedMode === 'month' ? 'month' : 'year'
   );
-  const [startIndex, setStartIndex] = useState(0);
-  const [visibleCount, setVisibleCount] = useState(0);
+  const [month, setMonth] = useState<number>(today.month() + 1);
+  const [selectedDay, setSelectedDay] = useState<string>(
+    today.year() === year ? today.format('YYYY-MM-DD') : `${year}-01-01`
+  );
   const [daysData, setDaysData] = useState<Record<string, DayInfo>>({});
 
-  const totalDays = dayjs(`${year}-12-31`).dayOfYear();
+  const totalDays =
+    viewMode === 'year'
+      ? dayjs(`${year}-12-31`).dayOfYear()
+      : new Date(year, month, 0).getDate();
 
-  const days = useMemo(
-    () =>
-      Array.from({ length: totalDays }, (_, i) =>
-        dayjs(`${year}-01-01`).add(i, 'day'),
-      ),
-    [year, totalDays],
-  );
-
-  useEffect(() => {
-    const calcVisible = () => {
-      const cellWidth = 70;
-      const available = window.innerWidth - 160;
-      setVisibleCount(Math.floor(available / cellWidth));
-    };
-    calcVisible();
-    window.addEventListener('resize', calcVisible);
-    return () => window.removeEventListener('resize', calcVisible);
-  }, []);
+  const days = useMemo(() => {
+    if (viewMode === 'year') {
+      return Array.from({ length: totalDays }, (_, i) =>
+        dayjs(`${year}-01-01`).add(i, 'day')
+      );
+    } else {
+      return Array.from({ length: totalDays }, (_, i) =>
+        dayjs(`${year}-${month.toString().padStart(2, '0')}-01`).add(i, 'day')
+      );
+    }
+  }, [year, totalDays, viewMode, month]);
 
   useEffect(() => {
-    if (visibleCount === 0) return;
-    const currentIndex = days.findIndex(
-      (d) => d.format('YYYY-MM-DD') === selectedDay,
-    );
-    if (currentIndex < 0) return;
-
-    const center = Math.max(currentIndex - Math.floor(visibleCount / 2), 0);
-    const maxStart = Math.max(totalDays - visibleCount, 0);
-    setStartIndex(Math.min(center, maxStart));
-  }, [selectedDay, visibleCount, totalDays, days]);
+    localStorage.setItem('viewMode', viewMode);
+  }, [viewMode]);
 
   useEffect(() => {
     setCurrentDate(selectedDay);
   }, [selectedDay, setCurrentDate]);
 
   useEffect(() => {
-    if (visibleCount === 0) return;
-
-    const startDay = days[startIndex];
-    const endDay = days[startIndex + visibleCount - 1];
-
-    if (!startDay || !endDay) return;
-
-    const start = startDay.format('YYYY-MM-DD');
-    const end = endDay.format('YYYY-MM-DD');
+    const start = days[0]?.format('YYYY-MM-DD');
+    const end = days[days.length - 1]?.format('YYYY-MM-DD');
+    if (!start || !end) return;
 
     const fetchData = async () => {
       try {
         const res = await fetch(
-          `${baseUrl}/api/crud/day-info?start=${start}&end=${end}&year=${year}`,
+          `${baseUrl}/api/day/status?year=${year}`
         );
         const json: DayInfo[] = await res.json();
-
         const map: Record<string, DayInfo> = {};
         json.forEach((item) => {
           map[item.date] = item;
@@ -99,82 +81,114 @@ export default function DashBoardNav({
     };
 
     fetchData();
-  }, [startIndex, visibleCount, year, days]);
-
-  const handleNext = () => {
-    setStartIndex((prev) =>
-      Math.min(prev + visibleCount, totalDays - visibleCount),
-    );
-  };
-
-  const handlePrev = () => {
-    setStartIndex((prev) => Math.max(prev - visibleCount, 0));
-  };
+  }, [year, days]);
 
   const handleSelect = (dateStr: string) => {
     setSelectedDay(dateStr);
     setCurrentDate(dateStr);
   };
 
-  const visibleDays = days.slice(startIndex, startIndex + visibleCount);
+  const handlePrevMonth = () => {
+    setMonth((prev) => (prev === 1 ? 12 : prev - 1));
+  };
+
+  const handleNextMonth = () => {
+    setMonth((prev) => (prev === 12 ? 1 : prev + 1));
+  };
 
   return (
-    <div className="w-full flex items-center justify-center gap-2 bg-background p-4 border border-border rounded-2xl shadow-sm">
-      <IconButton
-        onClick={handlePrev}
-        disabled={startIndex === 0}
-        size="small"
-        sx={{ color: startIndex === 0 ? '#9CA3AF' : '#111827' }}
-      >
-        <ChevronLeft />
-      </IconButton>
+    <div className="w-full flex flex-col items-center gap-3 bg-background p-4 border border-border rounded-2xl shadow-sm">
+      <div className="flex items-center gap-4 mb-2">
+        <button
+          className={`px-3 py-1 rounded-lg border ${
+            viewMode === 'year'
+              ? 'bg-primary text-white border-primary'
+              : 'bg-surface hover:bg-accent hover:text-white border-accent'
+          }`}
+          onClick={() => setViewMode('year')}
+        >
+          Весь рік
+        </button>
 
-      <div className="flex overflow-hidden gap-[2px]">
-        {visibleDays.map((date) => {
-          const dateStr = date.format('YYYY-MM-DD');
-          const isSelected = selectedDay === dateStr;
-          const isEmpty = daysData[dateStr]?.isFilled === false;
+        <button
+          className={`px-3 py-1 rounded-lg border ${
+            viewMode === 'month'
+              ? 'bg-primary text-white border-primary'
+              : 'bg-surface hover:bg-accent hover:text-white border-accent'
+          }`}
+          onClick={() => setViewMode('month')}
+        >
+          Поточний місяць
+        </button>
 
-          return (
-            <Tooltip
-              key={dateStr}
-              title={date.format('D MMMM YYYY')}
-              arrow
-              placement="top"
-            >
-              <button
-                onClick={() => handleSelect(dateStr)}
-                className={`w-16 h-12 flex flex-col items-center justify-center 
-                  text-[11px] font-medium rounded-md border transition-all duration-150
-                  ${
-                    isSelected
-                      ? 'bg-primary text-white border-primary shadow'
-                      : isEmpty
-                        ? 'bg-red-100 text-red-700 border-red-400'
-                        : 'bg-surface text-secondary hover:bg-accent hover:text-white border-accent'
-                  }
-                `}
-              >
-                <span>{date.format('D')}</span>
-                <span className="text-[10px] text-muted">
-                  {date.format('MMM')}
-                </span>
-              </button>
-            </Tooltip>
-          );
-        })}
+        {viewMode === 'month' && (
+          <Select
+            value={month}
+            onChange={(e) => setMonth(Number(e.target.value))}
+            size="small"
+            sx={{ minWidth: 120, background: 'white', borderRadius: '8px' }}
+          >
+            {Array.from({ length: 12 }).map((_, i) => (
+              <MenuItem key={i} value={i + 1}>
+                {dayjs(`${year}-${i + 1}-01`).format('MMMM')}
+              </MenuItem>
+            ))}
+          </Select>
+        )}
       </div>
 
-      <IconButton
-        onClick={handleNext}
-        disabled={startIndex + visibleCount >= totalDays}
-        size="small"
-        sx={{
-          color: startIndex + visibleCount >= totalDays ? '#9CA3AF' : '#111827',
-        }}
-      >
-        <ChevronRight />
-      </IconButton>
+      <div className="flex flex-col items-center">
+        {viewMode === 'month' && (
+          <div className="flex items-center gap-2 mb-2">
+            <IconButton onClick={handlePrevMonth} size="small">
+              <ChevronLeft />
+            </IconButton>
+            <span className="font-medium">
+              {dayjs(`${year}-${month}-01`).format('MMMM YYYY')}
+            </span>
+            <IconButton onClick={handleNextMonth} size="small">
+              <ChevronRight />
+            </IconButton>
+          </div>
+        )}
+
+        <div
+          className={`flex flex-wrap justify-center gap-[2px] ${
+            viewMode === 'year' ? 'max-h-[600px] overflow-y-auto' : ''
+          }`}
+        >
+          {days.map((date) => {
+            const dateStr = date.format('YYYY-MM-DD');
+            const isSelected = selectedDay === dateStr;
+            const isEmpty = daysData[dateStr]?.isFilled === false;
+
+            return (
+              <Tooltip
+                key={dateStr}
+                title={date.format('D MMMM YYYY')}
+                arrow
+                placement="top"
+              >
+                <button
+                  onClick={() => handleSelect(dateStr)}
+                  className={`w-10 h-10 flex flex-col items-center justify-center 
+                    text-[10px] font-medium rounded-md border transition-all duration-150
+                    ${
+                      isSelected
+                        ? 'bg-primary text-white border-primary shadow'
+                        : isEmpty
+                        ? 'bg-red-100 text-red-700 border-red-400'
+                        : 'bg-surface text-secondary hover:bg-accent hover:text-white border-accent'
+                    }
+                  `}
+                >
+                  <span>{date.format('YYYY-DD-MM')}</span>
+                </button>
+              </Tooltip>
+            );
+          })}
+        </div>
+      </div>
     </div>
   );
 }
