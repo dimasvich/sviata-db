@@ -1,4 +1,8 @@
-import { Injectable } from '@nestjs/common';
+import {
+  Injectable,
+  InternalServerErrorException,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import * as csv from 'csv-parser';
 import { Model } from 'mongoose';
@@ -6,6 +10,9 @@ import OpenAI from 'openai';
 import { Sviato, SviatoDocument } from 'src/crud/schema/sviato.schema';
 import { Readable } from 'stream';
 import * as cheerio from 'cheerio';
+import * as dayjs from 'dayjs';
+import 'dayjs/locale/uk';
+import { Day, DayDocument } from 'src/day/schema/day.schema';
 
 @Injectable()
 export class GenerateFromCsvService {
@@ -13,6 +20,7 @@ export class GenerateFromCsvService {
 
   constructor(
     @InjectModel(Sviato.name) private sviatoModel: Model<SviatoDocument>,
+    @InjectModel(Day.name) private dayModel: Model<DayDocument>,
   ) {
     this.openai = new OpenAI({
       apiKey: process.env.OPENAI_API_KEY,
@@ -58,7 +66,7 @@ export class GenerateFromCsvService {
     });
   }
 
-  private async parseUploadedFile(
+  public async parseUploadedFile(
     data: {
       date: string;
       type: string;
@@ -86,6 +94,7 @@ export class GenerateFromCsvService {
         Наприкінці додай:
         <meta name="title" content="(55–65 символів)">
         <meta name="description" content="(165–200 символів)">
+        <meta name="teaser" content="(150–200 символів)"> 
         `,
     );
     return prompts;
@@ -116,13 +125,13 @@ export class GenerateFromCsvService {
         prompts.map(async (prompt, index) => {
           try {
             console.log(
-              `🔹 Генерація ${index + 1}/${data.length}: ${data[index].name}`,
+              `Генерація ${index + 1}/${data.length}: ${data[index].name}`,
             );
 
             const html = await this.generateHtmlForPrompt(prompt);
 
             if (!html) {
-              console.warn(`⚠️ Порожній результат для: ${data[index].name}`);
+              console.warn(`Порожній результат для: ${data[index].name}`);
               return { name: data[index].name, success: false };
             }
 
@@ -131,6 +140,7 @@ export class GenerateFromCsvService {
             const metaTitle = $('meta[name="title"]').attr('content') || '';
             const metaDescription =
               $('meta[name="description"]').attr('content') || '';
+            const teaser = $('meta[name="teaser"]').attr('content') || '';
 
             await this.sviatoModel.create({
               tags: data[index].tags,
@@ -139,14 +149,15 @@ export class GenerateFromCsvService {
               name: h1Text || data[index].name,
               title: metaTitle,
               description: metaDescription,
+              teaser: teaser,
               seoText: html,
             });
 
-            console.log(`✅ Збережено: ${data[index].name}`);
+            console.log(`Збережено: ${data[index].name}`);
             return { name: data[index].name, success: true };
           } catch (err) {
             console.error(
-              `❌ Помилка при обробці ${data[index].name}:`,
+              `Помилка при обробці ${data[index].name}:`,
               err.message,
             );
             return {
@@ -162,12 +173,42 @@ export class GenerateFromCsvService {
       const failedCount = results.filter((r) => !r.success).length;
 
       console.log(
-        `🏁 Завершено. Успішно: ${successCount}, Помилок: ${failedCount}`,
+        `Завершено. Успішно: ${successCount}, Помилок: ${failedCount}`,
       );
 
       return { total: data.length, successCount, failedCount, results };
     } catch (error) {
-      console.error('💥 Error in uploadGenerateAndSave:', error);
+      console.error('Error in uploadGenerateAndSave:', error);
+      throw error;
+    }
+  }
+  public async generateDay(date: string) {
+    try {
+      const sviata = await this.sviatoModel.find({ date });
+      if (!sviata) throw new NotFoundException('Date dismatch');
+
+      const prompt = `
+        Створи короткий опис до статті.
+
+        Мета: дати користувачу лаконічну відповідь на питання "Яке сьогодні свято?".
+
+        Список свят: ${sviata.map((item) => item.name)}.
+        Дата: ${date}.
+
+        Структура опису:
+        - 1 речення у форматі: "${dayjs(date).locale('uk').format('D MMMM')} у світі відзначають відразу кілька подій  – " перелік подій.
+        - 1-2 речення розповідь про сезон року, згадуючи традиції та звичаї.
+        - 1 речення про свята та історію свят у цей місяць.
+        - 1-2 речення розповідь про особливості святкування цього свята в Україні у поєднанні з сучасністю.
+
+        Формат: 
+        - Кожну частину опису повернути у абзаці <p>.
+        - Не роби акцент на одному святі, намагайся узагальнити.
+      `;
+      const description = await this.generateHtmlForPrompt(prompt);
+      await this.dayModel.create({ date, description });
+      return { success:true };
+    } catch (error) {
       throw error;
     }
   }

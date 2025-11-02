@@ -5,6 +5,7 @@ import {
   Param,
   Post,
   Put,
+  Query,
   Req,
   Res,
 } from '@nestjs/common';
@@ -13,6 +14,24 @@ import { DayService } from './day.service';
 @Controller('day')
 export class DayController {
   constructor(private readonly dayService: DayService) {}
+
+  @Get('by-month')
+  async getByMonth(@Query('month') month: string) {
+    const monthNum = Number(month);
+    if (isNaN(monthNum) || monthNum < 1 || monthNum > 12) {
+      throw new Error('Невірний параметр month');
+    }
+    return this.dayService.getByMonth(monthNum);
+  }
+
+  @Get('by-year')
+  async getStatusByYear(@Query('year') year: string) {
+    const yearNum = Number(year);
+    if (isNaN(yearNum) || yearNum < 1 || yearNum > 12) {
+      throw new Error('Невірний параметр month');
+    }
+    return this.dayService.getStatusByYear(yearNum);
+  }
 
   @Post('images/:date')
   async uploadImages(@Param('date') date: string, @Req() req: Request) {

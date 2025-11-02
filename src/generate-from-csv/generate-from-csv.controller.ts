@@ -1,5 +1,7 @@
 import {
   Controller,
+  Get,
+  Param,
   Post,
   UploadedFile,
   UseInterceptors,
@@ -21,5 +23,10 @@ export class GenerateFromCsvController {
     return {
       data: result,
     };
+  }
+  @Post('day/:date')
+  async generateDate(@Param('date') date: string) {
+    const res = await this.generateFromCsvService.generateDay(date);
+    return res;
   }
 }

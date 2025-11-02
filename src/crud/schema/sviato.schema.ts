@@ -30,9 +30,6 @@ export class Sviato {
   @Prop({ type: [], required: false })
   sources: Source[];
 
-  @Prop({ type: [String], required: false })
-  omens: string[];
-
   @Prop({ type: [], required: false })
   timeline: TimeBlock[];
 

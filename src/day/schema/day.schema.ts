@@ -1,6 +1,6 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document } from 'mongoose';
-import { TimeBlock, WhoWasBornToday } from 'src/types';
+import { CompleteStatus, TimeBlock, WhoWasBornToday } from 'src/types';
 
 export type DayDocument = Day & Document;
 
@@ -38,6 +38,9 @@ export class Day {
 
   @Prop({ type: String, required: false })
   doc: string;
+
+  @Prop({ type: String, enum: CompleteStatus, default:CompleteStatus.EMPTY })
+  status: CompleteStatus;
 
   @Prop({ type: String, default: Date.now })
   date: string;

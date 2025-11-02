@@ -33,6 +33,12 @@ export enum SviatoType {
   'Свята в світі',
   'Церковні свята',
 }
+export enum CompleteStatus {
+  'EMPTY',
+  'PARTIAL',
+  'FILLED',
+  'OPENAI',
+}
 export enum SviatoTag {
   'Державні свята' = 'Державні свята',
   'Українські свята' = 'Українські свята',

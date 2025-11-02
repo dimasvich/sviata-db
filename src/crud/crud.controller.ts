@@ -9,17 +9,11 @@ import {
   Put,
   Query,
   Req,
-  UploadedFiles,
-  UseInterceptors,
 } from '@nestjs/common';
-import { FilesInterceptor } from '@nestjs/platform-express';
-import { diskStorage } from 'multer';
-import { extname } from 'path';
-import { CrudService } from './crud.service';
-import { Sviato } from './schema/sviato.schema';
-import * as crypto from 'crypto';
-import { DayRules } from './schema/dayrules.schema';
 import { DayInfo } from 'src/types';
+import { CrudService } from './crud.service';
+import { DayRules } from './schema/dayrules.schema';
+import { Sviato } from './schema/sviato.schema';
 
 @Controller('crud')
 export class CrudController {
