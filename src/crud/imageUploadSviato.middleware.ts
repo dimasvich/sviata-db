@@ -34,10 +34,6 @@ export class ImageUploadSviato implements NestMiddleware {
         if (!fs.existsSync(targetDir))
           fs.mkdirSync(targetDir, { recursive: true });
 
-        const imagesDir = path.join(targetDir);
-        if (!fs.existsSync(imagesDir))
-          fs.mkdirSync(imagesDir, { recursive: true });
-
         const processedImages = [];
 
         if (req.files && Array.isArray(req.files['images'])) {
@@ -48,21 +44,26 @@ export class ImageUploadSviato implements NestMiddleware {
             ).toString('utf8');
             const originalName = path.parse(originalNameUtf8).name;
             const outputFilename = `${originalName}.webp`;
-            const outputPath = path.join(imagesDir, outputFilename);
+            const outputPath = path.join(targetDir, outputFilename);
 
             const image = sharp(file.buffer);
             const metadata = await image.metadata();
 
-            const cropSize = Math.min(
-              metadata.width || 0,
-              metadata.height || 0,
-            );
-            const left = Math.floor(((metadata.width || 0) - cropSize) / 2);
-            const top = Math.floor(((metadata.height || 0) - cropSize) / 2);
+            const targetAspect = 16 / 9;
+            let cropWidth = metadata.width || 0;
+            let cropHeight = Math.round(cropWidth / targetAspect);
+
+            if (cropHeight > (metadata.height || 0)) {
+              cropHeight = metadata.height || 0;
+              cropWidth = Math.round(cropHeight * targetAspect);
+            }
+
+            const left = Math.round(((metadata.width || 0) - cropWidth) / 2);
+            const top = Math.round(((metadata.height || 0) - cropHeight) / 2);
 
             await image
-              .extract({ left, top, width: cropSize, height: cropSize })
-              .resize(400, 400)
+              .extract({ left, top, width: cropWidth, height: cropHeight })
+              .resize(1280, 720)
               .toFormat('webp', { quality: 90 })
               .toFile(outputPath);
 
@@ -71,11 +72,13 @@ export class ImageUploadSviato implements NestMiddleware {
             processedImages.push({
               filename: outputFilename,
               path: outputPath,
+              alt: req.body.alt || 'Зображення без опису',
               mimetype: 'image/webp',
             });
           }
         }
 
+        // 🔹 Обробка головного зображення (mainImage)
         if (req.files && Array.isArray(req.files['mainImage'])) {
           const file = req.files['mainImage'][0];
           const mainImageDir = path.join(targetDir, 'main');
@@ -85,13 +88,28 @@ export class ImageUploadSviato implements NestMiddleware {
           const outputFilename = `main.webp`;
           const outputPath = path.join(mainImageDir, outputFilename);
 
-          await sharp(file.buffer)
-            .resize(800, 800, { fit: 'cover' })
+          const image = sharp(file.buffer);
+          const metadata = await image.metadata();
+
+          const targetAspect = 16 / 9;
+          let cropWidth = metadata.width || 0;
+          let cropHeight = Math.round(cropWidth / targetAspect);
+
+          if (cropHeight > (metadata.height || 0)) {
+            cropHeight = metadata.height || 0;
+            cropWidth = Math.round(cropHeight * targetAspect);
+          }
+
+          const left = Math.round(((metadata.width || 0) - cropWidth) / 2);
+          const top = Math.round(((metadata.height || 0) - cropHeight) / 2);
+
+          await image
+            .extract({ left, top, width: cropWidth, height: cropHeight })
+            .resize(1920, 1080) // головне зображення у 16:9
             .toFormat('webp', { quality: 90 })
             .toFile(outputPath);
 
           await exiftool.write(outputPath, {}, ['-all=']);
-
           req['mainImagePath'] = outputFilename;
         }
 

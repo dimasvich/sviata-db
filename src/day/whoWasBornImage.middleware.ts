@@ -1,14 +1,14 @@
 import {
+  BadRequestException,
   Injectable,
   NestMiddleware,
-  BadRequestException,
 } from '@nestjs/common';
-import { Request, Response, NextFunction } from 'express';
-import * as multer from 'multer';
-import * as sharp from 'sharp';
-import * as path from 'path';
-import * as fs from 'fs';
 import { exiftool } from 'exiftool-vendored';
+import { NextFunction, Request, Response } from 'express';
+import * as fs from 'fs';
+import * as multer from 'multer';
+import * as path from 'path';
+import * as sharp from 'sharp';
 
 const uploadDir = path.join(__dirname, '..', '..', 'uploads');
 if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
@@ -40,23 +40,32 @@ export class WhoWasBornImageMiddleware implements NestMiddleware {
 
         if (req.files && Array.isArray(req.files['images'])) {
           for (const file of req.files['images'] as Express.Multer.File[]) {
-            const originalName = path.parse(file.originalname).name;
+            const originalNameUtf8 = Buffer.from(
+              file.originalname,
+              'latin1',
+            ).toString('utf8');
+            const originalName = path.parse(originalNameUtf8).name;
             const outputFilename = `${originalName}.webp`;
             const outputPath = path.join(whoWasBornDir, outputFilename);
 
             const image = sharp(file.buffer);
             const metadata = await image.metadata();
 
-            const cropSize = Math.min(
-              metadata.width || 0,
-              metadata.height || 0,
-            );
-            const left = Math.floor(((metadata.width || 0) - cropSize) / 2);
-            const top = Math.floor(((metadata.height || 0) - cropSize) / 2);
+            const targetAspect = 16 / 9;
+            let cropWidth = metadata.width || 0;
+            let cropHeight = Math.round(cropWidth / targetAspect);
+
+            if (cropHeight > (metadata.height || 0)) {
+              cropHeight = metadata.height || 0;
+              cropWidth = Math.round(cropHeight * targetAspect);
+            }
+
+            const left = Math.round(((metadata.width || 0) - cropWidth) / 2);
+            const top = Math.round(((metadata.height || 0) - cropHeight) / 2);
 
             await image
-              .extract({ left, top, width: cropSize, height: cropSize })
-              .resize(400, 400)
+              .extract({ left, top, width: cropWidth, height: cropHeight })
+              .resize(1280, 720)
               .toFormat('webp', { quality: 90 })
               .toFile(outputPath);
 
@@ -79,8 +88,24 @@ export class WhoWasBornImageMiddleware implements NestMiddleware {
           const outputFilename = `main.webp`;
           const outputPath = path.join(mainImageDir, outputFilename);
 
-          await sharp(file.buffer)
-            .resize(800, 800, { fit: 'cover' })
+          const image = sharp(file.buffer);
+          const metadata = await image.metadata();
+
+          const targetAspect = 16 / 9;
+          let cropWidth = metadata.width || 0;
+          let cropHeight = Math.round(cropWidth / targetAspect);
+
+          if (cropHeight > (metadata.height || 0)) {
+            cropHeight = metadata.height || 0;
+            cropWidth = Math.round(cropHeight * targetAspect);
+          }
+
+          const left = Math.round(((metadata.width || 0) - cropWidth) / 2);
+          const top = Math.round(((metadata.height || 0) - cropHeight) / 2);
+
+          await image
+            .extract({ left, top, width: cropWidth, height: cropHeight })
+            .resize(1920, 1080) // головне зображення 16:9
             .toFormat('webp', { quality: 90 })
             .toFile(outputPath);
 
