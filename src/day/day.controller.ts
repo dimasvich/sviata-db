@@ -24,13 +24,22 @@ export class DayController {
     return this.dayService.getByMonth(monthNum);
   }
 
-  @Get('by-year')
+  @Get('status-by-year')
   async getStatusByYear(@Query('year') year: string) {
     const yearNum = Number(year);
-    if (isNaN(yearNum) || yearNum < 1 || yearNum > 12) {
-      throw new Error('Невірний параметр month');
+    if (isNaN(yearNum) || yearNum < 1900 || yearNum > 2100) {
+      throw new BadRequestException('Невірний параметр year');
     }
     return this.dayService.getStatusByYear(yearNum);
+  }
+
+  @Get('status-by-month')
+  async getStatusByMonth(@Query('month') month: string) {
+    const monthNum = Number(month);
+    if (isNaN(monthNum) || monthNum < 1 || monthNum > 12) {
+      throw new Error('Невірний параметр month');
+    }
+    return this.dayService.getStatusByMonth(monthNum);
   }
 
   @Post('images/:date')

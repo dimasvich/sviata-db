@@ -9,6 +9,7 @@ import {
   Put,
   Query,
   Req,
+  Res,
 } from '@nestjs/common';
 import { DayInfo } from 'src/types';
 import { CrudService } from './crud.service';
@@ -107,9 +108,21 @@ export class CrudController {
   @Put(':id')
   async update(
     @Param('id') id: string,
-    @Body() sviatoData: Partial<Sviato>,
+    @Req() req,
+    @Res() res,
   ): Promise<Sviato> {
-    return this.sviatoService.update(id, sviatoData);
+    const { processedImages, mainImagePath } = req;
+    const sviatoData = JSON.parse(req.body.sviatoData);
+
+    if (processedImages?.length) {
+      sviatoData.images = processedImages.map((item) => item.filename);
+    }
+
+    if (mainImagePath) {
+      sviatoData.mainImage = mainImagePath;
+    }
+    const updated = await this.sviatoService.update(id, sviatoData);
+    return res.json(updated);
   }
 
   @Get(':id')

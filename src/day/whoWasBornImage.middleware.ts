@@ -13,7 +13,6 @@ import { exiftool } from 'exiftool-vendored';
 const uploadDir = path.join(__dirname, '..', '..', 'uploads');
 if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
 
-// 👇 одночасно приймаємо масив images і один файл mainImage
 const upload = multer({ storage: multer.memoryStorage() }).fields([
   { name: 'images', maxCount: 10 },
   { name: 'mainImage', maxCount: 1 },
