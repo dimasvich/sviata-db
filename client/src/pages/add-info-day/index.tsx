@@ -10,6 +10,7 @@ import Select from '@/components/ui/Select';
 import Textarea from '@/components/ui/Textarea';
 import Typography from '@/components/ui/Typography';
 import DaySeoTextEditor from '@/components/ui/editor/DaySeoTextEditor';
+import DefaultTextEditor from '@/components/ui/editor/DefaultTextEditor';
 import { baseUrl } from '@/http';
 import { DayRulesEnum } from '@/types';
 import { getNthWeekdayOfMonth } from '@/utils';
@@ -80,6 +81,7 @@ export default function AddInfoDay() {
   useEffect(() => {
     if (!dateParam) return;
     const fetchData = async () => {
+      setLoading(true);
       try {
         setDay((prev) => ({
           ...prev,
@@ -118,6 +120,8 @@ export default function AddInfoDay() {
         setRule2Id(jsonRules[1]._id);
       } catch (err) {
         console.error(err);
+      } finally {
+        setLoading(false);
       }
     };
     fetchData();
@@ -236,8 +240,6 @@ export default function AddInfoDay() {
         const text = await res.text();
         throw new Error(`Помилка при оновленні даних: ${text}`);
       }
-
-      router.push('/');
     } catch (error) {
       console.error('❌ handleSubmit error:', error);
       alert('Помилка при збереженні');
@@ -255,14 +257,13 @@ export default function AddInfoDay() {
         <link rel="icon" href="/favicon.ico" />
       </Head>
 
-      {day ? (
+      {!loading ? (
         <Layout>
           <div className="flex flex-col gap-6 w-full max-w-3xl mx-auto">
-            <Typography type="title">Редагування дня</Typography>
-            <Button onClick={() => handleUpload(day.date)}>
-              Вивантажити статтю
-            </Button>
-
+            <div className="flex justify-between">
+              <Typography type="title">Редагування дня</Typography>
+              <Button onClick={() => router.push('/')}>Назад</Button>
+            </div>
             <div className="flex flex-col gap-2">
               <Typography type="text">Головне зображення</Typography>
               <ImageUpload
@@ -270,14 +271,20 @@ export default function AddInfoDay() {
                 onFileSelect={(file) => setMainFile(file)}
               />
             </div>
-
-            <Textarea
+            <div className="flex flex-col gap-2">
+              <Typography type="text">Опис</Typography>
+              <DefaultTextEditor
+                value={day.description || ''}
+                onChange={(val) => handleChange('description', val)}
+              />
+            </div>
+            {/* <Textarea
               id="description"
               label="Опис (HTML)"
               maxLength={1000}
               value={day.description || ''}
               onChange={(e) => handleChange('description', e.target.value)}
-            />
+            /> */}
 
             <div className="flex flex-col gap-2">
               <div className="flex items-center justify-between">
@@ -550,17 +557,17 @@ export default function AddInfoDay() {
             </div>
 
             <Typography type="text">SEO текст</Typography>
-            {day.seoText.length ? (
+            <div className="width-[1200px]">
               <DaySeoTextEditor
                 value={day.seoText || ''}
                 onChange={(html) => handleChange('seoText', html)}
               />
-            ) : (
-              ''
-            )}
-
+            </div>
             <Button onClick={handleSubmit}>
               {loading ? 'Збереження...' : 'Зберегти'}
+            </Button>
+            <Button onClick={() => handleUpload(day.date)}>
+              Вивантажити статтю
             </Button>
           </div>
         </Layout>
