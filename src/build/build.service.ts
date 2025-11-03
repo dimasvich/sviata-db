@@ -425,6 +425,7 @@ export class BuildService {
       console.log('Post created:', postResponse.data);
       await this.sviatoModel.findByIdAndUpdate(id, {
         articleId: postResponse.data.id,
+        link: postResponse.data.link,
       });
 
       return postResponse.data;
@@ -549,6 +550,10 @@ export class BuildService {
       );
 
       console.log('Post updated:', postResponse.data);
+      await this.sviatoModel.findByIdAndUpdate(id, {
+        articleId: postResponse.data.id,
+        link: postResponse.data.link,
+      });
       return postResponse.data;
     } catch (error) {
       throw error;

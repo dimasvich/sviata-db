@@ -76,6 +76,9 @@ export class Sviato {
   @Prop({ type: String, required: false })
   mainImage: string;
 
+  @Prop({ type: String, required: false })
+  link: string;
+
   @Prop({ type: String, default: Date.now })
   date: string;
 
