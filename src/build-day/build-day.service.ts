@@ -24,14 +24,15 @@ export class BuildDayService {
   async buildArticle(date: string): Promise<string> {
     try {
       const day = await this.dayModel.findOne({ date }).lean();
-      if (!day || !day.seoText) {
-        throw new Error('Стаття не знайдена або відсутній seoText');
+      if (!day) {
+        throw new Error(`День із датою ${date} не знайдено`);
       }
-
+      console.log(day.date, date);
+      console.log(day.description);
       const dayrules = await this.dayRulesModel.find({ date });
-      let content = day.seoText;
-
       const host = process.env.HOST || '/wp-content/uploads';
+
+      let content = day.seoText || '';
 
       const blockTemplates: Record<string, string> = {
         'block-end': `</div><div class="content-list"></div></div></div></section>`,
@@ -246,7 +247,7 @@ export class BuildDayService {
             <div class="inner" bis_skin_checked="1">
             <div class="left" bis_skin_checked="1">
               <ul class="signs-block__list">
-                ${day.omens.map((item) => `<li>${item};</li>`).join('')}
+                ${day?.omens.map((item) => `<li>${item};</li>`).join('') || ''}
               </ul>
             </div>
             <div class="right" bis_skin_checked="1">
@@ -265,7 +266,7 @@ export class BuildDayService {
                 <div class="sidebar-block__content" bis_skin_checked="1">
                   Як назвати дитину, яка народилася ${dayjs(day.date).locale('uk').format('D MMMM')}?
                   <div class="name-list" bis_skin_checked="1">
-                    ${day.bornNames.map((item) => `<span class="item">${item}</span>`).join('')}
+                    ${day?.bornNames.map((item) => `<span class="item">${item}</span>`).join('') || ''}
                   </div>
                 </div>
               </div>
@@ -300,13 +301,15 @@ export class BuildDayService {
                </div>
         <div class="inner" bis_skin_checked="1">
           <ul class="list">
-            ${day.timeline
-              .map(
-                (item) => `
+            ${
+              day?.timeline
+                .map(
+                  (item) => `
             <li><span>${item.year}</span> - ${item.html}</li>
             `,
-              )
-              .join('')}
+                )
+                .join('') || ''
+            }
           </ul>
         </div>
       </div>
@@ -316,9 +319,10 @@ export class BuildDayService {
   <div class="who-born__content">
     <div class="who-born__slider swiper">
       <div class="swiper-wrapper">
-        ${day.whoWasBornToday
-          .map(
-            (item) => `
+        ${
+          day?.whoWasBornToday
+            .map(
+              (item) => `
         <div class="swiper-slide item">
           <div class="photo">
             <img
@@ -337,8 +341,9 @@ export class BuildDayService {
           </div>
         </div>
         `,
-          )
-          .join('')}
+            )
+            .join('') || ''
+        }
       </div>
       <div class="swiper-scrollbar"></div>
     </div>
@@ -346,7 +351,7 @@ export class BuildDayService {
 </div>
 
       `,
-        'day-rules': `<section class="second-bg" id="permissions"> <div class="container" bis_skin_checked="1"> <div class="info-block" bis_skin_checked="1"> <div class="block" bis_skin_checked="1"> <div class="head" bis_skin_checked="1"> Що можна робити ${dayjs(day.date).locale('uk').format('D MMMM')}? <img class="icon" src="/wp-content/themes/gosta/img/holiday/icon__top-plus.svg" width="109" height="116" alt="Icon" loading="lazy" decoding="async" /> </div> <div class="content" bis_skin_checked="1"> ${dayrules.find((item) => item.title === DayRulesEnum.ALLOWED).html} </div> </div> <div class="block minus" bis_skin_checked="1"> <div class="head" bis_skin_checked="1"> Чого не можна робити ${dayjs(day.date).locale('uk').format('D MMMM')}? <img class="icon" src="/wp-content/themes/gosta/img/holiday/icon__top-minus.svg" width="109" height="116" alt="Icon" loading="lazy" decoding="async" /> </div> <div class="content" bis_skin_checked="1"> ${dayrules.find((item) => item.title === DayRulesEnum.FORBIDDEN).html} </div> </div> </div> </div> </section>`,
+        'day-rules': `<section class="second-bg" id="permissions"> <div class="container" bis_skin_checked="1"> <div class="info-block" bis_skin_checked="1"> <div class="block" bis_skin_checked="1"> <div class="head" bis_skin_checked="1"> Що можна робити ${dayjs(day.date).locale('uk').format('D MMMM')}? <img class="icon" src="/wp-content/themes/gosta/img/holiday/icon__top-plus.svg" width="109" height="116" alt="Icon" loading="lazy" decoding="async" /> </div> <div class="content" bis_skin_checked="1"> ${dayrules.find((item) => item.title === DayRulesEnum.ALLOWED)?.html || ''} </div> </div> <div class="block minus" bis_skin_checked="1"> <div class="head" bis_skin_checked="1"> Чого не можна робити ${dayjs(day.date).locale('uk').format('D MMMM')}? <img class="icon" src="/wp-content/themes/gosta/img/holiday/icon__top-minus.svg" width="109" height="116" alt="Icon" loading="lazy" decoding="async" /> </div> <div class="content" bis_skin_checked="1"> ${dayrules.find((item) => item.title === DayRulesEnum.FORBIDDEN)?.html || ''} </div> </div> </div> </div> </section>`,
         'last-block-end': `        </div>
       </div>
       <div class="right" bis_skin_checked="1">
@@ -377,10 +382,58 @@ export class BuildDayService {
       <div class="left" bis_skin_checked="1">
         <div class="inner" bis_skin_checked="1">`,
       };
+      const blockKeys = Object.keys(blockTemplates).filter(
+        (key) => key !== 'day-rules',
+      );
+
+      if (!day.seoText) {
+        let blocksContent = '';
+
+        for (const key of blockKeys) {
+          if (
+            key.endsWith('-end') ||
+            key === 'last-block' ||
+            key === 'last-block-end' ||
+            key === 'day-history-inner' ||
+            key === 'day-rules' || 
+            key === 'signs-block-inner'
+          )
+            continue;
+
+          if (key === 'day-history-top') {
+            blocksContent += blockTemplates['day-history-top'];
+            blocksContent += blockTemplates['day-history-inner'];
+            blocksContent += blockTemplates['block-end'];
+            continue;
+          }
+          if (key === 'signs-block-top') {
+            blocksContent += blockTemplates['signs-block-top'];
+            blocksContent += blockTemplates['signs-block-inner'];
+            blocksContent += blockTemplates['block-end'];
+            continue;
+          }
+
+          blocksContent += blockTemplates[key];
+
+          if (key === 'church-calendar') {
+            blocksContent += blockTemplates['calendar-end'] || '';
+          } else {
+            blocksContent += blockTemplates['block-end'] || '';
+          }
+        }
+
+        content = blocksContent;
+      }
+
       const topBlock = `
       <div class="top-block__top">
         <div class="img-block">
-            <img src="/wp-content/themes/gosta/img/holiday/43642e2d_6cd0_4f32_a913_149aaf12258a_1.webp" alt="Img" width="447" height="224" loading="eager" decoding="async">
+            <img src="${host}/${new Date().getFullYear()}/${new Date().getMonth() + 1}/${(
+              day.mainImage || 'main.webp'
+            )
+              .replaceAll(' ', '_')
+              .replaceAll(',', '')}" 
+              alt="Img" width="447" height="224" loading="eager" decoding="async">
             <div class="year-day"></div>
             <div class="ny-block">
                 <strong>До Нового Року <span>залишилося:</span></strong>
@@ -388,15 +441,16 @@ export class BuildDayService {
             </div>
         </div>
         <div class="text-block">
-            <h1>${dayjs(day.date).locale('uk').format('D MMMM YYYY')} - яке свято, церковне свято, день янгола, історичні події, народні прикмети та заборони?</h1>
-            ${day.description}
+            <h1>${dayjs(day.date).locale('uk').format('D MMMM YYYY')} — яке свято, церковне свято, день янгола, історичні події, народні прикмети та заборони?</h1>
+            ${day?.description || ''}
             <p>Нижче ви знайдете добірку свят, іменин, народних прикмет та історичних подій цього дня.</p>
         </div>
       </div>
-      `;
+    `;
 
       const placeholderRegex =
         /<div\s+data-placeholder="([^"]+)"[^>]*>[\s\S]*?<\/div>/g;
+
       content = content.replace(
         placeholderRegex,
         (_, key) => blockTemplates[key] || `<p>[Невідомий блок: ${key}]</p>`,
@@ -407,7 +461,9 @@ export class BuildDayService {
         const $el = $(el);
         const src = $el.attr('src');
         if (src && !src.startsWith('http')) {
-          const newSrc = `${host}/${new Date().getFullYear()}/${new Date().getMonth() + 1}/${src.replaceAll(' ', '_').replaceAll(',', '')}`;
+          const newSrc = `${host}/${new Date().getFullYear()}/${new Date().getMonth() + 1}/${src
+            .replaceAll(' ', '_')
+            .replaceAll(',', '')}`;
           $el.attr('src', newSrc.replace('wepb', 'webp'));
         }
       });
@@ -434,50 +490,119 @@ export class BuildDayService {
       return content;
     } catch (error) {
       console.error('❌ Помилка збірки статті:', error);
-      throw error;
+
+      return `<section class="error"><p>Помилка збірки сторінки за ${date}: ${error.message}</p></section>`;
     }
   }
 
-  async publish(date: string) {
-    try {
-      const day = await this.dayModel.findOne({ date }).lean();
-      if (!day) throw new Error('Стаття не знайдена');
+  public async handleUpload(date: string) {
+    const day = await this.dayModel.findOne({ date }).lean();
+    if (!day) throw new Error('Стаття не знайдена');
 
-      const imageDir2 = path.join(
-        __dirname,
-        '..',
-        '..',
-        'uploads',
-        date,
-        'whoWasBorn',
+    const whoWasBornDir = path.join(
+      __dirname,
+      '..',
+      '..',
+      'uploads',
+      date,
+      'whoWasBorn',
+    );
+    const mainDir = path.join(__dirname, '..', '..', 'uploads', date, 'main');
+
+    if (!fs.existsSync(whoWasBornDir)) {
+      console.warn(`⚠️ Папка ${whoWasBornDir} не існує — пропускаю`);
+    }
+    if (!fs.existsSync(mainDir) || fs.readdirSync(mainDir).length === 0) {
+      await this.ensureMainImage(date, mainDir);
+    }
+
+    const dirsToUpload = [
+      { dir: whoWasBornDir, label: 'whoWasBorn' },
+      { dir: mainDir, label: 'main' },
+    ];
+
+    const results = await this.uploadImages(dirsToUpload);
+    return results;
+  }
+
+  private async ensureMainImage(date: string, mainDir: string) {
+    const monthDir = path.join(
+      __dirname,
+      '..',
+      '..',
+      'uploads',
+      dayjs(date).format('YYYY-MM'),
+    );
+
+    if (!fs.existsSync(monthDir)) {
+      console.warn(
+        `⚠️ Директорія ${monthDir} не існує — пропускаю створення main`,
       );
+      return;
+    }
 
-      if (!fs.existsSync(imageDir2)) {
-        throw new Error(`Папка ${imageDir2} не існує`);
+    const allImages = fs
+      .readdirSync(monthDir)
+      .filter((f) => /\.(webp)$/i.test(f));
+    if (allImages.length === 0) {
+      console.warn(
+        '⚠️ У директорії YYYY-MM немає зображень для резервного копіювання',
+      );
+      return;
+    }
+
+    const randomImage = allImages[Math.floor(Math.random() * allImages.length)];
+    const sourcePath = path.join(monthDir, randomImage);
+
+    fs.mkdirSync(mainDir, { recursive: true });
+    const targetPath = path.join(mainDir, 'main.webp');
+    fs.copyFileSync(sourcePath, targetPath);
+
+    await this.dayModel.findOneAndUpdate({ date }, { mainImage: 'main.webp' });
+    console.log(`📁 main.webp створено з ${randomImage}`);
+  }
+
+  private async uploadImages(dirs: { dir: string; label: string }[]): Promise<
+    {
+      folder: string;
+      file: string;
+      status: string;
+      response?: any;
+      error?: string;
+    }[]
+  > {
+    const results = [];
+
+    for (const { dir, label } of dirs) {
+      if (!fs.existsSync(dir)) {
+        console.warn(`⚠️ Папка ${label} (${dir}) не існує — пропускаю`);
+        continue;
       }
-      const imageFiles = fs
-        .readdirSync(imageDir2)
-        .filter((f) => /\.(webp)$/i.test(f));
 
-      if (imageFiles.length === 0) {
-        throw new Error('Немає зображень для завантаження');
+      const files = fs.readdirSync(dir).filter((f) => /\.(webp)$/i.test(f));
+      if (files.length === 0) {
+        console.warn(`⚠️ У папці ${label} немає файлів`);
+        continue;
       }
 
-      const results = [];
-
-      for (const imageName of imageFiles) {
+      for (const imageName of files) {
         const safeImageName = imageName.replaceAll(' ', '_');
-        const fullImagePath2 = path.join(imageDir2, imageName);
+        const fullImagePath = path.join(dir, imageName);
+
+        if (!fs.existsSync(fullImagePath)) {
+          console.warn(`⚠️ Файл ${fullImagePath} не існує — пропускаю`);
+          continue;
+        }
 
         const formData = new FormData();
         formData.append(
           'file',
-          fs.createReadStream(fullImagePath2),
+          fs.createReadStream(fullImagePath),
           safeImageName,
         );
 
         try {
-          const mediaResponse2 = await axios.post(
+          const mediaResponse = await axios.post(
             `${process.env.BASE_URL}/media`,
             formData,
             {
@@ -493,24 +618,37 @@ export class BuildDayService {
           );
 
           results.push({
+            folder: label,
             file: imageName,
             status: 'ok',
-            response: mediaResponse2.data,
+            response: mediaResponse.data,
           });
 
-          console.log(`✅ ${imageName} завантажено успішно`);
+          console.log(`✅ ${label}/${imageName} завантажено успішно`);
         } catch (error) {
           console.error(
-            `❌ Помилка при завантаженні ${imageName}:`,
+            `❌ Помилка при завантаженні ${label}/${imageName}:`,
             error.message,
           );
           results.push({
+            folder: label,
             file: imageName,
             status: 'error',
             error: error.message,
           });
         }
       }
+    }
+
+    return results;
+  }
+
+  async publish(date: string) {
+    try {
+      const day = await this.dayModel.findOne({ date }).lean();
+      if (!day) throw new Error('Стаття не знайдена');
+
+      await this.handleUpload(date);
 
       const content = await this.buildArticle(date);
       const postData = {
@@ -540,7 +678,10 @@ export class BuildDayService {
       );
 
       console.log('Post created:', postResponse.data);
-      await this.dayModel.updateOne({ date, articleId: postResponse.data.id });
+      await this.dayModel.updateOne(
+        { date },
+        { $set: { articleId: postResponse.data.id } },
+      );
       return postResponse.data;
     } catch (error) {
       console.error('Error publishing', error);
@@ -555,74 +696,7 @@ export class BuildDayService {
       const postData = {
         content,
       };
-      const imageDir2 = path.join(
-        __dirname,
-        '..',
-        '..',
-        'uploads',
-        date,
-        'whoWasBorn',
-      );
-
-      if (!fs.existsSync(imageDir2)) {
-        throw new Error(`Папка ${imageDir2} не існує`);
-      }
-      const imageFiles = fs
-        .readdirSync(imageDir2)
-        .filter((f) => /\.(webp)$/i.test(f));
-
-      if (imageFiles.length === 0) {
-        throw new Error('Немає зображень для завантаження');
-      }
-
-      const results = [];
-
-      for (const imageName of imageFiles) {
-        const safeImageName = imageName.replaceAll(' ', '_');
-        const fullImagePath2 = path.join(imageDir2, imageName);
-
-        const formData = new FormData();
-        formData.append(
-          'file',
-          fs.createReadStream(fullImagePath2),
-          safeImageName,
-        );
-
-        try {
-          const mediaResponse2 = await axios.post(
-            `${process.env.BASE_URL}/media`,
-            formData,
-            {
-              auth: {
-                username: process.env.APP_USER_PAGES,
-                password: process.env.APP_PASSWORD_PAGES,
-              },
-              headers: {
-                ...formData.getHeaders(),
-                'Content-Disposition': `attachment; filename="${safeImageName}"`,
-              },
-            },
-          );
-
-          results.push({
-            file: imageName,
-            status: 'ok',
-            response: mediaResponse2.data,
-          });
-
-          console.log(`✅ ${imageName} завантажено успішно`);
-        } catch (error) {
-          console.error(
-            `❌ Помилка при завантаженні ${imageName}:`,
-            error.message,
-          );
-          results.push({
-            file: imageName,
-            status: 'error',
-            error: error.message,
-          });
-        }
-      }
+      await this.handleUpload(date);
 
       const postResponse = await axios.post(
         `${process.env.BASE_URL}/pages/${day.articleId}`,
