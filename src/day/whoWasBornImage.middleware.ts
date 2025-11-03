@@ -85,7 +85,8 @@ export class WhoWasBornImageMiddleware implements NestMiddleware {
           if (!fs.existsSync(mainImageDir))
             fs.mkdirSync(mainImageDir, { recursive: true });
 
-          const outputFilename = `main.webp`;
+          // 🔸 Генеруємо унікальну назву через UUID
+          const outputFilename = `${crypto.randomUUID()}.webp`;
           const outputPath = path.join(mainImageDir, outputFilename);
 
           const image = sharp(file.buffer);
@@ -105,7 +106,7 @@ export class WhoWasBornImageMiddleware implements NestMiddleware {
 
           await image
             .extract({ left, top, width: cropWidth, height: cropHeight })
-            .resize(1920, 1080) // головне зображення 16:9
+            .resize(1920, 1080)
             .toFormat('webp', { quality: 90 })
             .toFile(outputPath);
 
