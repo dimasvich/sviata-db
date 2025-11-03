@@ -337,6 +337,7 @@ export default function AddInfo() {
         alert('Помилка при оновленні даних');
         return;
       }
+      if (res.ok) alert('Зміни збережено')
     } catch (e) {
       console.error(e);
       alert('Помилка при відправленні запиту');

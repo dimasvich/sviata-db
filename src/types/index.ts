@@ -47,6 +47,14 @@ export enum SviatoTag {
   'Національні свята' = 'Національні свята',
   'Міжнародні свята' = 'Міжнародні свята',
 }
+export const SviatoTagToIdMap: Record<SviatoTag, number> = {
+  [SviatoTag['Міжнародні свята']]: 13011,
+  [SviatoTag['Українські свята']]: 13048,
+  [SviatoTag['Професійні свята']]: 6076,
+  [SviatoTag['Релігійні свята']]: 1824,
+  [SviatoTag['Національні свята']]: 13052,
+  [SviatoTag['Державні свята']]: 4999, 
+}
 export interface DayInfo {
   dayOfMonth: number;
   year: number;

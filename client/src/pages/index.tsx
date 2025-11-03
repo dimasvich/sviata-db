@@ -17,12 +17,10 @@ interface DayInfo {
 export default function Home() {
   const year = new Date().getFullYear();
 
-  // 🔹 стартуємо з поточної дати
   const [date, setDate] = useState<string>(dayjs().format('YYYY-MM-DD'));
   const [month, setMonth] = useState<number>(dayjs().month());
   const [daysData, setDaysData] = useState<Record<string, DayInfo> | null>(null);
 
-  // 🧠 1. після гідратації читаємо кеш
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
@@ -33,7 +31,6 @@ export default function Home() {
     if (savedMonth) setMonth(Number(savedMonth));
   }, []);
 
-  // 🧠 2. зберігаємо при кожній зміні
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
@@ -41,7 +38,6 @@ export default function Home() {
     localStorage.setItem('dashboard-month', String(month));
   }, [date, month]);
 
-  // 🧠 3. завантаження днів
   useEffect(() => {
     if (!year) return;
 

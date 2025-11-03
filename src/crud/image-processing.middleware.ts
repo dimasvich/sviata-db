@@ -25,7 +25,6 @@ export class ImageProcessingMiddleware implements NestMiddleware {
         throw new BadRequestException('Відсутній ID свята у маршруті');
       }
 
-      // Створюємо директорію uploads/{sviatoId}/main якщо її ще немає
       const sviatoDir = path.join(__dirname, '..', '..', 'uploads', sviatoId, 'main');
       if (!fs.existsSync(sviatoDir)) {
         fs.mkdirSync(sviatoDir, { recursive: true });
@@ -57,7 +56,6 @@ export class ImageProcessingMiddleware implements NestMiddleware {
           .toFormat('webp', { quality: 90 })
           .toFile(outputPath);
 
-        // Очищаємо EXIF-дані
         await exiftool.write(outputPath, {}, ['-all=']);
 
         processedImages.push({

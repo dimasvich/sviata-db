@@ -1,22 +1,23 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
+import * as cheerio from 'cheerio';
+import * as FormData from 'form-data';
+import * as fs from 'fs';
+import { html as beautifyHtml } from 'js-beautify';
 import { Model } from 'mongoose';
+import * as path from 'path';
 import { DayRules, DayRulesDocument } from 'src/crud/schema/dayrules.schema';
 import { Sviato, SviatoDocument } from 'src/crud/schema/sviato.schema';
 import { SviatoImages } from 'src/crud/schema/sviatoimages.schema';
-import { DayRulesEnum } from 'src/types';
+import { DayRulesEnum, SviatoTagToIdMap } from 'src/types';
 import {
   capitalizeFirstLetter,
   getNext5YearsForecast,
   removeBisSkinChecked,
 } from 'src/utils';
-import { html as beautifyHtml } from 'js-beautify';
-import * as cheerio from 'cheerio';
-import * as FormData from 'form-data';
-import * as fs from 'fs';
-import * as path from 'path';
 
 import axios from 'axios';
+import * as dayjs from 'dayjs';
 
 @Injectable()
 export class BuildService {
@@ -109,7 +110,9 @@ export class BuildService {
             </figure>
             `,
         'timeline-section': `
-            <div class="timeline-block__wrapper" bis_skin_checked="1">
+            ${
+              sviato?.timeline
+                ? `<div class="timeline-block__wrapper" bis_skin_checked="1">
             <div class="timeline-block" bis_skin_checked="1">
                 ${sviato.timeline
                   .map(
@@ -124,9 +127,12 @@ export class BuildService {
                   )
                   .join('')}
             </div>
-            </div>
+            </div>`
+                : ''
+            }
         `,
-        'greetings-section': `
+        'greetings-section': sviato?.greetings
+          ? `
         <h2 class="wp-block-heading">Короткі привітання</h2><div class="greetings-list" bis_skin_checked="1">
                   ${sviato.greetings
                     .map(
@@ -140,8 +146,10 @@ export class BuildService {
                 </div>`,
                     )
                     .join('')}
-        </div>`,
-        'ideas-section': `
+        </div>`
+          : '',
+        'ideas-section': sviato?.ideas
+          ? `
         <h2 class="wp-block-heading">Ідеї для постів і листів</h2><div class="greetings-list" bis_skin_checked="1">
                   ${sviato.ideas
                     .map(
@@ -155,8 +163,10 @@ export class BuildService {
                 </div>`,
                     )
                     .join('')}
-        </div>`,
-        'rules-section': `<div class="info-block" bis_skin_checked="1">
+        </div>`
+          : '',
+        'rules-section': dayrules
+          ? `<div class="info-block" bis_skin_checked="1">
   <div class="block" bis_skin_checked="1">
     <div class="head" bis_skin_checked="1">
       Що варто зробити
@@ -170,7 +180,7 @@ export class BuildService {
         decoding="async"
       />
     </div>
-    <div class="content" bis_skin_checked="1">${dayrules.find((item) => item.title === DayRulesEnum.ALLOWED).html}</div>
+    <div class="content" bis_skin_checked="1">${dayrules.find((item) => item.title === DayRulesEnum.ALLOWED)?.html || ''}</div>
   </div>
   <div class="block minus" bis_skin_checked="1">
     <div class="head" bis_skin_checked="1">
@@ -185,11 +195,13 @@ export class BuildService {
         decoding="async"
       />
     </div>
-    <div class="content" bis_skin_checked="1">${dayrules.find((item) => item.title === DayRulesEnum.FORBIDDEN).html}</div>
+    <div class="content" bis_skin_checked="1">${dayrules.find((item) => item.title === DayRulesEnum.FORBIDDEN)?.html || ''}</div>
   </div>
 </div>
-`,
-        'facts-section': `<h2 class="wp-block-heading">Цікаві факти про ${sviato.name}</h2><div class="facts-list" bis_skin_checked="1">
+`
+          : '',
+        'facts-section': sviato.facts
+          ? `<h2 class="wp-block-heading">Цікаві факти про ${sviato.name}</h2><div class="facts-list" bis_skin_checked="1">
       ${sviato.facts
         .map(
           (item) => `  
@@ -210,8 +222,10 @@ export class BuildService {
         .join('')}
 
 </div>
-`,
-        'sources-section': `<h2 class="wp-block-heading">Джерела інформації</h2>
+`
+          : '',
+        'sources-section': sviato?.sources
+          ? `<h2 class="wp-block-heading">Джерела інформації</h2>
         <div class="sources" bis_skin_checked="1">
         ${sviato.sources
           .map(
@@ -220,9 +234,14 @@ export class BuildService {
     `,
           )
           .join('')}
-               </div> `,
-        'related-section': `<h2>Пов’язані події</h2><div class="related" data-id="[${sviato.related.map((item) => item)}]"></div>`,
-        'moreIdeas-section': `<h2>Більше ідей для привітань дивись у добірках порталу:</h2><div class="moreIdeas" data-id="[${sviato.moreIdeas.map((item) => item)}]"></div>`,
+               </div> `
+          : '',
+        'related-section': sviato?.related
+          ? `<h2>Пов’язані події</h2><div class="related" data-id="[${sviato.related.map((item) => item)}]"></div>`
+          : '',
+        'moreIdeas-section': sviato?.moreIdeas
+          ? `<h2>Більше ідей для привітань дивись у добірках порталу:</h2><div class="moreIdeas" data-id="[${sviato.moreIdeas.map((item) => item)}]"></div>`
+          : '',
       };
 
       const placeholderRegex = /<div\s+data-placeholder="([^"]+)"\s*><\/div>/g;
@@ -271,13 +290,10 @@ export class BuildService {
       const sviato = await this.sviatoModel.findById(id).lean();
       if (!sviato) throw new Error('Стаття не знайдена');
 
-      const record = await this.sviatoImagesModel
-        .findOne({ date: sviato.date })
-        .exec();
-      const images = record.images;
+      const mainImage = sviato.mainImage;
 
       const imageDir1 = path.join(__dirname, '..', '..', 'uploads', id, 'main');
-      const imageName1 = images[0];
+      const imageName1 = mainImage;
       const fullImagePath1 = path.join(imageDir1, imageName1);
 
       const formData = new FormData();
@@ -316,59 +332,62 @@ export class BuildService {
         .readdirSync(imageDir2)
         .filter((f) => /\.(webp)$/i.test(f));
 
-      if (imageFiles.length === 0) {
-        throw new Error('Немає зображень для завантаження');
-      }
+      if (imageFiles.length > 0) {
+        const results = [];
 
-      const results = [];
+        for (const imageName of imageFiles) {
+          const safeImageName = imageName.replaceAll(' ', '_');
+          const fullImagePath2 = path.join(imageDir2, imageName);
 
-      for (const imageName of imageFiles) {
-        const safeImageName = imageName.replaceAll(' ', '_');
-        const fullImagePath2 = path.join(imageDir2, imageName);
-
-        const formData = new FormData();
-        formData.append(
-          'file',
-          fs.createReadStream(fullImagePath2),
-          safeImageName,
-        );
-
-        try {
-          const mediaResponse2 = await axios.post(
-            `${process.env.BASE_URL}/media`,
-            formData,
-            {
-              auth: {
-                username: process.env.APP_USER,
-                password: process.env.APP_PASSWORD,
-              },
-              headers: {
-                ...formData.getHeaders(),
-                'Content-Disposition': `attachment; filename="${safeImageName}"`,
-              },
-            },
+          const formData = new FormData();
+          formData.append(
+            'file',
+            fs.createReadStream(fullImagePath2),
+            safeImageName,
           );
 
-          results.push({
-            file: imageName,
-            status: 'ok',
-            response: mediaResponse2.data,
-          });
+          try {
+            const mediaResponse2 = await axios.post(
+              `${process.env.BASE_URL}/media`,
+              formData,
+              {
+                auth: {
+                  username: process.env.APP_USER,
+                  password: process.env.APP_PASSWORD,
+                },
+                headers: {
+                  ...formData.getHeaders(),
+                  'Content-Disposition': `attachment; filename="${safeImageName}"`,
+                },
+              },
+            );
 
-          console.log(`✅ ${imageName} завантажено успішно`);
-        } catch (error) {
-          console.error(
-            `❌ Помилка при завантаженні ${imageName}:`,
-            error.message,
-          );
-          results.push({
-            file: imageName,
-            status: 'error',
-            error: error.message,
-          });
+            results.push({
+              file: imageName,
+              status: 'ok',
+              response: mediaResponse2.data,
+            });
+
+            console.log(`✅ ${imageName} завантажено успішно`);
+          } catch (error) {
+            console.error(
+              `❌ Помилка при завантаженні ${imageName}:`,
+              error.message,
+            );
+            results.push({
+              file: imageName,
+              status: 'error',
+              error: error.message,
+            });
+          }
         }
       }
-
+      const tags = sviato.tags.map((item) => SviatoTagToIdMap[item]);
+      const holiday_date = [
+        sviato.date,
+        `${new Date(sviato.date).getFullYear() + 1}-${dayjs(sviato.date).format('MM-DD')}`,
+        `${new Date(sviato.date).getFullYear() + 2}-${dayjs(sviato.date).format('MM-DD')}`,
+      ];
       const content = await this.buildArticle(id);
       const postData = {
         title: sviato.title,
@@ -377,6 +396,16 @@ export class BuildService {
         status: 'publish',
         featured_media: mediaId,
         categories: [12771],
+        tags,
+        meta: {
+          holiday_date,
+        },
+        seofo_title: sviato.title,
+        seofo_description: sviato.description
+          .replaceAll('<p>', '')
+          .replaceAll('</p>', '')
+          .replaceAll('<strong>', '')
+          .replaceAll('</strong>', ''),
       };
 
       const postResponse = await axios.post(
@@ -394,7 +423,10 @@ export class BuildService {
       );
 
       console.log('Post created:', postResponse.data);
-      await this.sviatoModel.updateOne({ id, articleId: postResponse.data.id });
+      await this.sviatoModel.findByIdAndUpdate(id, {
+        articleId: postResponse.data.id,
+      });
+
       return postResponse.data;
     } catch (error) {
       console.error('Error publishing:', error);
@@ -406,8 +438,36 @@ export class BuildService {
       const sviato = await this.sviatoModel.findById(id).lean();
       if (!sviato) throw new Error('Стаття не знайдена');
       const content = await this.buildArticle(id);
+      const mainImage = sviato.mainImage;
+
+      const imageDir1 = path.join(__dirname, '..', '..', 'uploads', id, 'main');
+      const imageName1 = mainImage;
+      const fullImagePath1 = path.join(imageDir1, imageName1);
+
+      const formData = new FormData();
+      formData.append('file', fs.createReadStream(fullImagePath1), imageName1);
+
+      const mediaResponse = await axios.post(
+        `${process.env.BASE_URL}/media`,
+        formData,
+        {
+          auth: {
+            username: process.env.APP_USER,
+            password: process.env.APP_PASSWORD,
+          },
+          headers: {
+            ...formData.getHeaders(),
+            'Content-Disposition': `attachment; filename="${imageName1}"`,
+          },
+        },
+      );
+
+      const mediaId = mediaResponse.data.id;
+      console.log('Media uploaded, ID:', mediaId);
       const postData = {
         content,
+        categories: [12771],
+        featured_media: mediaId,
       };
       const imageDir2 = path.join(
         __dirname,
@@ -424,59 +484,56 @@ export class BuildService {
         .readdirSync(imageDir2)
         .filter((f) => /\.(webp)$/i.test(f));
 
-      if (imageFiles.length === 0) {
-        throw new Error('Немає зображень для завантаження');
-      }
+      if (imageFiles.length > 0) {
+        const results = [];
 
-      const results = [];
+        for (const imageName of imageFiles) {
+          const safeImageName = imageName.replaceAll(' ', '_');
+          const fullImagePath2 = path.join(imageDir2, imageName);
 
-      for (const imageName of imageFiles) {
-        const safeImageName = imageName.replaceAll(' ', '_');
-        const fullImagePath2 = path.join(imageDir2, imageName);
-
-        const formData = new FormData();
-        formData.append(
-          'file',
-          fs.createReadStream(fullImagePath2),
-          safeImageName,
-        );
-
-        try {
-          const mediaResponse2 = await axios.post(
-            `${process.env.BASE_URL}/media`,
-            formData,
-            {
-              auth: {
-                username: process.env.APP_USER,
-                password: process.env.APP_PASSWORD,
-              },
-              headers: {
-                ...formData.getHeaders(),
-                'Content-Disposition': `attachment; filename="${safeImageName}"`,
-              },
-            },
+          const formData = new FormData();
+          formData.append(
+            'file',
+            fs.createReadStream(fullImagePath2),
+            safeImageName,
           );
 
-          results.push({
-            file: imageName,
-            status: 'ok',
-            response: mediaResponse2.data,
-          });
+          try {
+            const mediaResponse2 = await axios.post(
+              `${process.env.BASE_URL}/media`,
+              formData,
+              {
+                auth: {
+                  username: process.env.APP_USER,
+                  password: process.env.APP_PASSWORD,
+                },
+                headers: {
+                  ...formData.getHeaders(),
+                  'Content-Disposition': `attachment; filename="${safeImageName}"`,
+                },
+              },
+            );
 
-          console.log(`✅ ${imageName} завантажено успішно`);
-        } catch (error) {
-          console.error(
-            `❌ Помилка при завантаженні ${imageName}:`,
-            error.message,
-          );
-          results.push({
-            file: imageName,
-            status: 'error',
-            error: error.message,
-          });
+            results.push({
+              file: imageName,
+              status: 'ok',
+              response: mediaResponse2.data,
+            });
+
+            console.log(`✅ ${imageName} завантажено успішно`);
+          } catch (error) {
+            console.error(
+              `❌ Помилка при завантаженні ${imageName}:`,
+              error.message,
+            );
+            results.push({
+              file: imageName,
+              status: 'error',
+              error: error.message,
+            });
+          }
         }
       }
-
       const postResponse = await axios.post(
         `${process.env.BASE_URL}/posts/${sviato.articleId}`,
         postData,
