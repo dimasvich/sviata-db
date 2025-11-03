@@ -395,7 +395,7 @@ export class BuildDayService {
             key === 'last-block' ||
             key === 'last-block-end' ||
             key === 'day-history-inner' ||
-            key === 'day-rules' || 
+            key === 'day-rules' ||
             key === 'signs-block-inner'
           )
             continue;
@@ -526,6 +526,9 @@ export class BuildDayService {
   }
 
   private async ensureMainImage(date: string, mainDir: string) {
+    const day = await this.dayModel.findOne({ date }).lean();
+    if (!day) throw new Error('Стаття не знайдена');
+
     const monthDir = path.join(
       __dirname,
       '..',
@@ -551,15 +554,21 @@ export class BuildDayService {
       return;
     }
 
+    const mainImageName = `${crypto.randomUUID()}.webp`;
+
     const randomImage = allImages[Math.floor(Math.random() * allImages.length)];
     const sourcePath = path.join(monthDir, randomImage);
 
     fs.mkdirSync(mainDir, { recursive: true });
-    const targetPath = path.join(mainDir, 'main.webp');
+    const targetPath = path.join(mainDir, mainImageName);
     fs.copyFileSync(sourcePath, targetPath);
 
-    await this.dayModel.findOneAndUpdate({ date }, { mainImage: 'main.webp' });
-    console.log(`📁 main.webp створено з ${randomImage}`);
+    await this.dayModel.findOneAndUpdate(
+      { date },
+      { mainImage: mainImageName },
+    );
+
+    console.log(`📁 ${mainImageName} створено з ${randomImage}`);
   }
 
   private async uploadImages(dirs: { dir: string; label: string }[]): Promise<
