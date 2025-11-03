@@ -13,6 +13,7 @@ import * as cheerio from 'cheerio';
 import * as dayjs from 'dayjs';
 import 'dayjs/locale/uk';
 import { Day, DayDocument } from 'src/day/schema/day.schema';
+import { CompleteStatus } from 'src/types';
 
 @Injectable()
 export class GenerateFromCsvService {
@@ -151,6 +152,7 @@ export class GenerateFromCsvService {
               description: metaDescription,
               teaser: teaser,
               seoText: html,
+              status: CompleteStatus.OPENAI,
             });
 
             console.log(`Збережено: ${data[index].name}`);
@@ -206,7 +208,7 @@ export class GenerateFromCsvService {
         - Не роби акцент на одному святі, намагайся узагальнити.
       `;
       const description = await this.generateHtmlForPrompt(prompt);
-      await this.dayModel.create({ date, description });
+      await this.dayModel.create({ date, description, status: CompleteStatus.OPENAI });
       return { success:true };
     } catch (error) {
       throw error;

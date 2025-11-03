@@ -1,24 +1,25 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import Button from '@/components/ui/Button';
+import Calendar from '@/components/ui/Calendar';
+import DefaultTextEditor from '@/components/ui/editor/DefaultTextEditor';
+import SeoTextEditor from '@/components/ui/editor/SeoTextEditor';
+import ImageUpload from '@/components/ui/ImageUpload';
+import Input from '@/components/ui/Input';
+import Layout from '@/components/ui/Layout';
+import Select from '@/components/ui/Select';
+import SviatoDeleteModal from '@/components/ui/sviato/SviatoDeleteModal';
+import Textarea from '@/components/ui/Textarea';
+import Typography from '@/components/ui/Typography';
+import { baseUrl } from '@/http';
+import { deleteSviato } from '@/http/crud';
+import { Celebrate, DayRulesEnum, SviatoType } from '@/types';
+import { getNextThreeYearsForecast, getNthWeekdayOfMonth } from '@/utils';
+import dayjs from 'dayjs';
+import localeData from 'dayjs/plugin/localeData';
 import Head from 'next/head';
 import { useRouter, useSearchParams } from 'next/navigation';
-import Layout from '@/components/ui/Layout';
-import Typography from '@/components/ui/Typography';
-import Input from '@/components/ui/Input';
-import Textarea from '@/components/ui/Textarea';
-import Select from '@/components/ui/Select';
-import Button from '@/components/ui/Button';
-import { Celebrate, DayRulesEnum, SviatoType } from '@/types';
-import { baseUrl } from '@/http';
-import Calendar from '@/components/ui/Calendar';
-import localeData from 'dayjs/plugin/localeData';
-import dayjs from 'dayjs';
-import { getNextThreeYearsForecast, getNthWeekdayOfMonth } from '@/utils';
-import SviatoDeleteModal from '@/components/ui/sviato/SviatoDeleteModal';
-import { deleteSviato } from '@/http/crud';
-import ArticleGallery from '@/components/ui/ArticleGallery';
-import SeoTextEditor from '@/components/ui/editor/SeoTextEditor';
+import { useEffect, useState } from 'react';
 
 export default function AddInfo() {
   const searchParams = useSearchParams();
@@ -40,6 +41,7 @@ export default function AddInfo() {
     description: '',
     name: '',
     teaser: '',
+    mainImage: '',
     tags: [] as string[],
     sources: [] as {
       title: string;
@@ -87,8 +89,11 @@ export default function AddInfo() {
   const [newTimeBlockHtml, setNewTimeBlockHtml] = useState('');
 
   const [tags, setTags] = useState([]);
+
+  const [mainFile, setMainFile] = useState<File | null>(null);
+
+  const [mainImageUrl, setMainImageUrl] = useState<string | null>(null);
   const [newFiles, setNewFiles] = useState<File[]>([]);
-  const [images, setImages] = useState<string[]>([]);
 
   const handleUpload = async () => {
     if (!id) return;
@@ -104,7 +109,13 @@ export default function AddInfo() {
       });
     }
   };
-
+  useEffect(() => {
+    if (sviato.mainImage) {
+      setMainImageUrl(
+        `${baseUrl}/uploads/${id}/main/${sviato.mainImage}`,
+      );
+    }
+  }, [sviato]);
   useEffect(() => {
     if (!id) return;
     const fetchData = async () => {
@@ -122,7 +133,7 @@ export default function AddInfo() {
         omens: json.omens || [],
         sources: json.sources || [],
       });
-      setImages(json.images || []);
+
       const rulesRes = await fetch(
         `${baseUrl}/api/crud/day-rules/${json.date}`,
       );
@@ -145,7 +156,6 @@ export default function AddInfo() {
     try {
       if (!id) return;
       const res = await deleteSviato(id);
-      if (res.ok) router.replace('/');
     } catch (error) {
       alert(error);
     }
@@ -156,7 +166,6 @@ export default function AddInfo() {
   };
 
   const enumOptions = Object.values(DayRulesEnum);
-
 
   const handleAddGreeting = () => {
     if (newGreeting.trim() && !sviato.greetings.includes(newGreeting.trim())) {
@@ -311,30 +320,23 @@ export default function AddInfo() {
     setLoading(true);
     try {
       await handleSubmitRules();
+      const formData = new FormData();
+      formData.append('sviatoData', JSON.stringify(sviato));
+
+      newFiles.forEach((file) => formData.append('images', file));
+
+      if (mainFile) {
+        formData.append('mainImage', mainFile);
+      }
       const res = await fetch(`${baseUrl}/api/crud/${id}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(sviato),
+        body: formData,
       });
-      if (newFiles.length > 0) {
-        const formData = new FormData();
-        newFiles.forEach((f) => formData.append('images', f));
-        const res = await fetch(`${baseUrl}/api/crud/sviato-images/${id}`, {
-          method: 'POST',
-          body: formData,
-        });
-        if (!res.ok) throw new Error('Помилка завантаження зображень');
-        const uploaded = await res.json();
-        setImages((prev) => [...prev, ...uploaded]);
-        setNewFiles([]);
-      }
 
       if (!res.ok) {
         alert('Помилка при оновленні даних');
         return;
       }
-
-      router.replace(`/`);
     } catch (e) {
       console.error(e);
       alert('Помилка при відправленні запиту');
@@ -360,13 +362,8 @@ export default function AddInfo() {
       <Layout>
         <div className="flex flex-col gap-6 w-full max-w-3xl mx-auto">
           <div className="flex justify-between">
-            <div className="flex flex-col gap-2">
-              <Typography type="title">Редагування свята</Typography>
-              <Button onClick={handleUpload}>Вивантажити статтю</Button>;
-            </div>
-            <Button onClick={() => setIsOpenModal(true)} type="danger">
-              Видалити свято
-            </Button>
+            <Typography type="title">Редагування свята</Typography>
+            <Button onClick={() => router.push('/')}>Назад</Button>
           </div>
           {forecastDates.length > 0 && (
             <div className="mt-4">
@@ -386,21 +383,14 @@ export default function AddInfo() {
             </div>
           )}
           <Input
-            id="name"
-            label="Назва"
-            value={sviato.name || ''}
-            onChange={(e) => handleChange('name', e.target.value)}
-          />
-          <Input
             id="title"
-            label="Заголовок"
+            label="Title"
             value={sviato.title || ''}
             onChange={(e) => handleChange('title', e.target.value)}
           />
           <Textarea
             id="description"
-            label="Опис (HTML)"
-            maxLength={1000}
+            label="Description"
             value={sviato.description || ''}
             onChange={(e) => handleChange('description', e.target.value)}
           />
@@ -411,15 +401,10 @@ export default function AddInfo() {
             onChange={(e) => handleChange('teaser', e.target.value)}
           />
           <div className="flex flex-col gap-2">
-            <Typography type="text">Картинки свята</Typography>
-            <ArticleGallery
-              id={id || ''}
-              existingImages={images}
-              onImagesChange={setNewFiles}
-              onRemoveExisting={(img: string) =>
-                setImages((prev) => prev.filter((i) => i !== img))
-              }
-              maxImages={10}
+            <Typography type="text">Головне зображення</Typography>
+            <ImageUpload
+              previewImg={mainImageUrl}
+              onFileSelect={(file) => setMainFile(file)}
             />
           </div>
           <div className="flex flex-col gap-2">
@@ -452,6 +437,12 @@ export default function AddInfo() {
               ))}
             </div>
           </div>
+          <Input
+            id="name"
+            label="Офіційна назва свята (Н1)"
+            value={sviato.name || ''}
+            onChange={(e) => handleChange('name', e.target.value)}
+          />
           <div className="flex flex-col gap-2">
             <Typography type="text">Святкування</Typography>
             <div className="flex gap-1">
@@ -865,12 +856,18 @@ export default function AddInfo() {
             <SeoTextEditor
               value={sviato.seoText || ''}
               onChange={(html) => handleChange('seoText', html)}
+              newFiles={newFiles}
+              setNewFiles={setNewFiles}
             />
           ) : (
             ''
           )}
           <Button onClick={handleSubmit}>
             {loading ? 'Оновлюється...' : 'Зберегти зміни'}
+          </Button>
+          <Button onClick={handleUpload}>Вивантажити статтю</Button>
+          <Button onClick={() => setIsOpenModal(true)} type="danger">
+            Видалити свято
           </Button>
         </div>
       </Layout>

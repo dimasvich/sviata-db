@@ -1,38 +1,42 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import dayjs from 'dayjs';
-import dayOfYear from 'dayjs/plugin/dayOfYear';
-import 'dayjs/locale/uk';
-import { Tooltip, IconButton, Select, MenuItem } from '@mui/material';
+import IconOpenAI from '@/components/svg/IconOpenAI';
 import { ChevronLeft, ChevronRight } from '@mui/icons-material';
-import { baseUrl } from '@/http';
+import { IconButton, MenuItem, Select, Tooltip } from '@mui/material';
+import dayjs from 'dayjs';
+import 'dayjs/locale/uk';
+import dayOfYear from 'dayjs/plugin/dayOfYear';
+import { useEffect, useMemo, useState } from 'react';
 
 dayjs.extend(dayOfYear);
 dayjs.locale('uk');
 
 interface DayInfo {
   date: string;
-  isFilled: boolean;
+  status: string;
 }
-
 export default function DashBoardNav({
   year,
   setCurrentDate,
+  setMonthCurrent,
+  daysData,
+  date,
 }: {
   year: number;
   setCurrentDate: (date: string) => void;
+  setMonthCurrent: (m: number) => void;
+  daysData: Record<string, DayInfo>;
+  date: string;
 }) {
   const today = dayjs();
   const savedMode =
     typeof window !== 'undefined' ? localStorage.getItem('viewMode') : null;
 
   const [viewMode, setViewMode] = useState<'year' | 'month'>(
-    savedMode === 'month' ? 'month' : 'year'
+    savedMode === 'month' ? 'month' : 'year',
   );
   const [month, setMonth] = useState<number>(today.month() + 1);
   const [selectedDay, setSelectedDay] = useState<string>(
-    today.year() === year ? today.format('YYYY-MM-DD') : `${year}-01-01`
+    today.year() === year ? today.format('YYYY-MM-DD') : `${year}-01-01`,
   );
-  const [daysData, setDaysData] = useState<Record<string, DayInfo>>({});
 
   const totalDays =
     viewMode === 'year'
@@ -42,11 +46,11 @@ export default function DashBoardNav({
   const days = useMemo(() => {
     if (viewMode === 'year') {
       return Array.from({ length: totalDays }, (_, i) =>
-        dayjs(`${year}-01-01`).add(i, 'day')
+        dayjs(`${year}-01-01`).add(i, 'day'),
       );
     } else {
       return Array.from({ length: totalDays }, (_, i) =>
-        dayjs(`${year}-${month.toString().padStart(2, '0')}-01`).add(i, 'day')
+        dayjs(`${year}-${month.toString().padStart(2, '0')}-01`).add(i, 'day'),
       );
     }
   }, [year, totalDays, viewMode, month]);
@@ -60,28 +64,13 @@ export default function DashBoardNav({
   }, [selectedDay, setCurrentDate]);
 
   useEffect(() => {
-    const start = days[0]?.format('YYYY-MM-DD');
-    const end = days[days.length - 1]?.format('YYYY-MM-DD');
-    if (!start || !end) return;
-
-    const fetchData = async () => {
-      try {
-        const res = await fetch(
-          `${baseUrl}/api/day/status?year=${year}`
-        );
-        const json: DayInfo[] = await res.json();
-        const map: Record<string, DayInfo> = {};
-        json.forEach((item) => {
-          map[item.date] = item;
-        });
-        setDaysData(map);
-      } catch (err) {
-        console.error('Помилка завантаження:', err);
-      }
-    };
-
-    fetchData();
-  }, [year, days]);
+    if (!month) return;
+    setMonthCurrent(month);
+  }, [month]);
+  useEffect(() => {
+    if (!date) return;
+    setMonthCurrent(dayjs(date).month()+1);
+  }, [date]);
 
   const handleSelect = (dateStr: string) => {
     setSelectedDay(dateStr);
@@ -160,7 +149,6 @@ export default function DashBoardNav({
           {days.map((date) => {
             const dateStr = date.format('YYYY-MM-DD');
             const isSelected = selectedDay === dateStr;
-            const isEmpty = daysData[dateStr]?.isFilled === false;
 
             return (
               <Tooltip
@@ -171,18 +159,30 @@ export default function DashBoardNav({
               >
                 <button
                   onClick={() => handleSelect(dateStr)}
-                  className={`w-10 h-10 flex flex-col items-center justify-center 
+                  className={`w-10 h-13 flex flex-col items-center justify-center 
                     text-[10px] font-medium rounded-md border transition-all duration-150
                     ${
                       isSelected
                         ? 'bg-primary text-white border-primary shadow'
-                        : isEmpty
-                        ? 'bg-red-100 text-red-700 border-red-400'
-                        : 'bg-surface text-secondary hover:bg-accent hover:text-white border-accent'
+                        : daysData[dateStr]?.status === 'EMPTY'
+                          ? 'bg-red-100 y-[15px] text-red-700 border-red-400'
+                          : daysData[dateStr]?.status === 'PARTIAL'
+                            ? 'bg-surface text-secondary hover:bg-accent hover:text-white border-accent'
+                            : daysData[dateStr]?.status === 'FILLED'
+                              ? 'bg-accent text-secondary hover:bg-accent hover:text-white border-accent'
+                              : daysData[dateStr]?.status === 'OPENAI' ?
+                                'bg-[#ffa500] text-secondary hover:bg-[#ed9900] hover:text-white border-[#ed9900]' : ''
                     }
                   `}
                 >
-                  <span>{date.format('YYYY-DD-MM')}</span>
+                  <span>
+                    {date.format('YYYY-DD-MM')}{' '}
+                    {daysData[dateStr]?.status === 'OPENAI' ? (
+                      <IconOpenAI />
+                    ) : (
+                      ''
+                    )}
+                  </span>
                 </button>
               </Tooltip>
             );

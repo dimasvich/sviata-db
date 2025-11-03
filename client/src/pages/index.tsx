@@ -3,16 +3,65 @@ import DashboardMonth from '@/components/ui/Dashboard/DashboardMonth';
 import DashBoardNav from '@/components/ui/Dashboard/DashboardNav';
 import Header from '@/components/ui/Header/Header';
 import Layout from '@/components/ui/Layout';
-import { getList } from '@/http/crud';
+import Loader from '@/components/ui/Loader';
+import { baseUrl } from '@/http';
 import dayjs from 'dayjs';
 import Head from 'next/head';
-import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
-export default function Home() {
-  const router = useRouter();
+interface DayInfo {
+  date: string;
+  status: string;
+}
 
-  const [date, setDate] = useState(dayjs().format('YYYY-MM-DD'));
+export default function Home() {
+  const year = new Date().getFullYear();
+
+  // 🔹 стартуємо з поточної дати
+  const [date, setDate] = useState<string>(dayjs().format('YYYY-MM-DD'));
+  const [month, setMonth] = useState<number>(dayjs().month());
+  const [daysData, setDaysData] = useState<Record<string, DayInfo> | null>(null);
+
+  // 🧠 1. після гідратації читаємо кеш
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const savedDate = localStorage.getItem('dashboard-date');
+    const savedMonth = localStorage.getItem('dashboard-month');
+
+    if (savedDate) setDate(savedDate);
+    if (savedMonth) setMonth(Number(savedMonth));
+  }, []);
+
+  // 🧠 2. зберігаємо при кожній зміні
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    localStorage.setItem('dashboard-date', date);
+    localStorage.setItem('dashboard-month', String(month));
+  }, [date, month]);
+
+  // 🧠 3. завантаження днів
+  useEffect(() => {
+    if (!year) return;
+
+    const fetchData = async () => {
+      try {
+        const res = await fetch(`${baseUrl}/api/day/status-by-year?year=${year}`);
+        const json: DayInfo[] = await res.json();
+        const map: Record<string, DayInfo> = {};
+        json.forEach((item) => {
+          map[item.date] = item;
+        });
+        setDaysData(map);
+      } catch (err) {
+        console.error('Помилка завантаження:', err);
+      }
+    };
+
+    fetchData();
+  }, [year]);
+
   return (
     <>
       <Head>
@@ -21,14 +70,22 @@ export default function Home() {
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link rel="icon" href="/favicon.ico" />
       </Head>
-      <Layout>
-        <Header />
-        <DashBoardNav setCurrentDate={setDate} year={2025} />
-        <DashboardMonth
-          day={dayjs(date).date()}
-          month={dayjs(date).month() + 1}
-        />
-      </Layout>
+
+      {daysData ? (
+        <Layout>
+          <Header />
+          <DashBoardNav
+            setMonthCurrent={setMonth}
+            setCurrentDate={setDate}
+            year={year}
+            date={date}
+            daysData={daysData}
+          />
+          <DashboardMonth day={dayjs(date).date()} month={month} />
+        </Layout>
+      ) : (
+        <Loader />
+      )}
     </>
   );
 }

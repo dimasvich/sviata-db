@@ -96,7 +96,7 @@ export default function DashboardMonth({
                   key={currentDay}
                   onClick={() =>
                     router.push(
-                      `/add-info-day?date=${currentYear}-${month}-${currentDay}`,
+                      `/add-info-day?date=${dateStr}`,
                     )
                   }
                   className={`cursor-pointer hover:bg-gray-50 transition ${

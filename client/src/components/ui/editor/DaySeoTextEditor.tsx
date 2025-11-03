@@ -96,8 +96,8 @@ const DaySeoTextEditor: React.FC<SeoTextEditorProps> = ({
   if (!editor) return <div>Loading editor...</div>;
 
   return (
-    <div className="border rounded-lg p-3 bg-white shadow-sm">
-      <div className="flex flex-wrap gap-2 border-b pb-2 mb-2">
+    <div className="relative w-full max-w-[1200px] mx-auto border rounded-lg bg-white shadow-sm overflow-hidden">
+      <div className="flex flex-wrap gap-2 border-b px-3 py-2 bg-white sticky top-[0] z-50 shadow-sm">
         <button
           onClick={() => editor.chain().focus().toggleBold().run()}
           className={`px-2 py-1 rounded ${

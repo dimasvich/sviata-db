@@ -1,6 +1,13 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document } from 'mongoose';
-import { Celebrate, Source, SviatoTag, SviatoType, TimeBlock } from 'src/types';
+import {
+  Celebrate,
+  CompleteStatus,
+  Source,
+  SviatoTag,
+  SviatoType,
+  TimeBlock,
+} from 'src/types';
 
 export type SviatoDocument = Sviato & Document;
 
@@ -62,6 +69,12 @@ export class Sviato {
 
   @Prop({ type: [String], default: [] })
   images: string[];
+
+  @Prop({ type: String, enum: CompleteStatus, default: CompleteStatus.EMPTY })
+  status: CompleteStatus;
+
+  @Prop({ type: String, required: false })
+  mainImage: string;
 
   @Prop({ type: String, default: Date.now })
   date: string;

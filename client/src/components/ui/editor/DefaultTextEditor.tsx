@@ -14,7 +14,7 @@ const DefaultTextEditor: React.FC<DefaultTextEditorProps> = ({
   onChange,
 }) => {
   const editor = useEditor({
-    extensions: [StarterKit.configure({ heading: false })], // вимикаємо заголовки
+    extensions: [StarterKit.configure({ heading: false })], 
     content: value || '',
     editorProps: {
       attributes: {

@@ -34,10 +34,10 @@ export enum SviatoType {
   'Церковні свята',
 }
 export enum CompleteStatus {
-  'EMPTY',
-  'PARTIAL',
-  'FILLED',
-  'OPENAI',
+  EMPTY = 'EMPTY',
+  PARTIAL = 'PARTIAL',
+  FILLED = 'FILLED',
+  OPENAI = 'OPENAI',
 }
 export enum SviatoTag {
   'Державні свята' = 'Державні свята',
