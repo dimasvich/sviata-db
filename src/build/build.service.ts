@@ -390,7 +390,7 @@ export class BuildService {
       ];
       const content = await this.buildArticle(id);
       const postData = {
-        title: sviato.title,
+        title: sviato.name,
         content,
         excerpt: sviato.teaser,
         status: 'publish',
@@ -469,6 +469,7 @@ export class BuildService {
         content,
         categories: [12771],
         featured_media: mediaId,
+        title: sviato.name,
       };
       const imageDir2 = path.join(
         __dirname,
