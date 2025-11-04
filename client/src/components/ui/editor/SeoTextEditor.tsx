@@ -6,6 +6,7 @@ import StarterKit from '@tiptap/starter-kit';
 import { Node, mergeAttributes } from '@tiptap/core';
 import Heading from '@tiptap/extension-heading';
 import ImageUpload from '../ImageUpload';
+import { ImageNode } from './ImageNode';
 
 const BLOCKS = [
   { name: 'Коли святкуємо (таблиця)', insert: 'when-section' },
@@ -72,6 +73,7 @@ const SeoTextEditor: React.FC<SeoTextEditorProps> = ({
       StarterKit.configure({ heading: { levels: [1, 2, 3, 4, 5, 6] } }),
       CustomBlock,
       Heading,
+      ImageNode
     ],
     content: value || '',
     editorProps: {
@@ -95,11 +97,12 @@ const handleFileSelect = (file: File) => {
   editor
     .chain()
     .focus()
-    .insertContent(`<img src="${fileName}" alt="" />`)
+    .insertCustomImage({ src: fileName, alt: '' }) 
     .run();
 
   setShowUpload(false);
 };
+
 
 
   return (
