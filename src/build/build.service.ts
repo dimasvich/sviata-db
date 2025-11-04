@@ -13,6 +13,7 @@ import { DayRulesEnum, SviatoTagToIdMap } from 'src/types';
 import {
   capitalizeFirstLetter,
   getNext5YearsForecast,
+  groupSequentialImages,
   removeBisSkinChecked,
 } from 'src/utils';
 
@@ -93,7 +94,6 @@ export class BuildService {
           $el.replaceWith(decoded);
           return;
         }
-
       });
       $('img').each((_, el) => {
         const $el = $(el);
@@ -110,6 +110,7 @@ export class BuildService {
       });
 
       content = $.html();
+      content = groupSequentialImages(content);
 
       const blockTemplates: Record<string, string> = {
         'when-section-title': `<h1>В який день будемо відзначати ${sviato.name} в наступні 5 років</h1>`,
@@ -294,6 +295,7 @@ export class BuildService {
           return `<h2 ${newAttrs ? newAttrs + ' ' : ''}class="wp-block-heading" >${innerText}</h2>`;
         },
       );
+
       content = removeBisSkinChecked(content);
 
       content = beautifyHtml(content, {
@@ -497,7 +499,7 @@ export class BuildService {
       console.log('Media uploaded, ID:', mediaId);
       const postData = {
         content,
-        categories: [12771],
+        categories: [567],
         featured_media: mediaId,
         title: sviato.name,
       };
