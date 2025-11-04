@@ -21,6 +21,7 @@ import 'dayjs/locale/uk';
 import Head from 'next/head';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import Loader from '@/components/ui/Loader';
 
 export default function AddInfo() {
   const searchParams = useSearchParams();
@@ -74,8 +75,12 @@ export default function AddInfo() {
   const [celebrateDate, setCelebrateDate] = useState('');
   const [celebrateDayoff, setCelebrateDayoff] = useState('');
 
-  const [selectedRule1, setSelectedRule1] = useState('Що можна робити сьогоді?');
-  const [selectedRule2, setSelectedRule2] = useState('Що не можна робити сьогоді?');
+  const [selectedRule1, setSelectedRule1] = useState(
+    'Що можна робити сьогоді?',
+  );
+  const [selectedRule2, setSelectedRule2] = useState(
+    'Що не можна робити сьогоді?',
+  );
   const [html1, setHtml1] = useState('');
   const [html2, setHtml2] = useState('');
   const [rule1Id, setRule1Id] = useState('');
@@ -118,6 +123,7 @@ export default function AddInfo() {
   useEffect(() => {
     if (!id) return;
     const fetchData = async () => {
+      setLoading(true);
       const res = await fetch(`${baseUrl}/api/crud/${id}`);
       const resTags = await fetch(`${baseUrl}/api/crud/tags`);
       if (!res.ok) {
@@ -143,6 +149,7 @@ export default function AddInfo() {
       setHtml2(jsonRules[1].html || '');
       setRule1Id(jsonRules[0]._id || '');
       setRule2Id(jsonRules[1]._id || '');
+      setLoading(false);
     };
     fetchData();
   }, [id]);
@@ -267,7 +274,7 @@ export default function AddInfo() {
     if (selectedRule1 && html1.trim()) {
       requests.push({
         title: 'Що можна робити сьогоді?',
-        html: html1.replaceAll("<p></p>", ""),
+        html: html1.replaceAll('<p></p>', ''),
         date: sviato.date,
         id: rule1Id,
       });
@@ -276,7 +283,7 @@ export default function AddInfo() {
     if (selectedRule2 && html2.trim()) {
       requests.push({
         title: 'Що не можна робити сьогоді?',
-        html: html2.replaceAll("<p></p>", ""),
+        html: html2.replaceAll('<p></p>', ''),
         date: sviato.date,
         id: rule2Id,
       });
@@ -359,163 +366,167 @@ export default function AddInfo() {
       <Head>
         <title>Sviato-db | Редагування свята</title>
       </Head>
-      <Layout>
-        <div className="flex justify-between">
-          <Typography type="title">Редагування свята</Typography>
-          <Button onClick={() => router.push('/')}>Назад</Button>
-        </div>
-        <div className="flex gap-6 p-2 relative w-full">
-          <div className="flex flex-col gap-6 flex-1 max-w-3xl mx-auto">
-            <div className="flex gap-2 items-end flex-col">
-              {!alternativeDate && (
-                <Calendar
-                  id="date"
-                  label="Дата свята*"
-                  value={sviato.date}
-                  onChange={(d) => handleChange('date', d)}
-                  error={''}
+      {!loading ? (
+        <Layout>
+          <div className="flex justify-between">
+            <Typography type="title">Редагування свята</Typography>
+            <Button onClick={() => router.push('/')}>Назад</Button>
+          </div>
+          <div className="flex gap-6 p-2 relative w-full">
+            <div className="flex flex-col gap-6 flex-1 max-w-3xl mx-auto">
+              <div className="flex gap-2 items-end flex-col">
+                {!alternativeDate && (
+                  <Calendar
+                    id="date"
+                    label="Дата свята*"
+                    value={sviato.date}
+                    onChange={(d) => handleChange('date', d)}
+                    error={''}
+                  />
+                )}
+                {alternativeDate && (
+                  <div className="flex gap-1">
+                    <Select
+                      id="dayOfWeek"
+                      value={dayOfWeek}
+                      onChange={setDayOfWeek}
+                      label="День тижня"
+                      options={dayjs.weekdays()}
+                      error=""
+                    />
+                    <Select
+                      id="weekOrder"
+                      value={week}
+                      onChange={setWeek}
+                      label="Порядок у місяці"
+                      options={['1', '2', '3', '4', '5']}
+                      error=""
+                    />
+                    <Select
+                      id="month"
+                      value={month}
+                      onChange={setMonth}
+                      label="Місяць"
+                      options={dayjs.months()}
+                      error=""
+                    />
+                  </div>
+                )}
+                {!alternativeDate ? (
+                  <Button
+                    onClick={() => setAlternativeDate(true)}
+                    type="default"
+                  >
+                    Немає точної дати?
+                  </Button>
+                ) : (
+                  <Button
+                    onClick={() => setAlternativeDate(false)}
+                    type="default"
+                  >
+                    Є точна дата?
+                  </Button>
+                )}
+              </div>
+              <Input
+                id="title"
+                label="Title"
+                value={sviato.title || ''}
+                onChange={(e) => handleChange('title', e.target.value)}
+              />
+              <Textarea
+                id="description"
+                label="Description"
+                value={sviato.description || ''}
+                onChange={(e) => handleChange('description', e.target.value)}
+              />
+              <Textarea
+                id="teaser"
+                label="Короткий опис (teaser)"
+                value={sviato.teaser || ''}
+                onChange={(e) => handleChange('teaser', e.target.value)}
+              />
+              <div className="flex flex-col gap-2">
+                <Typography type="text">Головне зображення</Typography>
+                <ImageUpload
+                  previewImg={mainImageUrl}
+                  onFileSelect={(file) => setMainFile(file)}
                 />
-              )}
-              {alternativeDate && (
+              </div>
+              <div className="flex flex-col gap-2">
+                <div className="flex items-end gap-2">
+                  <Select
+                    id="newTag"
+                    label="Тег"
+                    value={newTag}
+                    onChange={(val) => setNewTag(val)}
+                    options={tags}
+                    error=""
+                  />
+                  <Button onClick={handleAddTag}>+</Button>
+                </div>
+
+                <div className="flex flex-wrap gap-2 mt-1">
+                  {sviato.tags.map((tag) => (
+                    <div
+                      key={tag}
+                      className="flex items-center gap-1 bg-border text-primary px-3 py-1 rounded-full text-sm"
+                    >
+                      <span>{tag}</span>
+                      <button
+                        onClick={() => handleRemoveTag(tag)}
+                        className="text-red-500 hover:text-red-700"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <Input
+                id="name"
+                label="Офіційна назва свята (Н1)"
+                value={sviato.name || ''}
+                onChange={(e) => handleChange('name', e.target.value)}
+              />
+              <div className="flex flex-col gap-2">
+                <Typography type="text">Святкування</Typography>
                 <div className="flex gap-1">
-                  <Select
-                    id="dayOfWeek"
-                    value={dayOfWeek}
-                    onChange={setDayOfWeek}
-                    label="День тижня"
-                    options={dayjs.weekdays()}
-                    error=""
+                  <Input
+                    id="celebrateWhen"
+                    label="Коли святкують?"
+                    placeholder="Коли святкують"
+                    value={celebrateWhen}
+                    onChange={(e) => setCelebrateWhen(e.target.value)}
+                  />
+                  <Input
+                    id="celebrateHtml"
+                    label="Коли започатковано?"
+                    placeholder="Коли започатковано"
+                    value={celebrateDate}
+                    onChange={(e) => setCelebrateDate(e.target.value)}
                   />
                   <Select
-                    id="weekOrder"
-                    value={week}
-                    onChange={setWeek}
-                    label="Порядок у місяці"
-                    options={['1', '2', '3', '4', '5']}
-                    error=""
-                  />
-                  <Select
-                    id="month"
-                    value={month}
-                    onChange={setMonth}
-                    label="Місяць"
-                    options={dayjs.months()}
+                    id="celebrateDayoff"
+                    value={celebrateDayoff}
+                    onChange={setCelebrateDayoff}
+                    label="Вихідний"
+                    options={['так', 'ні']}
                     error=""
                   />
                 </div>
-              )}
-              {!alternativeDate ? (
-                <Button onClick={() => setAlternativeDate(true)} type="default">
-                  Немає точної дати?
-                </Button>
+              </div>
+              {sviato.seoText ? (
+                <SeoTextEditor
+                  value={sviato.seoText || ''}
+                  onChange={(html) => handleChange('seoText', html)}
+                  newFiles={newFiles}
+                  setNewFiles={setNewFiles}
+                />
               ) : (
-                <Button
-                  onClick={() => setAlternativeDate(false)}
-                  type="default"
-                >
-                  Є точна дата?
-                </Button>
+                ''
               )}
-            </div>
-            <Input
-              id="title"
-              label="Title"
-              value={sviato.title || ''}
-              onChange={(e) => handleChange('title', e.target.value)}
-            />
-            <Textarea
-              id="description"
-              label="Description"
-              value={sviato.description || ''}
-              onChange={(e) => handleChange('description', e.target.value)}
-            />
-            <Textarea
-              id="teaser"
-              label="Короткий опис (teaser)"
-              value={sviato.teaser || ''}
-              onChange={(e) => handleChange('teaser', e.target.value)}
-            />
-            <div className="flex flex-col gap-2">
-              <Typography type="text">Головне зображення</Typography>
-              <ImageUpload
-                previewImg={mainImageUrl}
-                onFileSelect={(file) => setMainFile(file)}
-              />
-            </div>
-            <div className="flex flex-col gap-2">
-              <div className="flex items-end gap-2">
-                <Select
-                  id="newTag"
-                  label="Тег"
-                  value={newTag}
-                  onChange={(val) => setNewTag(val)}
-                  options={tags}
-                  error=""
-                />
-                <Button onClick={handleAddTag}>+</Button>
-              </div>
-
-              <div className="flex flex-wrap gap-2 mt-1">
-                {sviato.tags.map((tag) => (
-                  <div
-                    key={tag}
-                    className="flex items-center gap-1 bg-border text-primary px-3 py-1 rounded-full text-sm"
-                  >
-                    <span>{tag}</span>
-                    <button
-                      onClick={() => handleRemoveTag(tag)}
-                      className="text-red-500 hover:text-red-700"
-                    >
-                      ✕
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </div>
-            <Input
-              id="name"
-              label="Офіційна назва свята (Н1)"
-              value={sviato.name || ''}
-              onChange={(e) => handleChange('name', e.target.value)}
-            />
-            <div className="flex flex-col gap-2">
-              <Typography type="text">Святкування</Typography>
-              <div className="flex gap-1">
-                <Input
-                  id="celebrateWhen"
-                  label="Коли святкують?"
-                  placeholder="Коли святкують"
-                  value={celebrateWhen}
-                  onChange={(e) => setCelebrateWhen(e.target.value)}
-                />
-                <Input
-                  id="celebrateHtml"
-                  label="Коли започатковано?"
-                  placeholder="Коли започатковано"
-                  value={celebrateDate}
-                  onChange={(e) => setCelebrateDate(e.target.value)}
-                />
-                <Select
-                  id="celebrateDayoff"
-                  value={celebrateDayoff}
-                  onChange={setCelebrateDayoff}
-                  label="Вихідний"
-                  options={['так', 'ні']}
-                  error=""
-                />
-              </div>
-            </div>
-            {sviato.seoText ? (
-              <SeoTextEditor
-                value={sviato.seoText || ''}
-                onChange={(html) => handleChange('seoText', html)}
-                newFiles={newFiles}
-                setNewFiles={setNewFiles}
-              />
-            ) : (
-              ''
-            )}
-            {/* <Textarea
+              {/* <Textarea
             id="seoText"
             label="SEO текст (HTML)"
             maxLength={100000}
@@ -523,319 +534,332 @@ export default function AddInfo() {
             onChange={(e) => handleChange('seoText', e.target.value)}
           /> */}
 
-            <Button onClick={handleSubmit}>
-              {loading ? 'Оновлюється...' : 'Зберегти зміни'}
-            </Button>
-            <Button onClick={handleUpload}>Вивантажити статтю</Button>
-            <Button onClick={() => setIsOpenModal(true)} type="danger">
-              Видалити свято
-            </Button>
-          </div>
-          <div className="border-l-[2px] p-2 sticky flex flex-col">
-            <div className="flex flex-col gap-2">
-              <div className="flex items-center justify-between">
-                <Typography type="text">Timeline</Typography>
-                <Button
-                  onClick={() => {
-                    const year = newTimeBlockYear.trim();
-                    const html = newTimeBlockHtml.trim();
-                    if (year && html) {
-                      setSviato((prev) => ({
-                        ...prev,
-                        timeline: [...prev.timeline, { year, html }],
-                      }));
-                      setNewTimeBlockYear('');
-                      setNewTimeBlockHtml('');
-                    }
-                  }}
-                >
-                  +
-                </Button>
+              <Button onClick={handleSubmit}>
+                {loading ? 'Оновлюється...' : 'Зберегти зміни'}
+              </Button>
+              <Button onClick={handleUpload}>Вивантажити статтю</Button>
+              <Button onClick={() => setIsOpenModal(true)} type="danger">
+                Видалити свято
+              </Button>
+            </div>
+            <div className="border-l-[2px] p-2 sticky flex flex-col">
+              <div className="flex flex-col gap-2">
+                <div className="flex items-center justify-between">
+                  <Typography type="text">Timeline</Typography>
+                  <Button
+                    onClick={() => {
+                      const year = newTimeBlockYear.trim();
+                      const html = newTimeBlockHtml.trim();
+                      if (year && html) {
+                        setSviato((prev) => ({
+                          ...prev,
+                          timeline: [...prev.timeline, { year, html }],
+                        }));
+                        setNewTimeBlockYear('');
+                        setNewTimeBlockHtml('');
+                      }
+                    }}
+                  >
+                    +
+                  </Button>
+                </div>
+                <div className="flex flex-col gap-2">
+                  <Input
+                    id="newTimeBlockYear"
+                    label=""
+                    placeholder="Рік"
+                    value={newTimeBlockYear}
+                    onChange={(e) => setNewTimeBlockYear(e.target.value)}
+                  />
+                  <Textarea
+                    id="newTimeBlockHtml"
+                    label=""
+                    maxLength={500}
+                    placeholder="Текст (HTML)"
+                    value={newTimeBlockHtml}
+                    onChange={(e) => setNewTimeBlockHtml(e.target.value)}
+                  />
+                </div>
+
+                <div className="flex flex-wrap gap-2 mt-1">
+                  {sviato.timeline.map((timeblock, idx) => (
+                    <div
+                      key={idx}
+                      className="flex items-center gap-2 bg-border text-primary px-3 py-1 rounded-full text-sm"
+                    >
+                      <p>{timeblock.html}</p>
+                      <button
+                        onClick={() =>
+                          setSviato((prev) => ({
+                            ...prev,
+                            timeline: prev.timeline.filter((_, i) => i !== idx),
+                          }))
+                        }
+                        className="text-red-500 hover:text-red-700"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  ))}
+                </div>
               </div>
               <div className="flex flex-col gap-2">
-                <Input
-                  id="newTimeBlockYear"
-                  label=""
-                  placeholder="Рік"
-                  value={newTimeBlockYear}
-                  onChange={(e) => setNewTimeBlockYear(e.target.value)}
-                />
-                <Textarea
-                  id="newTimeBlockHtml"
-                  label=""
-                  maxLength={500}
-                  placeholder="Текст (HTML)"
-                  value={newTimeBlockHtml}
-                  onChange={(e) => setNewTimeBlockHtml(e.target.value)}
-                />
-              </div>
+                <Typography type="text">Короткі привітання</Typography>
+                <div className="flex items-end gap-2">
+                  <Input
+                    id="newGreeting"
+                    label=""
+                    placeholder="Додайте привітання"
+                    value={newGreeting}
+                    onChange={(e) => setNewGreeting(e.target.value)}
+                  />
+                  <Button onClick={handleAddGreeting}>+</Button>
+                </div>
 
-              <div className="flex flex-wrap gap-2 mt-1">
-                {sviato.timeline.map((timeblock, idx) => (
-                  <div
-                    key={idx}
-                    className="flex items-center gap-2 bg-border text-primary px-3 py-1 rounded-full text-sm"
-                  >
-                    <p>{timeblock.html}</p>
-                    <button
-                      onClick={() =>
-                        setSviato((prev) => ({
-                          ...prev,
-                          timeline: prev.timeline.filter((_, i) => i !== idx),
-                        }))
-                      }
-                      className="text-red-500 hover:text-red-700"
+                <div className="flex flex-wrap gap-2 mt-1">
+                  {sviato.greetings.map((greeting) => (
+                    <div
+                      key={greeting}
+                      className="flex items-center gap-1 bg-border text-primary px-3 py-1 rounded-full text-sm"
                     >
-                      ✕
-                    </button>
-                  </div>
-                ))}
+                      <span>{greeting}</span>
+                      <button
+                        onClick={() => handleRemoveGreeting(greeting)}
+                        className="text-red-500 hover:text-red-700"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  ))}
+                </div>
               </div>
-            </div>
-            <div className="flex flex-col gap-2">
-              <Typography type="text">Короткі привітання</Typography>
-              <div className="flex items-end gap-2">
-                <Input
-                  id="newGreeting"
-                  label=""
-                  placeholder="Додайте привітання"
-                  value={newGreeting}
-                  onChange={(e) => setNewGreeting(e.target.value)}
-                />
-                <Button onClick={handleAddGreeting}>+</Button>
-              </div>
+              <div className="flex flex-col gap-2">
+                <Typography type="text">Цитати для інстаграму</Typography>
+                <div className="flex items-end gap-2">
+                  <Input
+                    id="newIdea"
+                    label=""
+                    placeholder="Додайте ідею"
+                    value={newIdea}
+                    onChange={(e) => setNewIdea(e.target.value)}
+                  />
+                  <Button onClick={handleAddIdea}>+</Button>
+                </div>
 
-              <div className="flex flex-wrap gap-2 mt-1">
-                {sviato.greetings.map((greeting) => (
-                  <div
-                    key={greeting}
-                    className="flex items-center gap-1 bg-border text-primary px-3 py-1 rounded-full text-sm"
-                  >
-                    <span>{greeting}</span>
-                    <button
-                      onClick={() => handleRemoveGreeting(greeting)}
-                      className="text-red-500 hover:text-red-700"
+                <div className="flex flex-wrap gap-2 mt-1">
+                  {sviato.ideas.map((idea) => (
+                    <div
+                      key={idea}
+                      className="flex items-center gap-1 bg-border text-primary px-3 py-1 rounded-full text-sm"
                     >
-                      ✕
-                    </button>
-                  </div>
-                ))}
+                      <span>{idea}</span>
+                      <button
+                        onClick={() => handleRemoveIdea(idea)}
+                        className="text-red-500 hover:text-red-700"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  ))}
+                </div>
               </div>
-            </div>
-            <div className="flex flex-col gap-2">
-              <Typography type="text">Цитати для інстаграму</Typography>
-              <div className="flex items-end gap-2">
-                <Input
-                  id="newIdea"
-                  label=""
-                  placeholder="Додайте ідею"
-                  value={newIdea}
-                  onChange={(e) => setNewIdea(e.target.value)}
-                />
-                <Button onClick={handleAddIdea}>+</Button>
-              </div>
+              <div className="flex flex-col gap-2">
+                <Typography type="text">Більше ідей для привітання</Typography>
+                <div className="flex items-end gap-2">
+                  <Input
+                    id="newMore"
+                    label=""
+                    placeholder="Додайте id"
+                    value={newMore}
+                    onChange={(e) => setNewMore(e.target.value)}
+                  />
+                  <Button onClick={handleAddMore}>+</Button>
+                </div>
 
-              <div className="flex flex-wrap gap-2 mt-1">
-                {sviato.ideas.map((idea) => (
-                  <div
-                    key={idea}
-                    className="flex items-center gap-1 bg-border text-primary px-3 py-1 rounded-full text-sm"
-                  >
-                    <span>{idea}</span>
-                    <button
-                      onClick={() => handleRemoveIdea(idea)}
-                      className="text-red-500 hover:text-red-700"
+                <div className="flex flex-wrap gap-2 mt-1">
+                  {sviato.moreIdeas.map((more) => (
+                    <div
+                      key={more}
+                      className="flex items-center gap-1 bg-border text-primary px-3 py-1 rounded-full text-sm"
                     >
-                      ✕
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </div>
-            <div className="flex flex-col gap-2">
-              <Typography type="text">Більше ідей для привітання</Typography>
-              <div className="flex items-end gap-2">
-                <Input
-                  id="newMore"
-                  label=""
-                  placeholder="Додайте id"
-                  value={newMore}
-                  onChange={(e) => setNewMore(e.target.value)}
-                />
-                <Button onClick={handleAddMore}>+</Button>
-              </div>
-
-              <div className="flex flex-wrap gap-2 mt-1">
-                {sviato.moreIdeas.map((more) => (
-                  <div
-                    key={more}
-                    className="flex items-center gap-1 bg-border text-primary px-3 py-1 rounded-full text-sm"
-                  >
-                    <span>{more}</span>
-                    <button
-                      onClick={() => handleRemoveMore(more)}
-                      className="text-red-500 hover:text-red-700"
-                    >
-                      ✕
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="w-full">
-              <Typography type="title">
-                Що можна і що не можна робити сьогодні
-              </Typography>
-              <div className="flex flex-col gap-2 w-full">
-                <div className="flex flex-col gap-2">
-                  <Typography type="text">Що можна робити {dayjs(sviato.date).locale('uk').format('D MMMM')}</Typography>
-                  {html1 ? <ListOnlyEditor
-                    value={html1}
-                    onChange={(val) => setHtml1(val.replaceAll("<p></p>", ""))}
-                  /> : ""}
+                      <span>{more}</span>
+                      <button
+                        onClick={() => handleRemoveMore(more)}
+                        className="text-red-500 hover:text-red-700"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  ))}
                 </div>
               </div>
 
-              <div className="flex flex-col gap-2 w-full">
-                <div className="flex flex-col gap-2">
-                  <Typography type="text">Що не можна робити {dayjs(sviato.date).locale('uk').format('D MMMM')}</Typography>
-                  {html2 ? <ListOnlyEditor
-                    value={html2}
-                    onChange={(val) => setHtml2(val.replaceAll("<p></p>", ""))}
-                  /> : ""}
+              <div className="w-full">
+                <Typography type="title">
+                  Що можна і що не можна робити сьогодні
+                </Typography>
+                <div className="flex flex-col gap-2 w-full">
+                  <div className="flex flex-col gap-2">
+                    <Typography type="text">
+                      Що можна робити{' '}
+                      {dayjs(sviato.date).locale('uk').format('D MMMM')}
+                    </Typography>
+                      <ListOnlyEditor
+                        value={html1 || ''}
+                        onChange={(val) =>
+                          setHtml1(val.replaceAll('<p></p>', ''))
+                        }
+                      />
+                  </div>
+                </div>
+
+                <div className="flex flex-col gap-2 w-full">
+                  <div className="flex flex-col gap-2">
+                    <Typography type="text">
+                      Що не можна робити{' '}
+                      {dayjs(sviato.date).locale('uk').format('D MMMM')}
+                    </Typography>
+                      <ListOnlyEditor
+                        value={html2 || ''}
+                        onChange={(val) =>
+                          setHtml2(val.replaceAll('<p></p>', ''))
+                        }
+                      />
+                  </div>
                 </div>
               </div>
-            </div>
-            <div className="flex flex-col gap-2">
-              <Typography type="text">Цікаві факти</Typography>
-              <div className="flex items-start gap-2">
-                <Textarea
-                  id="newFact"
-                  label=""
-                  maxLength={1000}
-                  placeholder="Додайте факт"
-                  value={newFact}
-                  onChange={(e) => setNewFact(e.target.value)}
-                />
-                <Button onClick={handleAddFact}>+</Button>
-              </div>
+              <div className="flex flex-col gap-2">
+                <Typography type="text">Цікаві факти</Typography>
+                <div className="flex items-start gap-2">
+                  <Textarea
+                    id="newFact"
+                    label=""
+                    maxLength={1000}
+                    placeholder="Додайте факт"
+                    value={newFact}
+                    onChange={(e) => setNewFact(e.target.value)}
+                  />
+                  <Button onClick={handleAddFact}>+</Button>
+                </div>
 
-              <div className="flex flex-wrap gap-2 mt-1">
-                {sviato.facts.map((fact) => (
-                  <div
-                    key={fact}
-                    className="flex items-center gap-1 bg-border text-primary px-3 py-1 rounded-full text-sm"
-                  >
-                    <span>{fact}</span>
-                    <button
-                      onClick={() => handleRemoveFact(fact)}
-                      className="text-red-500 hover:text-red-700"
+                <div className="flex flex-wrap gap-2 mt-1">
+                  {sviato.facts.map((fact) => (
+                    <div
+                      key={fact}
+                      className="flex items-center gap-1 bg-border text-primary px-3 py-1 rounded-full text-sm"
                     >
-                      ✕
-                    </button>
-                  </div>
-                ))}
+                      <span>{fact}</span>
+                      <button
+                        onClick={() => handleRemoveFact(fact)}
+                        className="text-red-500 hover:text-red-700"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  ))}
+                </div>
               </div>
-            </div>
-            <div className="flex flex-col gap-2">
-              <Typography type="text">Пов&apos;язані події</Typography>
-              <div className="flex items-end gap-2">
-                <Input
-                  id="newRelated"
-                  label=""
-                  placeholder="Додайте id"
-                  value={newRelated}
-                  onChange={(e) => setNewRelated(e.target.value)}
-                />
-                <Button onClick={handleAddRelated}>+</Button>
-              </div>
+              <div className="flex flex-col gap-2">
+                <Typography type="text">Пов&apos;язані події</Typography>
+                <div className="flex items-end gap-2">
+                  <Input
+                    id="newRelated"
+                    label=""
+                    placeholder="Додайте id"
+                    value={newRelated}
+                    onChange={(e) => setNewRelated(e.target.value)}
+                  />
+                  <Button onClick={handleAddRelated}>+</Button>
+                </div>
 
-              <div className="flex flex-wrap gap-2 mt-1">
-                {sviato.related.map((related) => (
-                  <div
-                    key={related}
-                    className="flex items-center gap-1 bg-border text-primary px-3 py-1 rounded-full text-sm"
-                  >
-                    <span>{related}</span>
-                    <button
-                      onClick={() => handleRemoveRelated(related)}
-                      className="text-red-500 hover:text-red-700"
+                <div className="flex flex-wrap gap-2 mt-1">
+                  {sviato.related.map((related) => (
+                    <div
+                      key={related}
+                      className="flex items-center gap-1 bg-border text-primary px-3 py-1 rounded-full text-sm"
                     >
-                      ✕
-                    </button>
-                  </div>
-                ))}
+                      <span>{related}</span>
+                      <button
+                        onClick={() => handleRemoveRelated(related)}
+                        className="text-red-500 hover:text-red-700"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  ))}
+                </div>
               </div>
-            </div>
-            <div className="flex flex-col gap-2">
-              <Typography type="text">Джерела</Typography>
+              <div className="flex flex-col gap-2">
+                <Typography type="text">Джерела</Typography>
 
-              <div className="flex gap-2">
-                <Input
-                  id="newSourceTitle"
-                  label=""
-                  placeholder="Назва джерела"
-                  value={newSourceTitle}
-                  onChange={(e) => setNewSourceTitle(e.target.value)}
-                />
-                <Input
-                  id="newSourceLink"
-                  label=""
-                  placeholder="Посилання (URL)"
-                  value={newSourceLink}
-                  onChange={(e) => setNewSourceLink(e.target.value)}
-                />
-                <Button
-                  onClick={() => {
-                    const title = newSourceTitle.trim();
-                    const link = newSourceLink.trim();
-                    if (title && link) {
-                      setSviato((prev) => ({
-                        ...prev,
-                        sources: [...prev.sources, { title, link }],
-                      }));
-                      setNewSourceTitle('');
-                      setNewSourceLink('');
-                    }
-                  }}
-                >
-                  +
-                </Button>
-              </div>
-
-              <div className="flex flex-wrap gap-2 mt-1">
-                {sviato.sources.map((source, idx) => (
-                  <div
-                    key={idx}
-                    className="flex items-center gap-2 bg-border text-primary px-3 py-1 rounded-full text-sm"
-                  >
-                    <a
-                      href={source.link}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="underline hover:text-blue-600"
-                    >
-                      {source.title}
-                    </a>
-                    <button
-                      onClick={() =>
+                <div className="flex gap-2">
+                  <Input
+                    id="newSourceTitle"
+                    label=""
+                    placeholder="Назва джерела"
+                    value={newSourceTitle}
+                    onChange={(e) => setNewSourceTitle(e.target.value)}
+                  />
+                  <Input
+                    id="newSourceLink"
+                    label=""
+                    placeholder="Посилання (URL)"
+                    value={newSourceLink}
+                    onChange={(e) => setNewSourceLink(e.target.value)}
+                  />
+                  <Button
+                    onClick={() => {
+                      const title = newSourceTitle.trim();
+                      const link = newSourceLink.trim();
+                      if (title && link) {
                         setSviato((prev) => ({
                           ...prev,
-                          sources: prev.sources.filter((_, i) => i !== idx),
-                        }))
+                          sources: [...prev.sources, { title, link }],
+                        }));
+                        setNewSourceTitle('');
+                        setNewSourceLink('');
                       }
-                      className="text-red-500 hover:text-red-700"
+                    }}
+                  >
+                    +
+                  </Button>
+                </div>
+
+                <div className="flex flex-wrap gap-2 mt-1">
+                  {sviato.sources.map((source, idx) => (
+                    <div
+                      key={idx}
+                      className="flex items-center gap-2 bg-border text-primary px-3 py-1 rounded-full text-sm"
                     >
-                      ✕
-                    </button>
-                  </div>
-                ))}
+                      <a
+                        href={source.link}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="underline hover:text-blue-600"
+                      >
+                        {source.title}
+                      </a>
+                      <button
+                        onClick={() =>
+                          setSviato((prev) => ({
+                            ...prev,
+                            sources: prev.sources.filter((_, i) => i !== idx),
+                          }))
+                        }
+                        className="text-red-500 hover:text-red-700"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      </Layout>
+        </Layout>
+      ) : (
+        <Loader />
+      )}
       <SviatoDeleteModal
         onDelete={onDelete}
         isOpen={isOpenModal}
