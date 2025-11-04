@@ -1,12 +1,15 @@
 'use client';
 
-import React, { useState } from 'react';
-import { useEditor, EditorContent } from '@tiptap/react';
-import StarterKit from '@tiptap/starter-kit';
 import { Node, mergeAttributes } from '@tiptap/core';
 import Heading from '@tiptap/extension-heading';
+import Link from '@tiptap/extension-link';
+import { EditorContent, useEditor } from '@tiptap/react';
+import StarterKit from '@tiptap/starter-kit';
+import React, { useState } from 'react';
 import ImageUpload from '../ImageUpload';
 import { ImageNode } from './ImageNode';
+import { QuoteBlock } from './QuoteBlock';
+import { PullQuote } from './PullQuote';
 
 const BLOCKS = [
   { name: 'Коли святкуємо (таблиця)', insert: 'when-section' },
@@ -67,13 +70,27 @@ const SeoTextEditor: React.FC<SeoTextEditorProps> = ({
   setNewFiles,
 }) => {
   const [showUpload, setShowUpload] = useState(false);
+  const [showLinkModal, setShowLinkModal] = useState(false);
+  const [linkUrl, setLinkUrl] = useState('');
+  const [linkText, setLinkText] = useState('');
+  const [, forceUpdate] = useState(0);
 
   const editor = useEditor({
     extensions: [
       StarterKit.configure({ heading: { levels: [1, 2, 3, 4, 5, 6] } }),
       CustomBlock,
       Heading,
-      ImageNode
+      ImageNode,
+      QuoteBlock,
+      PullQuote,
+      Link.configure({
+        openOnClick: false,
+        HTMLAttributes: {
+          rel: 'nofollow',
+          target: '_blank',
+          class: 'text-blue-600 underline hover:text-blue-800',
+        },
+      }),
     ],
     content: value || '',
     editorProps: {
@@ -85,28 +102,39 @@ const SeoTextEditor: React.FC<SeoTextEditorProps> = ({
     onUpdate: ({ editor }) => {
       onChange(editor.getHTML());
     },
+    onSelectionUpdate: () => {
+      forceUpdate((x) => x + 1);
+    },
   });
 
   if (!editor) return <div>Loading editor...</div>;
 
-const handleFileSelect = (file: File) => {
-  setNewFiles((prev) => [...prev, file]);
+  const handleFileSelect = (file: File) => {
+    setNewFiles((prev) => [...prev, file]);
+    const fileName = file.name;
+    editor.chain().focus().insertCustomImage({ src: fileName, alt: '' }).run();
+    setShowUpload(false);
+  };
 
-  const fileName = file.name;
-
-  editor
-    .chain()
-    .focus()
-    .insertCustomImage({ src: fileName, alt: '' }) 
-    .run();
-
-  setShowUpload(false);
-};
-
-
+  const handleAddLink = () => {
+    if (!linkUrl.trim()) return;
+    const textToInsert = linkText.trim() || linkUrl;
+    editor
+      .chain()
+      .focus()
+      .extendMarkRange('link')
+      .insertContent(
+        `<a href="${linkUrl}" target="_blank" rel="nofollow">${textToInsert}</a>`,
+      )
+      .run();
+    setLinkUrl('');
+    setLinkText('');
+    setShowLinkModal(false);
+  };
 
   return (
     <div className="relative w-full max-w-[1200px] mx-auto border rounded-lg bg-white shadow-sm overflow-hidden">
+      {/* Toolbar */}
       <div className="flex flex-wrap gap-2 border-b px-3 py-2 bg-white sticky top-0 z-50 shadow-sm">
         <button
           onClick={() => editor.chain().focus().toggleBold().run()}
@@ -135,11 +163,7 @@ const handleFileSelect = (file: File) => {
           <button
             key={`h${level}`}
             onClick={() =>
-              editor
-                .chain()
-                .focus()
-                .toggleHeading({ level })
-                .run()
+              editor.chain().focus().toggleHeading({ level }).run()
             }
             className={`px-2 py-1 rounded ${
               editor.isActive('heading', { level })
@@ -156,6 +180,51 @@ const handleFileSelect = (file: File) => {
           className="px-2 py-1 rounded hover:bg-gray-100"
         >
           🖼️ Зображення
+        </button>
+
+        {/* 🔗 Додавання посилань */}
+        <button
+          onClick={() => setShowLinkModal(true)}
+          className={`px-2 py-1 rounded hover:bg-gray-100 ${
+            editor.isActive('link') ? 'bg-blue-100 text-blue-700' : ''
+          }`}
+        >
+          🔗 Посилання
+        </button>
+
+        <button
+          onClick={() => editor.chain().focus().unsetLink().run()}
+          className="px-2 py-1 rounded hover:bg-gray-100 text-gray-500"
+        >
+          ❌ Прибрати
+        </button>
+        <button
+          onClick={() =>
+            editor
+              .chain()
+              .focus()
+              .insertContent(
+                '<blockquote class="wp-block-quote"><p></p></blockquote>',
+              )
+              .run()
+          }
+          className="px-2 py-1 rounded hover:bg-gray-100"
+        >
+          ❝ blockquote
+        </button>
+        <button
+          onClick={() =>
+            editor
+              .chain()
+              .focus()
+              .insertContent(
+                '<pullquote class="wp-pull-quote"><p></p></pullquote>',
+              )
+              .run()
+          }
+          className="px-2 py-1 rounded hover:bg-gray-100"
+        >
+          ❝ pullquote
         </button>
 
         {BLOCKS.map((block) => (
@@ -182,7 +251,7 @@ const handleFileSelect = (file: File) => {
         <EditorContent editor={editor} />
       </div>
 
-      {/* Модалка з ImageUpload */}
+      {/* Модалка для завантаження зображення */}
       {showUpload && (
         <div className="absolute inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-white p-4 rounded-lg shadow-lg w-[400px]">
@@ -196,6 +265,50 @@ const handleFileSelect = (file: File) => {
             >
               Скасувати
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* 🔗 Модалка для вставки посилання */}
+      {showLinkModal && (
+        <div className="absolute inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white p-4 rounded-lg shadow-lg w-[400px]">
+            <h3 className="text-lg font-semibold mb-3 text-center">
+              Додати посилання
+            </h3>
+
+            <label className="block mb-2 text-sm font-medium">URL</label>
+            <input
+              type="text"
+              value={linkUrl}
+              onChange={(e) => setLinkUrl(e.target.value)}
+              placeholder="https://example.com"
+              className="w-full border rounded p-2 mb-3 text-sm"
+            />
+
+            <label className="block mb-2 text-sm font-medium">Текст</label>
+            <input
+              type="text"
+              value={linkText}
+              onChange={(e) => setLinkText(e.target.value)}
+              placeholder="Текст посилання"
+              className="w-full border rounded p-2 mb-3 text-sm"
+            />
+
+            <div className="flex gap-2">
+              <button
+                onClick={handleAddLink}
+                className="flex-1 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+              >
+                Додати
+              </button>
+              <button
+                onClick={() => setShowLinkModal(false)}
+                className="flex-1 py-2 bg-gray-100 rounded hover:bg-gray-200"
+              >
+                Скасувати
+              </button>
+            </div>
           </div>
         </div>
       )}

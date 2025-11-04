@@ -3,7 +3,7 @@
 import { Node, mergeAttributes } from '@tiptap/core';
 import { EditorContent, useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
-import React from 'react';
+import React, { useState } from 'react';
 
 const BLOCKS = [
   { name: 'Кінець блоку', insert: 'block-end' },
@@ -76,6 +76,7 @@ const DaySeoTextEditor: React.FC<SeoTextEditorProps> = ({
   value,
   onChange,
 }) => {
+  const [, forceUpdate] = useState(0);
   const editor = useEditor({
     extensions: [
       StarterKit.configure({ heading: { levels: [2] } }),
@@ -90,6 +91,9 @@ const DaySeoTextEditor: React.FC<SeoTextEditorProps> = ({
     onUpdate: ({ editor }) => {
       const html = editor.getHTML();
       onChange(html);
+    },
+    onSelectionUpdate: () => {
+      forceUpdate((x) => x + 1);
     },
   });
 

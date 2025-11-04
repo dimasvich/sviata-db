@@ -6,14 +6,15 @@ import ImageUpload from '@/components/ui/ImageUpload';
 import Input from '@/components/ui/Input';
 import Layout from '@/components/ui/Layout';
 import Loader from '@/components/ui/Loader';
-import Select from '@/components/ui/Select';
 import Textarea from '@/components/ui/Textarea';
 import Typography from '@/components/ui/Typography';
 import DaySeoTextEditor from '@/components/ui/editor/DaySeoTextEditor';
 import DefaultTextEditor from '@/components/ui/editor/DefaultTextEditor';
+import ListOnlyEditor from '@/components/ui/editor/ListOnlyEditor';
 import { baseUrl } from '@/http';
 import { DayRulesEnum } from '@/types';
 import { getNthWeekdayOfMonth } from '@/utils';
+import dayjs from 'dayjs';
 import Head from 'next/head';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
@@ -47,8 +48,8 @@ export default function AddInfoDay() {
   const [selectedRule, setSelectedRule] = useState('');
   const [ruleHtml, setRuleHtml] = useState('');
   const enumOptions = Object.values(DayRulesEnum);
-  const [selectedRule1, setSelectedRule1] = useState('');
-  const [selectedRule2, setSelectedRule2] = useState('');
+  const [selectedRule1, setSelectedRule1] = useState('Що можна робити сьогоді?');
+  const [selectedRule2, setSelectedRule2] = useState('Що не можна робити сьогоді?');
   const [html1, setHtml1] = useState('');
   const [html2, setHtml2] = useState('');
   const [rule1Id, setRule1Id] = useState('');
@@ -156,8 +157,8 @@ export default function AddInfoDay() {
 
     if (selectedRule1 && html1.trim()) {
       requests.push({
-        title: selectedRule1,
-        html: html1,
+        title: 'Що можна робити сьогоді?',
+        html: html1.replaceAll('<p></p>', ''),
         date: day.date,
         id: rule1Id,
       });
@@ -165,8 +166,8 @@ export default function AddInfoDay() {
 
     if (selectedRule2 && html2.trim()) {
       requests.push({
-        title: selectedRule2,
-        html: html2,
+        title: 'Що не можна робити сьогоді?',
+        html: html2.replaceAll('<p></p>', ''),
         date: day.date,
         id: rule2Id,
       });
@@ -513,46 +514,44 @@ export default function AddInfoDay() {
             </div>
             <div className="w-full">
               <Typography type="title">
-                Змінити правила для цієї дати
+                Що можна і що не можна робити сьогодні
               </Typography>
               <div className="flex flex-col gap-2 w-full">
-                <Select
-                  id="rule1"
-                  label="Перше правило"
-                  value={selectedRule1}
-                  onChange={setSelectedRule1}
-                  options={enumOptions}
-                  error=""
-                />
-
-                <Textarea
-                  id="html1"
-                  label="HTML контент для першого правила"
-                  placeholder="Введіть HTML..."
-                  value={html1}
-                  maxLength={1000}
-                  onChange={(e) => setHtml1(e.target.value)}
-                />
+                <div className="flex flex-col gap-2">
+                  <Typography type="text">
+                    Що можна робити{' '}
+                    {dayjs(day.date).locale('uk').format('D MMMM')}
+                  </Typography>
+                  {html1 ? (
+                    <ListOnlyEditor
+                      value={html1}
+                      onChange={(val) =>
+                        setHtml1(val.replaceAll('<p></p>', ''))
+                      }
+                    />
+                  ) : (
+                    ''
+                  )}
+                </div>
               </div>
 
               <div className="flex flex-col gap-2 w-full">
-                <Select
-                  id="rule2"
-                  label="Друге правило"
-                  value={selectedRule2}
-                  onChange={setSelectedRule2}
-                  options={enumOptions}
-                  error=""
-                />
-
-                <Textarea
-                  id="html2"
-                  label="HTML контент для другого правила"
-                  placeholder="Введіть HTML..."
-                  value={html2}
-                  maxLength={1000}
-                  onChange={(e) => setHtml2(e.target.value)}
-                />
+                <div className="flex flex-col gap-2">
+                  <Typography type="text">
+                    Що не можна робити{' '}
+                    {dayjs(day.date).locale('uk').format('D MMMM')}
+                  </Typography>
+                  {html2 ? (
+                    <ListOnlyEditor
+                      value={html2}
+                      onChange={(val) =>
+                        setHtml2(val.replaceAll('<p></p>', ''))
+                      }
+                    />
+                  ) : (
+                    ''
+                  )}
+                </div>
               </div>
             </div>
 
