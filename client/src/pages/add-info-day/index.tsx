@@ -522,16 +522,12 @@ export default function AddInfoDay() {
                     Що можна робити{' '}
                     {dayjs(day.date).locale('uk').format('D MMMM')}
                   </Typography>
-                  {html1 ? (
                     <ListOnlyEditor
-                      value={html1}
+                      value={html1 || ''}
                       onChange={(val) =>
                         setHtml1(val.replaceAll('<p></p>', ''))
                       }
                     />
-                  ) : (
-                    ''
-                  )}
                 </div>
               </div>
 
@@ -541,16 +537,12 @@ export default function AddInfoDay() {
                     Що не можна робити{' '}
                     {dayjs(day.date).locale('uk').format('D MMMM')}
                   </Typography>
-                  {html2 ? (
                     <ListOnlyEditor
-                      value={html2}
+                      value={html2 || ''}
                       onChange={(val) =>
                         setHtml2(val.replaceAll('<p></p>', ''))
                       }
                     />
-                  ) : (
-                    ''
-                  )}
                 </div>
               </div>
             </div>
