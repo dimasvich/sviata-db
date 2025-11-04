@@ -66,6 +66,42 @@ export class BuildService {
       const figureStart = `<figure class="wp-block-image size-full">`;
       const figureEnd = `</figure>`;
 
+      $('p').each((_, el) => {
+        const $el = $(el);
+        const innerHtml = $el.html() ? $el.html().trim() : '';
+
+        // 1) випадок: реальне <img> як єдиний дочірній елемент
+        const isRealImgOnly =
+          $el.children().length === 1 &&
+          $el.children('img').length === 1 &&
+          !$el.text().trim();
+
+        if (isRealImgOnly) {
+          $el.replaceWith(innerHtml);
+          return;
+        }
+
+        // 2) випадок: всередині лежить екранований HTML, наприклад &lt;img ... /&gt;
+        // Просте декодування поширених entities (якщо є 'he' - краще використати його)
+        const decoded = innerHtml
+          .replace(/&lt;/g, '<')
+          .replace(/&gt;/g, '>')
+          .replace(/&quot;/g, '"')
+          .replace(/&#39;/g, "'")
+          // WARNING: заміна &amp; може бути ризикована, але зазвичай потрібна для правильної декодув.
+          .replace(/&amp;/g, '&');
+
+        // регулярка дозволяє варіанти: <img...> або <a...><img...></a>
+        const imgOrAnchorImg = /^(?:<a[^>]*>\s*)?<img[\s\S]+?>(?:\s*<\/a>)?$/i;
+
+        if (decoded && imgOrAnchorImg.test(decoded.trim())) {
+          // вставляємо декодований HTML (Cheerio сам його розпарсить як HTML)
+          $el.replaceWith(decoded);
+          return;
+        }
+
+        // інші випадки — не чіпаємо
+      });
       $('img').each((_, el) => {
         const $el = $(el);
         const src = $el.attr('src');
@@ -244,7 +280,8 @@ export class BuildService {
           : '',
       };
 
-      const placeholderRegex = /<div\s+data-placeholder="([^"]+)"\s*><\/div>/g;
+      const placeholderRegex =
+        /<div\s+data-placeholder="([^"]+)"[^>]*>[\s\S]*?<\/div>/g;
 
       content = content.replace(placeholderRegex, (_, key) => {
         return blockTemplates[key] || `<p>[Невідомий блок: ${key}]</p>`;
