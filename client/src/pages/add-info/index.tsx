@@ -123,7 +123,6 @@ export default function AddInfo() {
   useEffect(() => {
     if (!id) return;
     const fetchData = async () => {
-      setLoading(true);
       const res = await fetch(`${baseUrl}/api/crud/${id}`);
       const resTags = await fetch(`${baseUrl}/api/crud/tags`);
       if (!res.ok) {
@@ -149,7 +148,6 @@ export default function AddInfo() {
       setHtml2(jsonRules[1].html || '');
       setRule1Id(jsonRules[0]._id || '');
       setRule2Id(jsonRules[1]._id || '');
-      setLoading(false);
     };
     fetchData();
   }, [id]);
@@ -366,7 +364,6 @@ export default function AddInfo() {
       <Head>
         <title>Sviato-db | Редагування свята</title>
       </Head>
-      {!loading ? (
         <Layout>
           <div className="flex justify-between">
             <Typography type="title">Редагування свята</Typography>
@@ -857,9 +854,6 @@ export default function AddInfo() {
             </div>
           </div>
         </Layout>
-      ) : (
-        <Loader />
-      )}
       <SviatoDeleteModal
         onDelete={onDelete}
         isOpen={isOpenModal}
