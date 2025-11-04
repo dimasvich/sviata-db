@@ -266,10 +266,10 @@ export class BuildService {
                </div> `
           : '',
         'related-section': sviato?.related
-          ? `<h2>Пов’язані події</h2><div class="related" data-id="[${sviato.related.map((item) => item)}]"></div>`
+          ? `<div class="related" data-id="[${sviato.related.map((item) => item)}]"></div>`
           : '',
         'moreIdeas-section': sviato?.moreIdeas
-          ? `<h2>Більше ідей для привітань дивись у добірках порталу:</h2><div class="moreIdeas" data-id="[${sviato.moreIdeas.map((item) => item)}]"></div>`
+          ? `<div class="moreIdeas" data-id="[${sviato.moreIdeas.map((item) => item)}]"></div>`
           : '',
       };
 
