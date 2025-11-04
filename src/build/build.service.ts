@@ -13,6 +13,7 @@ import { DayRulesEnum, SviatoTagToIdMap } from 'src/types';
 import {
   capitalizeFirstLetter,
   getNext5YearsForecast,
+  groupSequentialImages,
   removeBisSkinChecked,
 } from 'src/utils';
 
@@ -70,7 +71,6 @@ export class BuildService {
         const $el = $(el);
         const innerHtml = $el.html() ? $el.html().trim() : '';
 
-        // 1) випадок: реальне <img> як єдиний дочірній елемент
         const isRealImgOnly =
           $el.children().length === 1 &&
           $el.children('img').length === 1 &&
@@ -81,26 +81,19 @@ export class BuildService {
           return;
         }
 
-        // 2) випадок: всередині лежить екранований HTML, наприклад &lt;img ... /&gt;
-        // Просте декодування поширених entities (якщо є 'he' - краще використати його)
         const decoded = innerHtml
           .replace(/&lt;/g, '<')
           .replace(/&gt;/g, '>')
           .replace(/&quot;/g, '"')
           .replace(/&#39;/g, "'")
-          // WARNING: заміна &amp; може бути ризикована, але зазвичай потрібна для правильної декодув.
           .replace(/&amp;/g, '&');
 
-        // регулярка дозволяє варіанти: <img...> або <a...><img...></a>
         const imgOrAnchorImg = /^(?:<a[^>]*>\s*)?<img[\s\S]+?>(?:\s*<\/a>)?$/i;
 
         if (decoded && imgOrAnchorImg.test(decoded.trim())) {
-          // вставляємо декодований HTML (Cheerio сам його розпарсить як HTML)
           $el.replaceWith(decoded);
           return;
         }
-
-        // інші випадки — не чіпаємо
       });
       $('img').each((_, el) => {
         const $el = $(el);
@@ -117,6 +110,7 @@ export class BuildService {
       });
 
       content = $.html();
+      content = groupSequentialImages(content);
 
       const blockTemplates: Record<string, string> = {
         'when-section-title': `<h1>В який день будемо відзначати ${sviato.name} в наступні 5 років</h1>`,
@@ -169,7 +163,7 @@ export class BuildService {
         `,
         'greetings-section': sviato?.greetings
           ? `
-        <h2 class="wp-block-heading">Короткі привітання</h2><div class="greetings-list" bis_skin_checked="1">
+        <div class="greetings-list" bis_skin_checked="1">
                   ${sviato.greetings
                     .map(
                       (item) => `  <div class="item" bis_skin_checked="1">
@@ -186,7 +180,7 @@ export class BuildService {
           : '',
         'ideas-section': sviato?.ideas
           ? `
-        <h2 class="wp-block-heading">Ідеї для постів і листів</h2><div class="greetings-list" bis_skin_checked="1">
+        <div class="greetings-list" bis_skin_checked="1">
                   ${sviato.ideas
                     .map(
                       (item) => `  <div class="item" bis_skin_checked="1">
@@ -237,7 +231,7 @@ export class BuildService {
 `
           : '',
         'facts-section': sviato.facts
-          ? `<h2 class="wp-block-heading">Цікаві факти про ${sviato.name}</h2><div class="facts-list" bis_skin_checked="1">
+          ? `<div class="facts-list" bis_skin_checked="1">
       ${sviato.facts
         .map(
           (item) => `  
@@ -261,7 +255,7 @@ export class BuildService {
 `
           : '',
         'sources-section': sviato?.sources
-          ? `<h2 class="wp-block-heading">Джерела інформації</h2>
+          ? `
         <div class="sources" bis_skin_checked="1">
         ${sviato.sources
           .map(
@@ -273,10 +267,10 @@ export class BuildService {
                </div> `
           : '',
         'related-section': sviato?.related
-          ? `<h2>Пов’язані події</h2><div class="related" data-id="[${sviato.related.map((item) => item)}]"></div>`
+          ? `<div class="related" data-id="[${sviato.related.map((item) => item)}]"></div>`
           : '',
         'moreIdeas-section': sviato?.moreIdeas
-          ? `<h2>Більше ідей для привітань дивись у добірках порталу:</h2><div class="moreIdeas" data-id="[${sviato.moreIdeas.map((item) => item)}]"></div>`
+          ? `<div class="moreIdeas" data-id="[${sviato.moreIdeas.map((item) => item)}]"></div>`
           : '',
       };
 
@@ -301,6 +295,7 @@ export class BuildService {
           return `<h2 ${newAttrs ? newAttrs + ' ' : ''}class="wp-block-heading" >${innerText}</h2>`;
         },
       );
+
       content = removeBisSkinChecked(content);
 
       content = beautifyHtml(content, {
@@ -504,7 +499,7 @@ export class BuildService {
       console.log('Media uploaded, ID:', mediaId);
       const postData = {
         content,
-        categories: [12771],
+        categories: [567],
         featured_media: mediaId,
         title: sviato.name,
       };

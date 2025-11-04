@@ -1,11 +1,11 @@
-import { Node, mergeAttributes, CommandProps } from '@tiptap/core'
-type HTMLAttrs = Record<string, string | number | boolean>
+import { CommandProps, Node, mergeAttributes } from '@tiptap/core';
+type HTMLAttrs = Record<string, string | number | boolean>;
 
 declare module '@tiptap/core' {
   interface Commands<ReturnType> {
     customImage: {
-      insertCustomImage: (options: { src: string; alt?: string }) => ReturnType
-    }
+      insertCustomImage: (options: { src: string; alt?: string }) => ReturnType;
+    };
   }
 }
 
@@ -22,7 +22,7 @@ export const ImageNode = Node.create({
       alt: {
         default: '',
       },
-    }
+    };
   },
 
   parseHTML() {
@@ -34,11 +34,15 @@ export const ImageNode = Node.create({
           alt: element.getAttribute('alt'),
         }),
       },
-    ]
+    ];
   },
 
-  renderHTML({ HTMLAttributes }: { HTMLAttributes: Record<string, HTMLAttrs> }) {
-    return ['img', mergeAttributes(HTMLAttributes)]
+  renderHTML({
+    HTMLAttributes,
+  }: {
+    HTMLAttributes: Record<string, HTMLAttrs>;
+  }) {
+    return ['img', mergeAttributes(HTMLAttributes)];
   },
 
   addCommands() {
@@ -51,8 +55,8 @@ export const ImageNode = Node.create({
               type: this.name,
               attrs: options,
             })
-            .run()
+            .run();
         },
-    }
+    };
   },
-})
+});

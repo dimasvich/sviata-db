@@ -1,8 +1,8 @@
 'use client';
 
-import React from 'react';
-import { useEditor, EditorContent } from '@tiptap/react';
+import { EditorContent, useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
+import React, { useState } from 'react';
 
 interface DefaultTextEditorProps {
   value: string;
@@ -13,8 +13,9 @@ const DefaultTextEditor: React.FC<DefaultTextEditorProps> = ({
   value,
   onChange,
 }) => {
+  const [, forceUpdate] = useState(0);
   const editor = useEditor({
-    extensions: [StarterKit.configure({ heading: false })], 
+    extensions: [StarterKit.configure({ heading: false })],
     content: value || '',
     editorProps: {
       attributes: {
@@ -23,6 +24,9 @@ const DefaultTextEditor: React.FC<DefaultTextEditorProps> = ({
     },
     onUpdate: ({ editor }) => {
       onChange(editor.getHTML());
+    },
+    onSelectionUpdate: () => {
+      forceUpdate((x) => x + 1);
     },
   });
 
