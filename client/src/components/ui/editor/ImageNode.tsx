@@ -1,4 +1,5 @@
 import { CommandProps, Node, mergeAttributes } from '@tiptap/core';
+
 type HTMLAttrs = Record<string, string | number | boolean>;
 
 declare module '@tiptap/core' {
@@ -11,8 +12,10 @@ declare module '@tiptap/core' {
 
 export const ImageNode = Node.create({
   name: 'customImage',
-  group: 'block',
+  inline: true, // 🔹 робимо inline
+  group: 'inline', // 🔹 додаємо до inline-групи
   selectable: true,
+  atom: true, // 🔹 щоб редактор сприймав як єдиний елемент (зручно для курсора)
 
   addAttributes() {
     return {
