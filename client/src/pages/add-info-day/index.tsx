@@ -279,13 +279,6 @@ export default function AddInfoDay() {
                 onChange={(val) => handleChange('description', val)}
               />
             </div>
-            {/* <Textarea
-              id="description"
-              label="Опис (HTML)"
-              maxLength={1000}
-              value={day.description || ''}
-              onChange={(e) => handleChange('description', e.target.value)}
-            /> */}
 
             <div className="flex flex-col gap-2">
               <div className="flex items-center justify-between">

@@ -370,7 +370,7 @@ export default function AddInfo() {
             <Button onClick={() => router.push('/')}>Назад</Button>
           </div>
           <div className="flex gap-6 p-2 relative w-full">
-            <div className="flex flex-col gap-6 flex-1 max-w-3xl mx-auto">
+            <div className="flex flex-col gap-6 w-1/2">
               <div className="flex gap-2 items-end flex-col">
                 {!alternativeDate && (
                   <Calendar
@@ -539,7 +539,7 @@ export default function AddInfo() {
                 Видалити свято
               </Button>
             </div>
-            <div className="border-l-[2px] p-2 sticky flex flex-col">
+            <div className="border-l-[2px] p-2 flex flex-col w-1/2">
               <div className="flex flex-col gap-2">
                 <div className="flex items-center justify-between">
                   <Typography type="text">Timeline</Typography>

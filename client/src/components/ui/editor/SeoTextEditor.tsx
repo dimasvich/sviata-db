@@ -204,7 +204,7 @@ const SeoTextEditor: React.FC<SeoTextEditorProps> = ({
               .chain()
               .focus()
               .insertContent(
-                '<blockquote class="wp-block-quote"><p></p></blockquote>',
+                '<figure class="wp-block-pullquote"><blockquote><p></p></blockquote></figure>',
               )
               .run()
           }
@@ -218,7 +218,7 @@ const SeoTextEditor: React.FC<SeoTextEditorProps> = ({
               .chain()
               .focus()
               .insertContent(
-                '<pullquote class="wp-pull-quote"><p></p></pullquote>',
+                '<figure class="wp-block-pullquote"><blockquote><p></p></blockquote></figure>',
               )
               .run()
           }
