@@ -1,21 +1,20 @@
-import { CommandProps, Node, mergeAttributes } from '@tiptap/core';
+import { CommandProps, Node, mergeAttributes } from '@tiptap/core'
 
-type HTMLAttrs = Record<string, string | number | boolean>;
+type HTMLAttrs = Record<string, string | number | boolean>
 
 declare module '@tiptap/core' {
   interface Commands<ReturnType> {
     customImage: {
-      insertCustomImage: (options: { src: string; alt?: string }) => ReturnType;
-    };
+      insertCustomImage: (options: { src: string; alt?: string }) => ReturnType
+    }
   }
 }
 
 export const ImageNode = Node.create({
   name: 'customImage',
-  inline: true, // 🔹 робимо inline
-  group: 'inline', // 🔹 додаємо до inline-групи
+  group: 'block',
   selectable: true,
-  atom: true, // 🔹 щоб редактор сприймав як єдиний елемент (зручно для курсора)
+  atom: true,
 
   addAttributes() {
     return {
@@ -25,7 +24,7 @@ export const ImageNode = Node.create({
       alt: {
         default: '',
       },
-    };
+    }
   },
 
   parseHTML() {
@@ -37,15 +36,11 @@ export const ImageNode = Node.create({
           alt: element.getAttribute('alt'),
         }),
       },
-    ];
+    ]
   },
 
-  renderHTML({
-    HTMLAttributes,
-  }: {
-    HTMLAttributes: Record<string, HTMLAttrs>;
-  }) {
-    return ['img', mergeAttributes(HTMLAttributes)];
+  renderHTML({ HTMLAttributes }: { HTMLAttributes: Record<string, HTMLAttrs> }) {
+    return ['img', mergeAttributes(HTMLAttributes)]
   },
 
   addCommands() {
@@ -55,11 +50,16 @@ export const ImageNode = Node.create({
         ({ chain }: CommandProps) => {
           return chain()
             .insertContent({
-              type: this.name,
-              attrs: options,
+              type: 'paragraph', // 🔹 вставляємо параграф
+              content: [
+                {
+                  type: this.name, // 🔹 усередині — наша картинка
+                  attrs: options,
+                },
+              ],
             })
-            .run();
+            .run()
         },
-    };
+    }
   },
-});
+})
