@@ -108,24 +108,15 @@ const SeoTextEditor: React.FC<SeoTextEditorProps> = ({
 
   if (!editor) return <div>Loading editor...</div>;
 
+  // 🔄 Повертаємо старий метод завантаження зображень
   const handleFileSelect = (file: File) => {
     setNewFiles((prev) => [...prev, file]);
     const fileName = file.name;
+
     editor
       .chain()
       .focus()
-      .insertContent({
-        type: 'paragraph',
-        content: [
-          {
-            type: 'image',
-            attrs: {
-              src: fileName,
-              alt: '',
-            },
-          },
-        ],
-      })
+      .insertContent(`<img src="${fileName}" alt="" />`)
       .run();
 
     setShowUpload(false);
@@ -197,7 +188,6 @@ const SeoTextEditor: React.FC<SeoTextEditorProps> = ({
           🖼️ Зображення
         </button>
 
-        {/* 🔗 Додавання посилань */}
         <button
           onClick={() => setShowLinkModal(true)}
           className={`px-2 py-1 rounded hover:bg-gray-100 ${
@@ -260,7 +250,7 @@ const SeoTextEditor: React.FC<SeoTextEditorProps> = ({
         <EditorContent editor={editor} />
       </div>
 
-      {/* Модалка для завантаження зображення */}
+      {/* Модалка завантаження зображення */}
       {showUpload && (
         <div className="absolute inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-white p-4 rounded-lg shadow-lg w-[400px]">
@@ -278,7 +268,7 @@ const SeoTextEditor: React.FC<SeoTextEditorProps> = ({
         </div>
       )}
 
-      {/* 🔗 Модалка для вставки посилання */}
+      {/* Модалка для вставки посилання */}
       {showLinkModal && (
         <div className="absolute inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-white p-4 rounded-lg shadow-lg w-[400px]">
