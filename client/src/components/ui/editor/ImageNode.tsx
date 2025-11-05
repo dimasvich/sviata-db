@@ -11,9 +11,11 @@ declare module '@tiptap/core' {
 
 export const ImageNode = Node.create({
   name: 'customImage',
-  group: 'block',
+  inline: true, // ✅ inline!
+  group: 'inline', // ✅ дозволено в <p>
   selectable: true,
   draggable: true,
+  atom: true, // ✅ курсор не потрапляє всередину
 
   addAttributes() {
     return {
@@ -49,11 +51,12 @@ export const ImageNode = Node.create({
         (options: { src: string; alt?: string }) =>
         ({ chain }) => {
           return chain()
+            .focus()
             .insertContent({
               type: 'paragraph',
               content: [
                 {
-                  type: this.name,
+                  type: 'customImage',
                   attrs: options,
                 },
               ],
