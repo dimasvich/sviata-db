@@ -47,13 +47,19 @@ export const ImageNode = Node.create({
     return {
       insertCustomImage:
         (options: { src: string; alt?: string }) =>
-        ({ chain }) =>
-          chain()
+        ({ chain }) => {
+          return chain()
             .insertContent({
-              type: this.name,
-              attrs: options,
+              type: 'paragraph',
+              content: [
+                {
+                  type: this.name,
+                  attrs: options,
+                },
+              ],
             })
-            .run(),
+            .run();
+        },
     };
   },
 });
