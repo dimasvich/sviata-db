@@ -80,7 +80,6 @@ const SeoTextEditor: React.FC<SeoTextEditorProps> = ({
       StarterKit.configure({ heading: { levels: [1, 2, 3, 4, 5, 6] } }),
       CustomBlock,
       Heading,
-      ImageNode,
       QuoteBlock,
       PullQuote,
       Link.configure({
@@ -112,7 +111,12 @@ const SeoTextEditor: React.FC<SeoTextEditorProps> = ({
   const handleFileSelect = (file: File) => {
     setNewFiles((prev) => [...prev, file]);
     const fileName = file.name;
-    editor.chain().focus().insertCustomImage({ src: fileName, alt: '' }).run();
+    editor
+      .chain()
+      .focus()
+      .insertContent(`<p><img src="${fileName}" alt="" /></p>`)
+      .run();
+
     setShowUpload(false);
   };
 
@@ -192,12 +196,6 @@ const SeoTextEditor: React.FC<SeoTextEditorProps> = ({
           🔗 Посилання
         </button>
 
-        <button
-          onClick={() => editor.chain().focus().unsetLink().run()}
-          className="px-2 py-1 rounded hover:bg-gray-100 text-gray-500"
-        >
-          ❌ Прибрати
-        </button>
         <button
           onClick={() =>
             editor
