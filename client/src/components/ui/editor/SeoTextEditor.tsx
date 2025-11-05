@@ -114,7 +114,18 @@ const SeoTextEditor: React.FC<SeoTextEditorProps> = ({
     editor
       .chain()
       .focus()
-      .insertContent(`<p><img src="${fileName}" alt="" /></p>`)
+      .insertContent({
+        type: 'paragraph',
+        content: [
+          {
+            type: 'image',
+            attrs: {
+              src: fileName,
+              alt: '',
+            },
+          },
+        ],
+      })
       .run();
 
     setShowUpload(false);
