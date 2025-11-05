@@ -1,5 +1,4 @@
-import { CommandProps, Node, mergeAttributes } from '@tiptap/core'
-
+import { Node, mergeAttributes, CommandProps } from '@tiptap/core'
 type HTMLAttrs = Record<string, string | number | boolean>
 
 declare module '@tiptap/core' {
@@ -14,7 +13,6 @@ export const ImageNode = Node.create({
   name: 'customImage',
   group: 'block',
   selectable: true,
-  atom: true,
 
   addAttributes() {
     return {
@@ -50,13 +48,8 @@ export const ImageNode = Node.create({
         ({ chain }: CommandProps) => {
           return chain()
             .insertContent({
-              type: 'paragraph', // 🔹 вставляємо параграф
-              content: [
-                {
-                  type: this.name, // 🔹 усередині — наша картинка
-                  attrs: options,
-                },
-              ],
+              type: this.name,
+              attrs: options,
             })
             .run()
         },
