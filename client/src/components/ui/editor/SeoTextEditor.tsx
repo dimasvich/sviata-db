@@ -21,6 +21,7 @@ const BLOCKS = [
   { name: 'Джерела', insert: 'sources-section' },
   { name: 'Пов`язані події', insert: 'related-section' },
   { name: 'Більше ідей для привітання', insert: 'moreIdeas-section' },
+  { name: 'Листівки', insert: 'leaflets-section' },
 ];
 
 export const CustomBlock = Node.create({

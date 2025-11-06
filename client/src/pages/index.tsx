@@ -5,7 +5,6 @@ import Header from '@/components/ui/Header/Header';
 import Layout from '@/components/ui/Layout';
 import Loader from '@/components/ui/Loader';
 import { baseUrl } from '@/http';
-import { useDayStore } from '@/store/useDayStore';
 import dayjs from 'dayjs';
 import Head from 'next/head';
 import { useEffect, useState } from 'react';
@@ -16,11 +15,28 @@ interface DayInfo {
 }
 
 export default function Home() {
-  const {date, month, setDate, setMonth} = useDayStore();
   const year = new Date().getFullYear();
 
+  const [date, setDate] = useState<string>(dayjs().format('YYYY-MM-DD'));
+  const [month, setMonth] = useState<number>(dayjs().month());
   const [daysData, setDaysData] = useState<Record<string, DayInfo> | null>(null);
 
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const savedDate = localStorage.getItem('dashboard-date');
+    const savedMonth = localStorage.getItem('dashboard-month');
+
+    if (savedDate) setDate(savedDate);
+    if (savedMonth) setMonth(Number(savedMonth));
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    localStorage.setItem('dashboard-date', date);
+    localStorage.setItem('dashboard-month', String(month));
+  }, [date, month]);
 
   useEffect(() => {
     if (!year) return;
