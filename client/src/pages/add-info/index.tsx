@@ -147,7 +147,7 @@ export default function AddInfo() {
   };
   useEffect(() => {
     if (sviato.mainImage) {
-      setMainImageUrl(`${baseUrl}/uploads/${id}/main/${sviato.mainImage}`);
+      setMainImageUrl(`${baseUrl}/uploads/${id}/${sviato.mainImage}`);
     }
   }, [sviato]);
   useEffect(() => {
