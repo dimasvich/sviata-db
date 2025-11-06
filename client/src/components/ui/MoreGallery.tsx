@@ -24,10 +24,8 @@ export default function MoreGallery({
 
   // оновлення existing при зміні пропсів
   useEffect(() => {
-    if (JSON.stringify(existingImages) !== JSON.stringify(existing)) {
-      setExisting(existingImages || []);
-    }
-  }, [existingImages, existing]);
+    setExisting(existingImages || []);
+  }, [existingImages]);
 
   // очищаємо всі URL при демонтовані
   useEffect(() => {
@@ -59,7 +57,10 @@ export default function MoreGallery({
     updateFiles(newFiles);
   };
 
-  const handleMultipleFilesSelect = (startIndex: number, selectedFiles: File[]) => {
+  const handleMultipleFilesSelect = (
+    startIndex: number,
+    selectedFiles: File[],
+  ) => {
     const newFiles = [...files];
     let insertPos = startIndex;
 
@@ -143,9 +144,11 @@ export default function MoreGallery({
             key={`upload-${idx}`}
             onFileSelect={(f) => handleFileSelect(idx, f)}
             onMultipleSelect={(files) => handleMultipleFilesSelect(idx, files)}
-            disabled={files.filter(Boolean).length + existing.length >= maxImages}
+            disabled={
+              files.filter(Boolean).length + existing.length >= maxImages
+            }
           />
-        )
+        ),
       )}
     </div>
   );
