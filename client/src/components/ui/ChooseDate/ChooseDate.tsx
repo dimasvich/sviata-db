@@ -6,6 +6,7 @@ import Select from '@/components/ui/Select';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input'; // ⚠️ якщо у тебе ще немає Input — підключи твій компонент
 import { getNthWeekdayOfMonth } from '@/utils';
+import Typography from '../Typography';
 
 interface ChooseDateProps {
   sviatoDate: string;
@@ -141,11 +142,12 @@ export default function ChooseDate({
 
           {/* 🔹 Новий блок: день року */}
           <div className="flex flex-col items-start w-full">
-            <p className="text-sm text-muted-foreground">
+            <Typography type='text'>
               або встановіть день року (наприклад, 256)
-            </p>
+            </Typography>
             <Input
               id="dayOfYear"
+              label=''
               type="number"
               value={dayOfYear}
               onChange={(e) => setDayOfYear(e.target.value)}

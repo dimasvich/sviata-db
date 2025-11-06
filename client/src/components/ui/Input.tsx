@@ -1,5 +1,18 @@
 import Typography from './Typography';
 
+interface InputProps {
+  id: string;
+  label: string;
+  type?: string;
+  placeholder?: string;
+  value: string;
+  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onBlur?: (e: React.FocusEvent<HTMLInputElement>) => void;
+  error?: string;
+  min?: number;
+  max?: number;
+}
+
 export default function Input({
   id,
   label,
@@ -9,16 +22,9 @@ export default function Input({
   onChange,
   onBlur,
   error,
-}: {
-  id: string;
-  label: string;
-  type?: string;
-  placeholder?: string;
-  value: string;
-  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  onBlur?: (e: React.FocusEvent<HTMLInputElement>) => void;
-  error?: string;
-}) {
+  min,
+  max,
+}: InputProps) {
   return (
     <div className="flex flex-col gap-1 w-full">
       <label htmlFor={id} className="text-secondary">
@@ -32,6 +38,8 @@ export default function Input({
         value={value}
         onChange={onChange}
         onBlur={onBlur}
+        min={min}
+        max={max}
         className={`px-3 py-2 rounded-lg border focus:outline-none focus:ring-2 text-primary bg-surface
           ${error ? 'border-red-500 focus:ring-red-500' : 'border-border focus:ring-primary'}`}
       />
