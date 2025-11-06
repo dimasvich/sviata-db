@@ -392,13 +392,6 @@ export default function AddInfo() {
                 setAlternativeDate={setAlternativeDate}
                 alternativeDate={alternativeDate}
               />
-              <div className="p-4">
-                <CheckBox
-                  label="Плаваюча дата"
-                  value={sviato.checkedAlternative}
-                  setValue={(val) => handleChange('checkedAlternative', val)}
-                />
-              </div>
               <Input
                 id="title"
                 label="Title"

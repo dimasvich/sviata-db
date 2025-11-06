@@ -4,13 +4,15 @@ import { useEffect, useState } from 'react';
 import Calendar from '@/components/ui/Calendar';
 import Select from '@/components/ui/Select';
 import Button from '@/components/ui/Button';
+import Input from '@/components/ui/Input'; // ⚠️ якщо у тебе ще немає Input — підключи твій компонент
 import { getNthWeekdayOfMonth } from '@/utils';
+import Typography from '../Typography';
 
 interface ChooseDateProps {
   sviatoDate: string;
   onChangeDate: (date: string) => void;
-  setAlternativeDate: (b:boolean) => void;
-  alternativeDate:boolean;
+  setAlternativeDate: (b: boolean) => void;
+  alternativeDate: boolean;
   onChangeAlternative?: (data: {
     dayOfWeek: string;
     week: string;
@@ -48,11 +50,12 @@ export default function ChooseDate({
   onChangeDate,
   onChangeAlternative,
   setAlternativeDate,
-  alternativeDate
+  alternativeDate,
 }: ChooseDateProps) {
   const [dayOfWeek, setDayOfWeek] = useState('');
   const [week, setWeek] = useState('');
   const [month, setMonth] = useState('');
+  const [dayOfYear, setDayOfYear] = useState<string>(''); // 🔹 нове поле для “дня року”
 
   const handleAlternativeChange = (field: string, value: string) => {
     if (field === 'dayOfWeek') setDayOfWeek(value);
@@ -80,6 +83,20 @@ export default function ChooseDate({
     }
   }, [dayOfWeek, week, month, onChangeDate]);
 
+  // 🔹 коли заповнено день року — конвертуємо в дату
+  useEffect(() => {
+    if (dayOfYear) {
+      const num = parseInt(dayOfYear);
+      if (!isNaN(num) && num >= 1 && num <= 366) {
+        const currentYear = new Date().getFullYear();
+        const date = new Date(currentYear, 0); // 1 січня
+        date.setDate(num);
+        const formatted = date.toISOString().split('T')[0];
+        onChangeDate(formatted);
+      }
+    }
+  }, [dayOfYear, onChangeDate]);
+
   return (
     <div className="flex gap-2 items-end flex-col">
       {/* Якщо є точна дата */}
@@ -95,31 +112,50 @@ export default function ChooseDate({
 
       {/* Якщо альтернативна дата */}
       {alternativeDate && (
-        <div className="flex gap-1">
-          <Select
-            id="dayOfWeek"
-            value={dayOfWeek}
-            onChange={(v) => handleAlternativeChange('dayOfWeek', v)}
-            label="День тижня"
-            options={weekdays}
-            error=""
-          />
-          <Select
-            id="weekOrder"
-            value={week}
-            onChange={(v) => handleAlternativeChange('week', v)}
-            label="Порядок у місяці"
-            options={['1', '2', '3', '4', '5']}
-            error=""
-          />
-          <Select
-            id="month"
-            value={month}
-            onChange={(v) => handleAlternativeChange('month', v)}
-            label="Місяць"
-            options={months}
-            error=""
-          />
+        <div className="flex flex-col gap-3 w-full">
+          <div className="flex gap-1">
+            <Select
+              id="dayOfWeek"
+              value={dayOfWeek}
+              onChange={(v) => handleAlternativeChange('dayOfWeek', v)}
+              label="День тижня"
+              options={weekdays}
+              error=""
+            />
+            <Select
+              id="weekOrder"
+              value={week}
+              onChange={(v) => handleAlternativeChange('week', v)}
+              label="Порядок у місяці"
+              options={['1', '2', '3', '4', '5']}
+              error=""
+            />
+            <Select
+              id="month"
+              value={month}
+              onChange={(v) => handleAlternativeChange('month', v)}
+              label="Місяць"
+              options={months}
+              error=""
+            />
+          </div>
+
+          {/* 🔹 Новий блок: день року */}
+          <div className="flex flex-col items-start w-full">
+            <Typography type='text'>
+              або встановіть день року (наприклад, 256)
+            </Typography>
+            <Input
+              id="dayOfYear"
+              label=''
+              type="number"
+              value={dayOfYear}
+              onChange={(e) => setDayOfYear(e.target.value)}
+              placeholder="1–366"
+              min={1}
+              max={366}
+            />
+          </div>
         </div>
       )}
 
