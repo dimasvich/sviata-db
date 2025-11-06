@@ -13,30 +13,30 @@ export function getNthWeekdayOfMonth({
   month,
   year = dayjs().year(),
 }: GetNthWeekdayOfMonthParams): string {
-  const weekdays = [
-    'Sunday',
-    'Monday',
-    'Tuesday',
-    'Wednesday',
-    'Thursday',
-    'Friday',
-    'Saturday',
-  ];
+const weekdays = [
+  'Понеділок',
+  'Вівторок',
+  'Середа',
+  'Четвер',
+  'П’ятниця',
+  'Субота',
+  'Неділя',
+];
 
-  const months = [
-    'January',
-    'February',
-    'March',
-    'April',
-    'May',
-    'June',
-    'July',
-    'August',
-    'September',
-    'October',
-    'November',
-    'December',
-  ];
+const months = [
+  'Січень',
+  'Лютий',
+  'Березень',
+  'Квітень',
+  'Травень',
+  'Червень',
+  'Липень',
+  'Серпень',
+  'Вересень',
+  'Жовтень',
+  'Листопад',
+  'Грудень',
+];
 
   const dayOfWeekNum = weekdays.findIndex(
     (d) => d.toLowerCase() === dayOfWeek.toLowerCase(),
