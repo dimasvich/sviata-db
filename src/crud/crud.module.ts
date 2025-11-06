@@ -13,6 +13,7 @@ import { SviatoImages, SviatoImagesSchema } from './schema/sviatoimages.schema';
 import { ImageProcessingMiddleware } from './image-processing.middleware';
 import { SviatoImageProcessingMiddleware } from './sviato-images.middleware';
 import { ImageUploadSviato } from './imageUploadSviato.middleware';
+import { DayRulesController } from './day-rules.controller';
 
 @Module({
   imports: [
@@ -23,7 +24,7 @@ import { ImageUploadSviato } from './imageUploadSviato.middleware';
     ]),
   ],
   providers: [CrudService],
-  controllers: [CrudController],
+  controllers: [CrudController, DayRulesController],
 })
 export class CrudModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {

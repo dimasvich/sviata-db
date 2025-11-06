@@ -70,6 +70,9 @@ export class Sviato {
   @Prop({ type: [String], default: [] })
   images: string[];
 
+  @Prop({ type: [String], default: [] })
+  leaflets: string[];
+
   @Prop({ type: String, enum: CompleteStatus, default: CompleteStatus.EMPTY })
   status: CompleteStatus;
 
@@ -78,6 +81,9 @@ export class Sviato {
 
   @Prop({ type: String, required: false })
   link: string;
+
+  @Prop({ type: Boolean, default: false })
+  checkedAlternative: boolean;
 
   @Prop({ type: String, default: Date.now })
   date: string;

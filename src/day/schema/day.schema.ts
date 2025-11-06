@@ -39,8 +39,11 @@ export class Day {
   @Prop({ type: String, required: false })
   doc: string;
 
-  @Prop({ type: String, enum: CompleteStatus, default:CompleteStatus.EMPTY })
+  @Prop({ type: String, enum: CompleteStatus, default: CompleteStatus.EMPTY })
   status: CompleteStatus;
+
+  @Prop({ type: Boolean, default: false })
+  checkedAlternative: boolean;
 
   @Prop({ type: String, default: Date.now })
   date: string;

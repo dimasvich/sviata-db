@@ -668,6 +668,7 @@ export class BuildDayService {
         template: 'template-ua/categories-ua/holiday-today-ua.php',
         meta: {
           holiday_date: day.date,
+          isAlternative: day.checkedAlternative,
         },
         seofo_title: `Яке свято ${dayjs(day.date).locale('uk').format('D MMMM YYYY')} - церковне свято, іменини`,
         seofo_description: `Дізнайтеся яке свято ${dayjs(day.date).locale('uk').format('D MMMM YYYY')} в Україні та світі`,
@@ -703,6 +704,7 @@ export class BuildDayService {
       if (!day) throw new Error('Стаття не знайдена');
       const content = await this.buildArticle(date);
       const postData = {
+        isAlternative: day.checkedAlternative,
         content,
       };
       await this.handleUpload(date);

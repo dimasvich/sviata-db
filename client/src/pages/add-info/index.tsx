@@ -1,27 +1,30 @@
 'use client';
 
+import AutoSearch from '@/components/ui/AutoSearch';
 import Button from '@/components/ui/Button';
 import Calendar from '@/components/ui/Calendar';
+import CheckBox from '@/components/ui/CheckBox';
 import ListOnlyEditor from '@/components/ui/editor/ListOnlyEditor';
 import SeoTextEditor from '@/components/ui/editor/SeoTextEditor';
 import ImageUpload from '@/components/ui/ImageUpload';
 import Input from '@/components/ui/Input';
 import Layout from '@/components/ui/Layout';
+import Loader from '@/components/ui/Loader';
+import MoreGallery from '@/components/ui/MoreGallery';
 import Select from '@/components/ui/Select';
 import SviatoDeleteModal from '@/components/ui/sviato/SviatoDeleteModal';
 import Textarea from '@/components/ui/Textarea';
 import Typography from '@/components/ui/Typography';
 import { baseUrl } from '@/http';
 import { deleteSviato } from '@/http/crud';
-import { Celebrate, DayRulesEnum, SviatoType } from '@/types';
+import { Celebrate, DayRulesEnum } from '@/types';
 import { getNextThreeYearsForecast, getNthWeekdayOfMonth } from '@/utils';
 import dayjs from 'dayjs';
-import localeData from 'dayjs/plugin/localeData';
 import 'dayjs/locale/uk';
+import localeData from 'dayjs/plugin/localeData';
 import Head from 'next/head';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import Loader from '@/components/ui/Loader';
 
 export default function AddInfo() {
   const searchParams = useSearchParams();
@@ -32,18 +35,13 @@ export default function AddInfo() {
   const [alternativeDate, setAlternativeDate] = useState(false);
   dayjs.extend(localeData);
   const [loading, setLoading] = useState(false);
-  const [forecastDates, setForecastDates] = useState<
-    {
-      date: string;
-      weekday: string;
-    }[]
-  >([]);
   const [sviato, setSviato] = useState({
     title: '',
     description: '',
     name: '',
     teaser: '',
     mainImage: '',
+    checkedAlternative: false,
     tags: [] as string[],
     sources: [] as {
       title: string;
@@ -63,6 +61,7 @@ export default function AddInfo() {
     seoText: null,
     type: '',
     date: '',
+    leaflets: [] as string[],
   });
   const [newGreeting, setNewGreeting] = useState('');
   const [newIdea, setNewIdea] = useState('');
@@ -100,6 +99,35 @@ export default function AddInfo() {
 
   const [mainImageUrl, setMainImageUrl] = useState<string | null>(null);
   const [newFiles, setNewFiles] = useState<File[]>([]);
+  const [leaflets, setLeaflets] = useState<File[]>([]);
+  const [search, setSearch] = useState('');
+  const [searchList, setSearchList] = useState<
+    { _id: string; name: string; articleId: string }[]
+  >([]);
+
+  const selectRelated = (item: {
+    _id: string;
+    name: string;
+    articleId: string;
+  }) => {
+    setSviato((prev) => ({
+      ...prev,
+      related: [...prev.related, item.articleId],
+    }));
+    setSearch('');
+    setSearchList([]);
+  };
+
+  useEffect(() => {
+    if (!search.length) return;
+    const fetchData = async () => {
+      const res = await fetch(`${baseUrl}/api/crud/search?query=${search}`);
+      if (!res.ok) return;
+      const json = await res.json();
+      setSearchList(json);
+    };
+    fetchData();
+  }, [search]);
 
   const handleUpload = async () => {
     if (!id) return;
@@ -124,40 +152,39 @@ export default function AddInfo() {
     if (!id) return;
     const fetchData = async () => {
       setLoading(true);
-      const res = await fetch(`${baseUrl}/api/crud/${id}`);
-      const resTags = await fetch(`${baseUrl}/api/crud/tags`);
-      if (!res.ok) {
-        alert('Не вдалося завантажити дані');
-        return;
-      }
-      const json = await res.json();
-      const jsonTags = await resTags.json();
-      setTags(jsonTags);
-      setSviato({
-        ...json,
-        omens: json.omens || [],
-        sources: json.sources || [],
-      });
+      try {
+        const res = await fetch(`${baseUrl}/api/crud/${id}`);
+        const resTags = await fetch(`${baseUrl}/api/crud/tags`);
+        if (!res.ok) {
+          alert('Не вдалося завантажити дані');
+          return;
+        }
+        const json = await res.json();
+        const jsonTags = await resTags.json();
+        setTags(jsonTags);
+        setSviato({
+          ...json,
+          omens: json.omens || [],
+          sources: json.sources || [],
+        });
 
-      const rulesRes = await fetch(
-        `${baseUrl}/api/crud/day-rules/${json.date}`,
-      );
-      const jsonRules = (await rulesRes.json()) || [];
-      setSelectedRule1(jsonRules[0].title || 'Що можна робити сьогоді?');
-      setSelectedRule2(jsonRules[1].title || 'Що не можна робити сьогоді?');
-      setHtml1(jsonRules[0].html || '');
-      setHtml2(jsonRules[1].html || '');
-      setRule1Id(jsonRules[0]._id || '');
-      setRule2Id(jsonRules[1]._id || '');
-      setLoading(false);
+        const rulesRes = await fetch(`${baseUrl}/api/day-rules/${json.date}`);
+        const jsonRules = (await rulesRes.json()) || [];
+        setSelectedRule1(jsonRules[0].title || 'Що можна робити сьогоді?');
+        setSelectedRule2(jsonRules[1].title || 'Що не можна робити сьогоді?');
+        setHtml1(jsonRules[0].html);
+        setHtml2(jsonRules[1].html);
+        setRule1Id(jsonRules[0]._id);
+        setRule2Id(jsonRules[1]._id);
+      } catch (error) {
+        console.log(error);
+      } finally {
+        setLoading(false);
+      }
     };
     fetchData();
   }, [id]);
 
-  useEffect(() => {
-    const forecast = getNextThreeYearsForecast(sviato.date);
-    setForecastDates(forecast);
-  }, [sviato.date]);
   const onDelete = async () => {
     try {
       if (!id) return;
@@ -167,7 +194,7 @@ export default function AddInfo() {
     }
   };
 
-  const handleChange = (field: string, value: string) => {
+  const handleChange = (field: string, value: string | boolean) => {
     setSviato((prev) => ({ ...prev, [field]: value }));
   };
 
@@ -292,8 +319,13 @@ export default function AddInfo() {
     setLoading(true);
     try {
       for (const req of requests) {
-        await fetch(`${baseUrl}/api/crud/day-rules/${req.id}`, {
-          method: 'PUT',
+        const method = req.id ? 'PUT' : 'POST';
+        const url = req.id
+          ? `${baseUrl}/api/day-rules/${req.id}`
+          : `${baseUrl}/api/day-rules`;
+
+        await fetch(url, {
+          method,
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(req),
         });
@@ -330,6 +362,7 @@ export default function AddInfo() {
       formData.append('sviatoData', JSON.stringify(sviato));
 
       newFiles.forEach((file) => formData.append('images', file));
+      leaflets.forEach((file) => formData.append('leaflets', file));
 
       if (mainFile) {
         formData.append('mainImage', mainFile);
@@ -352,8 +385,6 @@ export default function AddInfo() {
     }
   };
 
-  const options = Object.keys(SviatoType).filter((k) => isNaN(Number(k)));
-
   useEffect(() => {
     if (dayOfWeek.length && month.length && week.length) {
       const d = getNthWeekdayOfMonth({ dayOfWeek, weekOrder: week, month });
@@ -373,7 +404,7 @@ export default function AddInfo() {
             <Button onClick={() => router.push('/')}>Назад</Button>
           </div>
           <div className="flex gap-6 p-2 relative w-full">
-            <div className="flex flex-col gap-6 flex-1 max-w-3xl mx-auto">
+            <div className="flex flex-col gap-6 w-1/2">
               <div className="flex gap-2 items-end flex-col">
                 {!alternativeDate && (
                   <Calendar
@@ -427,6 +458,13 @@ export default function AddInfo() {
                     Є точна дата?
                   </Button>
                 )}
+              </div>
+              <div className="p-4">
+                <CheckBox
+                  label="Плаваюча дата"
+                  value={sviato.checkedAlternative}
+                  setValue={(val) => handleChange('checkedAlternative', val)}
+                />
               </div>
               <Input
                 id="title"
@@ -542,7 +580,7 @@ export default function AddInfo() {
                 Видалити свято
               </Button>
             </div>
-            <div className="border-l-[2px] p-2 sticky flex flex-col">
+            <div className="border-l-[2px] p-2 flex flex-col w-1/2">
               <div className="flex flex-col gap-2">
                 <div className="flex items-center justify-between">
                   <Typography type="text">Timeline</Typography>
@@ -663,7 +701,7 @@ export default function AddInfo() {
                   ))}
                 </div>
               </div>
-              <div className="flex flex-col gap-2">
+              {/* <div className="flex flex-col gap-2">
                 <Typography type="text">Більше ідей для привітання</Typography>
                 <div className="flex items-end gap-2">
                   <Input
@@ -692,8 +730,11 @@ export default function AddInfo() {
                     </div>
                   ))}
                 </div>
+              </div> */}
+              <div className="flex flex-col gap-2 my-[8px]">
+                <Typography type="text">Листівки</Typography>
+                <MoreGallery onImagesChange={setLeaflets} maxImages={20} />
               </div>
-
               <div className="w-full">
                 <Typography type="title">
                   Що можна і що не можна робити сьогодні
@@ -704,12 +745,12 @@ export default function AddInfo() {
                       Що можна робити{' '}
                       {dayjs(sviato.date).locale('uk').format('D MMMM')}
                     </Typography>
-                      <ListOnlyEditor
-                        value={html1 || ''}
-                        onChange={(val) =>
-                          setHtml1(val.replaceAll('<p></p>', ''))
-                        }
-                      />
+                    <ListOnlyEditor
+                      value={html1 || ''}
+                      onChange={(val) =>
+                        setHtml1(val.replaceAll('<p></p>', ''))
+                      }
+                    />
                   </div>
                 </div>
 
@@ -719,12 +760,12 @@ export default function AddInfo() {
                       Що не можна робити{' '}
                       {dayjs(sviato.date).locale('uk').format('D MMMM')}
                     </Typography>
-                      <ListOnlyEditor
-                        value={html2 || ''}
-                        onChange={(val) =>
-                          setHtml2(val.replaceAll('<p></p>', ''))
-                        }
-                      />
+                    <ListOnlyEditor
+                      value={html2 || ''}
+                      onChange={(val) =>
+                        setHtml2(val.replaceAll('<p></p>', ''))
+                      }
+                    />
                   </div>
                 </div>
               </div>
@@ -762,14 +803,14 @@ export default function AddInfo() {
               <div className="flex flex-col gap-2">
                 <Typography type="text">Пов&apos;язані події</Typography>
                 <div className="flex items-end gap-2">
-                  <Input
-                    id="newRelated"
-                    label=""
-                    placeholder="Додайте id"
-                    value={newRelated}
-                    onChange={(e) => setNewRelated(e.target.value)}
+                  <AutoSearch
+                    label="Пошук свят по H1"
+                    value={search}
+                    placeholder="H1 свята"
+                    results={searchList}
+                    onChange={(e) => setSearch(e.target.value)}
+                    onSelect={(item) => selectRelated(item)}
                   />
-                  <Button onClick={handleAddRelated}>+</Button>
                 </div>
 
                 <div className="flex flex-wrap gap-2 mt-1">

@@ -7,10 +7,14 @@ export const PullQuote = Node.create({
   defining: true,
 
   parseHTML() {
-    return [{ tag: 'pullquote.wp-pull-quote' }];
+    return [
+      {
+        tag: 'figure.wp-block-pullquote',
+      },
+    ];
   },
 
   renderHTML({ HTMLAttributes }) {
-    return ['pullquote', { class: 'wp-pull-quote' }, 0];
+    return ['figure', { class: 'wp-block-pullquote' }, ['blockquote', 0]];
   },
 });

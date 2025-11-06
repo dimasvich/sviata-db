@@ -2,6 +2,7 @@
 
 import Button from '@/components/ui/Button';
 import Calendar from '@/components/ui/Calendar';
+import CheckBox from '@/components/ui/CheckBox';
 import ImageUpload from '@/components/ui/ImageUpload';
 import Input from '@/components/ui/Input';
 import Layout from '@/components/ui/Layout';
@@ -29,6 +30,7 @@ export default function AddInfoDay() {
     title: '',
     description: '',
     date: '',
+    checkedAlternative: false,
     dayRules: [] as { title: string; html: string; _id?: string }[],
     whoWasBornToday: [] as { title: string; html: string; image: string }[],
     omens: [] as string[],
@@ -48,8 +50,12 @@ export default function AddInfoDay() {
   const [selectedRule, setSelectedRule] = useState('');
   const [ruleHtml, setRuleHtml] = useState('');
   const enumOptions = Object.values(DayRulesEnum);
-  const [selectedRule1, setSelectedRule1] = useState('Що можна робити сьогоді?');
-  const [selectedRule2, setSelectedRule2] = useState('Що не можна робити сьогоді?');
+  const [selectedRule1, setSelectedRule1] = useState(
+    'Що можна робити сьогоді?',
+  );
+  const [selectedRule2, setSelectedRule2] = useState(
+    'Що не можна робити сьогоді?',
+  );
   const [html1, setHtml1] = useState('');
   const [html2, setHtml2] = useState('');
   const [rule1Id, setRule1Id] = useState('');
@@ -107,11 +113,10 @@ export default function AddInfoDay() {
           bornNames: json.bornNames || [],
           mainImage: json.mainImage || null,
           articleId: json.articleId || null,
+          checkedAlternative: json.checkedAlternative || false,
         });
 
-        const rulesRes = await fetch(
-          `${baseUrl}/api/crud/day-rules/${dateParam}`,
-        );
+        const rulesRes = await fetch(`${baseUrl}/api/day-rules/${dateParam}`);
         const jsonRules = await rulesRes.json();
         setSelectedRule1(jsonRules[0].title);
         setSelectedRule2(jsonRules[1].title);
@@ -149,7 +154,7 @@ export default function AddInfoDay() {
     }
   };
 
-  const handleChange = (field: string, value: string) => {
+  const handleChange = (field: string, value: string | boolean) => {
     setDay((prev) => ({ ...prev, [field]: value }));
   };
   const handleSubmitRules = async () => {
@@ -176,8 +181,13 @@ export default function AddInfoDay() {
     setLoading(true);
     try {
       for (const req of requests) {
-        await fetch(`${baseUrl}/api/crud/day-rules/${req.id}`, {
-          method: 'PUT',
+        const method = req.id ? 'PUT' : 'POST';
+        const url = req.id
+          ? `${baseUrl}/api/day-rules/${req.id}`
+          : `${baseUrl}/api/day-rules`;
+
+        await fetch(url, {
+          method,
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(req),
         });
@@ -279,13 +289,6 @@ export default function AddInfoDay() {
                 onChange={(val) => handleChange('description', val)}
               />
             </div>
-            {/* <Textarea
-              id="description"
-              label="Опис (HTML)"
-              maxLength={1000}
-              value={day.description || ''}
-              onChange={(e) => handleChange('description', e.target.value)}
-            /> */}
 
             <div className="flex flex-col gap-2">
               <div className="flex items-center justify-between">
@@ -483,6 +486,13 @@ export default function AddInfoDay() {
                 />
               )}
             </div>
+            <div className="p-4">
+              <CheckBox
+                label="Плаваюча дата"
+                value={day.checkedAlternative}
+                setValue={(val) => handleChange('checkedAlternative', val)}
+              />
+            </div>
             <div className="flex flex-col gap-2">
               <Typography type="text">Прикмети</Typography>
               <div className="flex items-end gap-2">
@@ -522,12 +532,10 @@ export default function AddInfoDay() {
                     Що можна робити{' '}
                     {dayjs(day.date).locale('uk').format('D MMMM')}
                   </Typography>
-                    <ListOnlyEditor
-                      value={html1 || ''}
-                      onChange={(val) =>
-                        setHtml1(val.replaceAll('<p></p>', ''))
-                      }
-                    />
+                  <ListOnlyEditor
+                    value={html1 || ''}
+                    onChange={(val) => setHtml1(val.replaceAll('<p></p>', ''))}
+                  />
                 </div>
               </div>
 
@@ -537,12 +545,10 @@ export default function AddInfoDay() {
                     Що не можна робити{' '}
                     {dayjs(day.date).locale('uk').format('D MMMM')}
                   </Typography>
-                    <ListOnlyEditor
-                      value={html2 || ''}
-                      onChange={(val) =>
-                        setHtml2(val.replaceAll('<p></p>', ''))
-                      }
-                    />
+                  <ListOnlyEditor
+                    value={html2 || ''}
+                    onChange={(val) => setHtml2(val.replaceAll('<p></p>', ''))}
+                  />
                 </div>
               </div>
             </div>

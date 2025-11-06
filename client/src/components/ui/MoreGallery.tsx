@@ -1,7 +1,10 @@
-// MoreGallery.tsx
+'use client';
 import { baseUrl } from '@/http';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import MoreImageUpload from './MoreImageUpload';
+
+type PreviewFile = File & { previewUrl: string };
+type LeafletFile = PreviewFile | null;
 
 type GalleryProps = {
   maxImages?: number;
@@ -16,94 +19,82 @@ export default function MoreGallery({
   existingImages = [],
   onRemoveExisting,
 }: GalleryProps) {
-  // масив слотів: File | null (null = слот для завантаження)
-  const [files, setFiles] = useState<(File | null)[]>([null]);
+  const [files, setFiles] = useState<LeafletFile[]>([null]);
   const [existing, setExisting] = useState<string[]>(existingImages);
 
+  // оновлення existing при зміні пропсів
   useEffect(() => {
-    setExisting(existingImages);
-  }, [existingImages]);
-
-  // одиночне додавання у вказаний слот
-  const handleFileSelect = (index: number, file: File) => {
-    const newFiles = [...files];
-
-    // якщо індекс поза поточним буфером, розширимо до цього індексу
-    while (newFiles.length <= index) newFiles.push(null);
-
-    newFiles[index] = file;
-
-    // додати null-слот в кінець якщо треба і ще є місце
-    if (newFiles.filter(Boolean).length + existing.length < maxImages) {
-      if (!newFiles.includes(null)) newFiles.push(null);
-    } else {
-      // обрізаємо зайві null'и вкінці
-      // (але не видаляємо останні файли)
-      while (newFiles.length > maxImages) newFiles.pop();
+    if (JSON.stringify(existingImages) !== JSON.stringify(existing)) {
+      setExisting(existingImages || []);
     }
+  }, [existingImages, existing]);
 
+  // очищаємо всі URL при демонтовані
+  useEffect(() => {
+    return () => {
+      files.forEach((f) => {
+        if (f) URL.revokeObjectURL(f.previewUrl);
+      });
+    };
+  }, [files]);
+
+  const updateFiles = (newFiles: LeafletFile[]) => {
     setFiles(newFiles);
-    onImagesChange?.(newFiles.filter(Boolean) as File[]);
+    const realFiles = newFiles.filter((f): f is PreviewFile => f !== null);
+    onImagesChange?.(realFiles.map((f) => f as File));
   };
 
-  // Додавання кількох файлів, починаючи з startIndex
-  const handleMultipleFilesSelect = (
-    startIndex: number,
-    selectedFiles: File[] | FileList,
-  ) => {
-    const selected = Array.from(selectedFiles).slice(
-      0,
-      Math.max(0, maxImages - existing.length),
-    );
-    if (selected.length === 0) return;
+  const handleFileSelect = (index: number, file: File) => {
+    const previewFile: PreviewFile = Object.assign(file, {
+      previewUrl: URL.createObjectURL(file),
+    });
 
-    // Копія поточних слотів
     const newFiles = [...files];
+    newFiles[index] = previewFile;
 
-    // Переконаємось, що є достатньо слотів до maxImages
-    while (newFiles.length < maxImages) newFiles.push(null);
+    // додаємо null-слот, якщо ще є місце
+    const totalCount = newFiles.filter(Boolean).length + existing.length;
+    if (totalCount < maxImages && !newFiles.includes(null)) newFiles.push(null);
 
-    // Знайдемо перший вільний слот, якщо startIndex зайнятий
+    updateFiles(newFiles);
+  };
+
+  const handleMultipleFilesSelect = (startIndex: number, selectedFiles: File[]) => {
+    const newFiles = [...files];
     let insertPos = startIndex;
-    // якщо insertPos > maxImages-1 — скоректуємо
-    if (insertPos > maxImages - 1) insertPos = maxImages - 1;
 
-    for (const f of selected) {
-      // знайти наступний null або просто використати insertPos якщо він в межах
-      while (insertPos < maxImages && newFiles[insertPos] !== null) {
-        insertPos++;
-      }
-      if (insertPos >= maxImages) break; // немає місця
-      newFiles[insertPos] = f;
+    selectedFiles.forEach((file) => {
+      const previewFile: PreviewFile = Object.assign(file, {
+        previewUrl: URL.createObjectURL(file),
+      });
+
+      while (insertPos < maxImages && newFiles[insertPos] !== null) insertPos++;
+      if (insertPos >= maxImages) return;
+      newFiles[insertPos] = previewFile;
       insertPos++;
-    }
+    });
 
-    // Обрізати зайві елементи (не більше maxImages)
-    const trimmed = newFiles.slice(0, maxImages);
+    // забезпечуємо null-слот, якщо ще можна додавати
+    const totalCount = newFiles.filter(Boolean).length + existing.length;
+    if (totalCount < maxImages && !newFiles.includes(null)) newFiles.push(null);
 
-    // Переконаємось що є як мінімум один null-слот (якщо ще є місце під завантаження)
-    const nonNullCount = trimmed.filter(Boolean).length + existing.length;
-    const allowMore = nonNullCount < maxImages;
-    if (allowMore && !trimmed.includes(null)) trimmed.push(null);
-
-    setFiles(trimmed);
-    onImagesChange?.(trimmed.filter(Boolean) as File[]);
+    updateFiles(newFiles.slice(0, maxImages));
   };
 
   const handleRemoveNew = (index: number) => {
     const newFiles = [...files];
-    if (index >= 0 && index < newFiles.length) {
-      newFiles.splice(index, 1);
+    const removed = newFiles.splice(index, 1);
+
+    // очищаємо URL тільки для існуючого файлу
+    if (removed[0]) {
+      URL.revokeObjectURL(removed[0].previewUrl);
     }
-    // забезпечимо наявність null-слота, якщо ще можна додавати
-    if (
-      !newFiles.includes(null) &&
-      newFiles.filter(Boolean).length + existing.length < maxImages
-    ) {
-      newFiles.push(null);
-    }
-    setFiles(newFiles);
-    onImagesChange?.(newFiles.filter(Boolean) as File[]);
+
+    // забезпечуємо null-слот
+    const totalCount = newFiles.filter(Boolean).length + existing.length;
+    if (totalCount < maxImages && !newFiles.includes(null)) newFiles.push(null);
+
+    updateFiles(newFiles);
   };
 
   const handleRemoveExisting = (img: string) => {
@@ -135,7 +126,7 @@ export default function MoreGallery({
         file ? (
           <div key={`new-${idx}`} className="relative">
             <img
-              src={URL.createObjectURL(file)}
+              src={file.previewUrl}
               alt="Preview"
               className="object-contain w-full h-40 rounded-lg border border-border"
             />
@@ -151,13 +142,10 @@ export default function MoreGallery({
           <MoreImageUpload
             key={`upload-${idx}`}
             onFileSelect={(f) => handleFileSelect(idx, f)}
-            // передаємо індекс, щоб множинні файли вставлялися починаючи з цього слота
             onMultipleSelect={(files) => handleMultipleFilesSelect(idx, files)}
-            disabled={
-              files.filter(Boolean).length + existing.length >= maxImages
-            }
+            disabled={files.filter(Boolean).length + existing.length >= maxImages}
           />
-        ),
+        )
       )}
     </div>
   );

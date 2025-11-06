@@ -29,6 +29,15 @@ export class CrudController {
     return this.sviatoService.getByMonth(monthNum);
   }
 
+  @Get('search')
+  async searchByName(@Query('query') query: string) {
+    if (!query || query.trim() === '') {
+      throw new BadRequestException('Параметр "query" є обов’язковим');
+    }
+
+    return this.sviatoService.searchByName(query.trim());
+  }
+
   @Get('tags')
   async getTags() {
     return this.sviatoService.getTags();
@@ -52,26 +61,6 @@ export class CrudController {
   @Get('sviato-images/:date')
   async getImages(@Param('date') date: string) {
     return this.sviatoService.getImagesByDate(date);
-  }
-
-  @Get('day-rules/:date')
-  async getRulesByDate(@Param('date') date: string) {
-    return this.sviatoService.getRulesByDate(date);
-  }
-
-  @Post('day-rules')
-  async createDayRules(
-    @Body() body: { title: string; html: string; date: Date },
-  ) {
-    return this.sviatoService.createDayRule(body.title, body.html, body.date);
-  }
-
-  @Put('day-rules/:id')
-  async updateDayRule(
-    @Param('id') id: string,
-    @Body() DayRuleData: Partial<DayRules>,
-  ): Promise<DayRules> {
-    return this.sviatoService.updateDayRule(id, DayRuleData);
   }
 
   @Post('images/:id')
@@ -105,17 +94,35 @@ export class CrudController {
     return this.sviatoService.updateDescriptionByDate(date, description);
   }
 
+  // @Put('make-related')
+  // async makeRelated(
+  //   @Body()
+  //   body: {
+  //     id: string;
+  //     related: { _id: string; name: string; articleId: string };
+  //   },
+  // ) {
+  //   if (!body.id || !Array.isArray(body.related)) {
+  //     throw new BadRequestException('Невірні дані у запиті');
+  //   }
+  //   return this.sviatoService.makeRelated(body);
+  // }
+
   @Put(':id')
   async update(
     @Param('id') id: string,
     @Req() req,
     @Res() res,
   ): Promise<Sviato> {
-    const { processedImages, mainImagePath } = req;
+    const { processedImages, mainImagePath, leafletsPath } = req;
     const sviatoData = JSON.parse(req.body.sviatoData);
 
     if (processedImages?.length) {
       sviatoData.images = processedImages.map((item) => item.filename);
+    }
+
+    if (leafletsPath.length) {
+      sviatoData.leaflets = leafletsPath.map((item) => item.outputFilename);
     }
 
     if (mainImagePath) {

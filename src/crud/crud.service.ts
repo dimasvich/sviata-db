@@ -1,7 +1,7 @@
 import { LocalDate } from '@js-joda/core';
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import { Sviato, SviatoDocument } from './schema/sviato.schema';
 import * as crypto from 'crypto';
 import { SviatoImages } from './schema/sviatoimages.schema';
@@ -41,12 +41,17 @@ export class CrudService {
   }
 
   async update(id: string, sviatoData: Partial<Sviato>): Promise<Sviato> {
-    const sviato = await this.sviatoModel.findById(id);
-    if (!sviato) throw new NotFoundException('Свято не знайдено');
+    const updated = await this.sviatoModel.findOneAndUpdate(
+      { _id: id },
+      { $set: sviatoData },
+      { new: true, upsert: false, runValidators: true },
+    );
 
-    Object.assign(sviato, sviatoData);
+    if (!updated) {
+      throw new NotFoundException('Свято не знайдено');
+    }
 
-    return sviato.save();
+    return updated;
   }
 
   async updateDescriptionByDate(
@@ -107,6 +112,44 @@ export class CrudService {
     const newRule = new this.dayRulesModel({ title, html, date });
     return newRule.save();
   }
+
+  async searchByName(query: string) {
+    try {
+      if (!query) return [];
+
+      const results = await this.sviatoModel
+        .find(
+          {
+            name: { $regex: query, $options: 'i' },
+            articleId: { $exists: true, $ne: '' },
+          },
+          { _id: 1, name: 1, articleId: 1 },
+        )
+        .limit(3)
+        .lean();
+
+      return results;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  // async makeRelated(body: {
+  //   id: string;
+  //   related: { _id: string; name: string; articleId: string };
+  // }) {
+  //   try {
+  //     const { id, related } = body;
+  //     const sviato = await this.sviatoModel.findOne({ _id: new Types.ObjectId(id) });
+  //     await this.sviatoModel.findOneAndUpdate(
+  //       { _id: new Types.ObjectId(id) },
+  //       { related: [...sviato?.related || [],related] },
+  //     );
+  //     return { success: true };
+  //   } catch (error) {
+  //     throw error;
+  //   }
+  // }
 
   async getRulesByDate(date: string): Promise<DayRules[]> {
     return this.dayRulesModel.find({ date }).exec();

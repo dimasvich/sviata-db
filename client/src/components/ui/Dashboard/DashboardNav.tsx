@@ -54,14 +54,19 @@ export default function DashBoardNav({
       );
     }
   }, [year, totalDays, viewMode, month]);
-
+  useEffect(() => {
+    if (date) {
+      setSelectedDay(date);
+      setMonth(dayjs(date).month() + 1);
+    }
+  }, []);
   useEffect(() => {
     localStorage.setItem('viewMode', viewMode);
   }, [viewMode]);
 
   useEffect(() => {
     setCurrentDate(selectedDay);
-  }, [selectedDay, setCurrentDate]);
+  }, [selectedDay]);
 
   useEffect(() => {
     if (!month) return;
@@ -69,12 +74,11 @@ export default function DashBoardNav({
   }, [month]);
   useEffect(() => {
     if (!date) return;
-    setMonthCurrent(dayjs(date).month()+1);
+    setMonthCurrent(dayjs(date).month() + 1);
   }, [date]);
 
   const handleSelect = (dateStr: string) => {
     setSelectedDay(dateStr);
-    setCurrentDate(dateStr);
   };
 
   const handlePrevMonth = () => {
@@ -170,8 +174,9 @@ export default function DashBoardNav({
                             ? 'bg-surface text-secondary hover:bg-accent hover:text-white border-accent'
                             : daysData[dateStr]?.status === 'FILLED'
                               ? 'bg-accent text-secondary hover:bg-accent hover:text-white border-accent'
-                              : daysData[dateStr]?.status === 'OPENAI' ?
-                                'bg-[#ffa500] text-secondary hover:bg-[#ed9900] hover:text-white border-[#ed9900]' : ''
+                              : daysData[dateStr]?.status === 'OPENAI'
+                                ? 'bg-[#ffa500] text-secondary hover:bg-[#ed9900] hover:text-white border-[#ed9900]'
+                                : ''
                     }
                   `}
                 >

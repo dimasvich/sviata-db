@@ -21,6 +21,7 @@ const BLOCKS = [
   { name: 'Джерела', insert: 'sources-section' },
   { name: 'Пов`язані події', insert: 'related-section' },
   { name: 'Більше ідей для привітання', insert: 'moreIdeas-section' },
+  { name: 'Листівки', insert: 'leaflets-section' },
 ];
 
 export const CustomBlock = Node.create({
@@ -80,7 +81,6 @@ const SeoTextEditor: React.FC<SeoTextEditorProps> = ({
       StarterKit.configure({ heading: { levels: [1, 2, 3, 4, 5, 6] } }),
       CustomBlock,
       Heading,
-      ImageNode,
       QuoteBlock,
       PullQuote,
       Link.configure({
@@ -109,10 +109,17 @@ const SeoTextEditor: React.FC<SeoTextEditorProps> = ({
 
   if (!editor) return <div>Loading editor...</div>;
 
+  // 🔄 Повертаємо старий метод завантаження зображень
   const handleFileSelect = (file: File) => {
     setNewFiles((prev) => [...prev, file]);
     const fileName = file.name;
-    editor.chain().focus().insertCustomImage({ src: fileName, alt: '' }).run();
+
+    editor
+      .chain()
+      .focus()
+      .insertContent(`<img src="${fileName}" alt="" />`)
+      .run();
+
     setShowUpload(false);
   };
 
@@ -182,7 +189,6 @@ const SeoTextEditor: React.FC<SeoTextEditorProps> = ({
           🖼️ Зображення
         </button>
 
-        {/* 🔗 Додавання посилань */}
         <button
           onClick={() => setShowLinkModal(true)}
           className={`px-2 py-1 rounded hover:bg-gray-100 ${
@@ -193,18 +199,12 @@ const SeoTextEditor: React.FC<SeoTextEditorProps> = ({
         </button>
 
         <button
-          onClick={() => editor.chain().focus().unsetLink().run()}
-          className="px-2 py-1 rounded hover:bg-gray-100 text-gray-500"
-        >
-          ❌ Прибрати
-        </button>
-        <button
           onClick={() =>
             editor
               .chain()
               .focus()
               .insertContent(
-                '<blockquote class="wp-block-quote"><p></p></blockquote>',
+                '<figure class="wp-block-pullquote"><blockquote><p></p></blockquote></figure>',
               )
               .run()
           }
@@ -218,7 +218,7 @@ const SeoTextEditor: React.FC<SeoTextEditorProps> = ({
               .chain()
               .focus()
               .insertContent(
-                '<pullquote class="wp-pull-quote"><p></p></pullquote>',
+                '<figure class="wp-block-pullquote"><blockquote><p></p></blockquote></figure>',
               )
               .run()
           }
@@ -251,7 +251,7 @@ const SeoTextEditor: React.FC<SeoTextEditorProps> = ({
         <EditorContent editor={editor} />
       </div>
 
-      {/* Модалка для завантаження зображення */}
+      {/* Модалка завантаження зображення */}
       {showUpload && (
         <div className="absolute inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-white p-4 rounded-lg shadow-lg w-[400px]">
@@ -269,7 +269,7 @@ const SeoTextEditor: React.FC<SeoTextEditorProps> = ({
         </div>
       )}
 
-      {/* 🔗 Модалка для вставки посилання */}
+      {/* Модалка для вставки посилання */}
       {showLinkModal && (
         <div className="absolute inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-white p-4 rounded-lg shadow-lg w-[400px]">
