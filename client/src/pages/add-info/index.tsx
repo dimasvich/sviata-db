@@ -2,8 +2,8 @@
 
 import AutoSearch from '@/components/ui/AutoSearch';
 import Button from '@/components/ui/Button';
-import Calendar from '@/components/ui/Calendar';
 import CheckBox from '@/components/ui/CheckBox';
+import ChooseDate from '@/components/ui/ChooseDate/ChooseDate';
 import ListOnlyEditor from '@/components/ui/editor/ListOnlyEditor';
 import SeoTextEditor from '@/components/ui/editor/SeoTextEditor';
 import ImageUpload from '@/components/ui/ImageUpload';
@@ -18,13 +18,12 @@ import Typography from '@/components/ui/Typography';
 import { baseUrl } from '@/http';
 import { deleteSviato } from '@/http/crud';
 import { Celebrate, DayRulesEnum } from '@/types';
-import { getNextThreeYearsForecast, getNthWeekdayOfMonth } from '@/utils';
 import dayjs from 'dayjs';
 import 'dayjs/locale/uk';
 import localeData from 'dayjs/plugin/localeData';
 import Head from 'next/head';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 
 dayjs.locale('uk');
 dayjs.extend(localeData);
@@ -32,9 +31,6 @@ dayjs.extend(localeData);
 export default function AddInfo() {
   const searchParams = useSearchParams();
   const id = searchParams.get('id');
-  const [dayOfWeek, setDayOfWeek] = useState('');
-  const [week, setWeek] = useState('');
-  const [month, setMonth] = useState('');
   const [alternativeDate, setAlternativeDate] = useState(false);
   const [loading, setLoading] = useState(false);
   const [sviato, setSviato] = useState({
@@ -140,13 +136,13 @@ export default function AddInfo() {
           method: 'Post',
           headers: { 'Content-Type': 'application/json' },
         });
-        if (res.status==201) alert('Зміни вивантажено');
+        if (res.status == 201) alert('Зміни вивантажено');
       } else {
         const res = await fetch(`${baseUrl}/api/build/update/${id}`, {
           method: 'Post',
           headers: { 'Content-Type': 'application/json' },
         });
-        if (res.status==201) alert('Зміни вивантажено');
+        if (res.status == 201) alert('Зміни вивантажено');
       }
     } catch (error) {
       console.log(error);
@@ -196,6 +192,10 @@ export default function AddInfo() {
     fetchData();
   }, [id]);
 
+  useEffect(() => {
+    handleChange('checkedAlternative', alternativeDate);
+  }, [alternativeDate]);
+
   const onDelete = async () => {
     try {
       if (!id) return;
@@ -208,8 +208,6 @@ export default function AddInfo() {
   const handleChange = (field: string, value: string | boolean) => {
     setSviato((prev) => ({ ...prev, [field]: value }));
   };
-
-  const enumOptions = Object.values(DayRulesEnum);
 
   const handleAddGreeting = () => {
     if (newGreeting.trim() && !sviato.greetings.includes(newGreeting.trim())) {
@@ -259,15 +257,6 @@ export default function AddInfo() {
     }));
   };
 
-  const handleAddRelated = () => {
-    if (newRelated.trim() && !sviato.related.includes(newRelated.trim())) {
-      setSviato((prev) => ({
-        ...prev,
-        related: [...prev.related, newRelated.trim()],
-      }));
-      setNewRelated('');
-    }
-  };
   const handleRemoveRelated = (related: string) => {
     setSviato((prev) => ({
       ...prev,
@@ -275,21 +264,6 @@ export default function AddInfo() {
     }));
   };
 
-  const handleAddMore = () => {
-    if (newMore.trim() && !sviato.moreIdeas.includes(newMore.trim())) {
-      setSviato((prev) => ({
-        ...prev,
-        moreIdeas: [...prev.moreIdeas, newMore.trim()],
-      }));
-      setNewMore('');
-    }
-  };
-  const handleRemoveMore = (more: string) => {
-    setSviato((prev) => ({
-      ...prev,
-      moreIdeas: prev.moreIdeas.filter((t) => t !== more),
-    }));
-  };
   const handleAddTag = () => {
     if (newTag.trim() && !sviato.tags.includes(newTag.trim())) {
       setSviato((prev) => ({
@@ -396,38 +370,6 @@ export default function AddInfo() {
     }
   };
 
-  useEffect(() => {
-    if (dayOfWeek.length && month.length && week.length) {
-      const d = getNthWeekdayOfMonth({ dayOfWeek, weekOrder: week, month });
-      handleChange('date', d);
-    }
-  }, [dayOfWeek, month, week]);
-
-  const weekdays = [
-    'Sunday',
-    'Monday',
-    'Tuesday',
-    'Wednesday',
-    'Thursday',
-    'Friday',
-    'Saturday',
-  ];
-
-  const months = [
-    'January',
-    'February',
-    'March',
-    'April',
-    'May',
-    'June',
-    'July',
-    'August',
-    'September',
-    'October',
-    'November',
-    'December',
-  ];
-
   return (
     <>
       <Head>
@@ -441,60 +383,15 @@ export default function AddInfo() {
           </div>
           <div className="flex gap-6 p-2 relative w-full">
             <div className="flex flex-col gap-6 w-1/2">
-              <div className="flex gap-2 items-end flex-col">
-                {!alternativeDate && (
-                  <Calendar
-                    id="date"
-                    label="Дата свята*"
-                    value={sviato.date}
-                    onChange={(d) => handleChange('date', d)}
-                    error={''}
-                  />
-                )}
-                {alternativeDate && (
-                  <div className="flex gap-1">
-                    <Select
-                      id="dayOfWeek"
-                      value={dayOfWeek}
-                      onChange={setDayOfWeek}
-                      label="День тижня"
-                      options={weekdays}
-                      error=""
-                    />
-                    <Select
-                      id="weekOrder"
-                      value={week}
-                      onChange={setWeek}
-                      label="Порядок у місяці"
-                      options={['1', '2', '3', '4', '5']}
-                      error=""
-                    />
-                    <Select
-                      id="month"
-                      value={month}
-                      onChange={setMonth}
-                      label="Місяць"
-                      options={months}
-                      error=""
-                    />
-                  </div>
-                )}
-                {!alternativeDate ? (
-                  <Button
-                    onClick={() => setAlternativeDate(true)}
-                    type="default"
-                  >
-                    Немає точної дати?
-                  </Button>
-                ) : (
-                  <Button
-                    onClick={() => setAlternativeDate(false)}
-                    type="default"
-                  >
-                    Є точна дата?
-                  </Button>
-                )}
-              </div>
+              <ChooseDate
+                sviatoDate={sviato.date}
+                onChangeDate={(d) => handleChange('date', d)}
+                onChangeAlternative={(altData) => {
+                  console.log('Вибрана альтернатива:', altData);
+                }}
+                setAlternativeDate={setAlternativeDate}
+                alternativeDate={alternativeDate}
+              />
               <div className="p-4">
                 <CheckBox
                   label="Плаваюча дата"
@@ -769,7 +666,13 @@ export default function AddInfo() {
               </div> */}
               <div className="flex flex-col gap-2 my-[8px]">
                 <Typography type="text">Листівки</Typography>
-                <MoreGallery existingImages={sviato.leaflets.map((img)=>`${baseUrl}/uploads/${id}/leaflets/${img}`)} onImagesChange={setLeaflets} maxImages={20} />
+                <MoreGallery
+                  existingImages={sviato.leaflets.map(
+                    (img) => `${baseUrl}/uploads/${id}/leaflets/${img}`,
+                  )}
+                  onImagesChange={setLeaflets}
+                  maxImages={20}
+                />
               </div>
               <div className="w-full">
                 <Typography type="title">
