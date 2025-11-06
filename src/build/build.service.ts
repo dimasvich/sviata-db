@@ -705,7 +705,7 @@ async updateMany(fromDate: string, toDate: string) {
 
     const updatePromises = toUpdate.map(async (item) => {
       const content = await this.buildArticle(item._id.toString());
-      const postData = { content };
+      const postData = { content, title: item.name};
 
       try {
         const postResponse = await axios.post(
