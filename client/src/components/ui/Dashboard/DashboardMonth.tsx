@@ -20,9 +20,11 @@ interface Sviato {
 export default function DashboardMonth({
   month,
   day,
+  date,
 }: {
   month: number;
   day: number;
+  date: string;
 }) {
   const router = useRouter();
   const [data, setData] = useState<Sviato[]>([]);
@@ -51,6 +53,17 @@ export default function DashboardMonth({
     };
     fetchData();
   }, [month]);
+
+  useEffect(() => {
+    if (!date) return;
+    const el = document.getElementById(`row-${date}`);
+    if (el) {
+      el.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start',
+      });
+    }
+  }, [date]);
 
   if (loading)
     return <p className="text-center text-secondary">Завантаження...</p>;
@@ -94,11 +107,8 @@ export default function DashboardMonth({
               return (
                 <tr
                   key={currentDay}
-                  onClick={() =>
-                    router.push(
-                      `/add-info-day?date=${dateStr}`,
-                    )
-                  }
+                  id={`row-${dateStr}`}
+                  onClick={() => router.push(`/add-info-day?date=${dateStr}`)}
                   className={`cursor-pointer hover:bg-gray-50 transition ${
                     isEmpty ? 'border-2 border-red-400' : ''
                   }`}

@@ -421,7 +421,7 @@ export class BuildService {
 
           try {
             const mediaResponse2 = await axios.post(
-              `https://dev25.gosta.media/wp-json/gosta/v1/postcard`,
+              `${process.env.BASE_URL}/postcard`,
               formData,
               {
                 auth: {

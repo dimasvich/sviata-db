@@ -133,22 +133,25 @@ export default function AddInfo() {
 
   const handleUpload = async () => {
     if (!id) return;
+    setLoading(true);
     try {
       if (!sviato.articleId) {
         const res = await fetch(`${baseUrl}/api/build/${id}`, {
           method: 'Post',
           headers: { 'Content-Type': 'application/json' },
         });
-        if (res.ok) alert('Зміни збережено');
+        if (res.status==201) alert('Зміни вивантажено');
       } else {
         const res = await fetch(`${baseUrl}/api/build/update/${id}`, {
           method: 'Post',
           headers: { 'Content-Type': 'application/json' },
         });
-        if (res.ok) alert('Зміни збережено');
+        if (res.status==201) alert('Зміни вивантажено');
       }
     } catch (error) {
       console.log(error);
+    } finally {
+      setLoading(false);
     }
   };
   useEffect(() => {
@@ -766,7 +769,7 @@ export default function AddInfo() {
               </div> */}
               <div className="flex flex-col gap-2 my-[8px]">
                 <Typography type="text">Листівки</Typography>
-                <MoreGallery onImagesChange={setLeaflets} maxImages={20} />
+                <MoreGallery existingImages={sviato.leaflets.map((img)=>`${baseUrl}/uploads/${id}/leaflets/${img}`)} onImagesChange={setLeaflets} maxImages={20} />
               </div>
               <div className="w-full">
                 <Typography type="title">
