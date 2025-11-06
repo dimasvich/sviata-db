@@ -77,7 +77,7 @@ export default function Home() {
             date={date}
             daysData={daysData}
           />
-          <DashboardMonth day={dayjs(date).date()} month={month} />
+          <DashboardMonth day={dayjs(date).date()} month={month} date={date} />
         </Layout>
       ) : (
         <Loader />
