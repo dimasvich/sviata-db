@@ -24,7 +24,10 @@ import 'dayjs/locale/uk';
 import localeData from 'dayjs/plugin/localeData';
 import Head from 'next/head';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+
+dayjs.locale('uk');
+dayjs.extend(localeData);
 
 export default function AddInfo() {
   const searchParams = useSearchParams();
@@ -33,7 +36,6 @@ export default function AddInfo() {
   const [week, setWeek] = useState('');
   const [month, setMonth] = useState('');
   const [alternativeDate, setAlternativeDate] = useState(false);
-  dayjs.extend(localeData);
   const [loading, setLoading] = useState(false);
   const [sviato, setSviato] = useState({
     title: '',
@@ -392,6 +394,31 @@ export default function AddInfo() {
     }
   }, [dayOfWeek, month, week]);
 
+  const weekdays = [
+    'Sunday',
+    'Monday',
+    'Tuesday',
+    'Wednesday',
+    'Thursday',
+    'Friday',
+    'Saturday',
+  ];
+
+  const months = [
+    'January',
+    'February',
+    'March',
+    'April',
+    'May',
+    'June',
+    'July',
+    'August',
+    'September',
+    'October',
+    'November',
+    'December',
+  ];
+
   return (
     <>
       <Head>
@@ -422,7 +449,7 @@ export default function AddInfo() {
                       value={dayOfWeek}
                       onChange={setDayOfWeek}
                       label="День тижня"
-                      options={dayjs.weekdays()}
+                      options={weekdays}
                       error=""
                     />
                     <Select
@@ -438,7 +465,7 @@ export default function AddInfo() {
                       value={month}
                       onChange={setMonth}
                       label="Місяць"
-                      options={dayjs.months()}
+                      options={months}
                       error=""
                     />
                   </div>

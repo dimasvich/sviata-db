@@ -121,7 +121,7 @@ export class CrudController {
       sviatoData.images = processedImages.map((item) => item.filename);
     }
 
-    if (leafletsPath.length) {
+    if (leafletsPath?.length) {
       sviatoData.leaflets = leafletsPath.map((item) => item.outputFilename);
     }
 

@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import * as cheerio from 'cheerio';
 import * as FormData from 'form-data';
@@ -49,14 +49,14 @@ export class BuildService {
                             <div class="holiday-date__block" bis_skin_checked="1">
                                 <div class="holiday-date__head" bis_skin_checked="1">
                                     <img src="/wp-content/themes/gosta/img/holiday/icon__holiday-date-2.svg" alt="Icon" width="20" height="20" loading="lazy" decoding="async">
-                                    Коли започатковане:
+                                    Започатковане:
                                 </div>
                                 <div class="holiday-date__content" bis_skin_checked="1">${sviato.celebrate.date}</div>
                             </div>
                             <div class="holiday-date__block" bis_skin_checked="1">
                                 <div class="holiday-date__head" bis_skin_checked="1">
                                     <img src="/wp-content/themes/gosta/img/holiday/icon__holiday-date-3.svg" alt="Icon" width="20" height="20" loading="lazy" decoding="async">
-                                    Чи вихідний цей день:
+                                    Чи є вихідний:
                                 </div>
                                 <div class="holiday-date__content" bis_skin_checked="1">${sviato.celebrate.isDayoff ? 'Так' : 'Ні'}</div>
                             </div>
@@ -674,7 +674,9 @@ export class BuildService {
           });
           await this.sviatoModel.findOneAndUpdate(
             { articleId: sviato.related[i] },
-            { related: [...(realtedSviato.related || []), postResponse.data.id] },
+            {
+              related: [...(realtedSviato.related || []), postResponse.data.id],
+            },
           );
         }
       }
@@ -683,6 +685,62 @@ export class BuildService {
       throw error;
     }
   }
+async updateMany(fromDate: string, toDate: string) {
+  try {
+    const toUpdate = await this.sviatoModel.find(
+      {
+        date: { $gte: fromDate, $lte: toDate },
+        articleId: { $exists: true, $ne: null },
+      },
+      {
+        articleId: 1,
+        _id: 1,
+        date: 1,
+      },
+    );
+
+    if (!toUpdate || toUpdate.length === 0) {
+      throw new NotFoundException('No sviato found in given date range');
+    }
+
+    const updatePromises = toUpdate.map(async (item) => {
+      const content = await this.buildArticle(item._id.toString());
+      const postData = { content };
+
+      try {
+        const postResponse = await axios.post(
+          `${process.env.BASE_URL}/posts/${item.articleId}`,
+          postData,
+          {
+            auth: {
+              username: process.env.APP_USER,
+              password: process.env.APP_PASSWORD,
+            },
+            headers: {
+              'Content-Type': 'application/json',
+            },
+          },
+        );
+
+        console.log('Post updated:', postResponse.data);
+        return { id: item._id, success: true };
+      } catch (err) {
+        console.error(`Failed to update post ${item.articleId}:`, err.message);
+        return { id: item._id, success: false, error: err.message };
+      }
+    });
+
+    // Очікуємо всі запити
+    const results = await Promise.all(updatePromises);
+
+    return results;
+  } catch (error) {
+    console.error('updateMany error:', error);
+    throw new InternalServerErrorException(error.message || 'Update failed');
+  }
+}
+
+
   async delete(id: string) {
     try {
       const sviato = await this.sviatoModel.findById(id).lean();
