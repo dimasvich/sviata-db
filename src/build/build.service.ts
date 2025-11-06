@@ -261,9 +261,7 @@ export class BuildService {
         <div class="sources" bis_skin_checked="1">
         ${sviato.sources
           .map(
-            (item) => `
-            <a href="${item.link}"><span>${item.title}</span></a>
-    `,
+            (item) => `<a href="${item.link}"><span>${item.title}</span></a>`,
           )
           .join('')}
                </div> `
@@ -388,7 +386,7 @@ export class BuildService {
 
       const mainImage = sviato.mainImage;
 
-      const imageDir1 = path.join(__dirname, '..', '..', 'uploads', id);
+      const imageDir1 = path.join(__dirname, '..', '..', 'uploads', id, 'main');
       const imageName1 = mainImage;
       const fullImagePath1 = path.join(imageDir1, imageName1);
 
@@ -548,7 +546,7 @@ export class BuildService {
       const content = await this.buildArticle(id);
       const mainImage = sviato.mainImage;
 
-      const imageDir1 = path.join(__dirname, '..', '..', 'uploads', id);
+      const imageDir1 = path.join(__dirname, '..', '..', 'uploads', id, 'main');
       const imageName1 = mainImage;
       const fullImagePath1 = path.join(imageDir1, imageName1);
 
