@@ -1,4 +1,8 @@
-import { Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  InternalServerErrorException,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import * as cheerio from 'cheerio';
 import * as FormData from 'form-data';
@@ -270,7 +274,7 @@ export class BuildService {
           ? `<div class="related" data-id="[${sviato.related.map((item) => item)}]"></div>`
           : '',
         'moreIdeas-section': `<div class="moreIdeas"></div>`,
-        leaflets: sviato?.leaflets
+        'leaflets-section': sviato?.leaflets
           ? `
           <div class="postcard-block" bis_skin_checked="1">
           ${sviato.leaflets
@@ -379,6 +383,82 @@ export class BuildService {
       throw error;
     }
   }
+  async uploadLeaflets(id: string) {
+    const sviato = await this.sviatoModel.findById(id).lean();
+    if (!sviato || !sviato.seoText) {
+      throw new Error('Стаття не знайдена або відсутній seoText');
+    }
+    try {
+      const imageDir2 = path.join(
+        __dirname,
+        '..',
+        '..',
+        'uploads',
+        sviato._id.toString(),
+        'leaflets',
+      );
+
+      if (!fs.existsSync(imageDir2)) {
+        throw new Error(`Папка ${imageDir2} не існує`);
+      }
+      const imageFiles = fs
+        .readdirSync(imageDir2)
+        .filter((f) => /\.(webp)$/i.test(f));
+
+      if (imageFiles.length > 0) {
+        const results = [];
+
+        for (const imageName of imageFiles) {
+          const safeImageName = imageName.replaceAll(' ', '_');
+          const fullImagePath2 = path.join(imageDir2, imageName);
+
+          const formData = new FormData();
+          formData.append(
+            'file',
+            fs.createReadStream(fullImagePath2),
+            safeImageName,
+          );
+
+          try {
+            const mediaResponse2 = await axios.post(
+              `https://dev25.gosta.media/wp-json/gosta/v1/postcard`,
+              formData,
+              {
+                auth: {
+                  username: process.env.APP_USER,
+                  password: process.env.APP_PASSWORD,
+                },
+                headers: {
+                  ...formData.getHeaders(),
+                  'Content-Disposition': `attachment; filename="${safeImageName}"`,
+                },
+              },
+            );
+
+            results.push({
+              file: imageName,
+              status: 'ok',
+              response: mediaResponse2.data,
+            });
+
+            console.log(`✅ ${imageName} завантажено успішно`);
+          } catch (error) {
+            console.error(
+              `❌ Помилка при завантаженні ${imageName}:`,
+              error.message,
+            );
+            results.push({
+              file: imageName,
+              status: 'error',
+              error: error.message,
+            });
+          }
+        }
+      }
+    } catch (error) {
+      throw error;
+    }
+  }
   async publish(id: string) {
     try {
       const sviato = await this.sviatoModel.findById(id).lean();
@@ -476,6 +556,7 @@ export class BuildService {
           }
         }
       }
+      await this.uploadLeaflets(id);
       const tags = sviato.tags.map((item) => SviatoTagToIdMap[item]);
       const holiday_date = [
         sviato.date,
@@ -570,6 +651,7 @@ export class BuildService {
 
       const mediaId = mediaResponse.data.id;
       console.log('Media uploaded, ID:', mediaId);
+      await this.uploadLeaflets(id);
       const tags = sviato.tags.map((item) => SviatoTagToIdMap[item]);
       const postData = {
         content,
@@ -683,61 +765,63 @@ export class BuildService {
       throw error;
     }
   }
-async updateMany(fromDate: string, toDate: string) {
-  try {
-    const toUpdate = await this.sviatoModel.find(
-      {
-        date: { $gte: fromDate, $lte: toDate },
-        articleId: { $exists: true, $ne: null },
-      },
-      {
-        articleId: 1,
-        _id: 1,
-        date: 1,
-      },
-    );
+  async updateMany(fromDate: string, toDate: string) {
+    try {
+      const toUpdate = await this.sviatoModel.find(
+        {
+          date: { $gte: fromDate, $lte: toDate },
+          articleId: { $exists: true, $ne: null },
+        },
+        {
+          articleId: 1,
+          _id: 1,
+          date: 1,
+        },
+      );
 
-    if (!toUpdate || toUpdate.length === 0) {
-      throw new NotFoundException('No sviato found in given date range');
-    }
-
-    const updatePromises = toUpdate.map(async (item) => {
-      const content = await this.buildArticle(item._id.toString());
-      const postData = { content, title: item.name};
-
-      try {
-        const postResponse = await axios.post(
-          `${process.env.BASE_URL}/posts/${item.articleId}`,
-          postData,
-          {
-            auth: {
-              username: process.env.APP_USER,
-              password: process.env.APP_PASSWORD,
-            },
-            headers: {
-              'Content-Type': 'application/json',
-            },
-          },
-        );
-
-        console.log('Post updated:', postResponse.data);
-        return { id: item._id, success: true };
-      } catch (err) {
-        console.error(`Failed to update post ${item.articleId}:`, err.message);
-        return { id: item._id, success: false, error: err.message };
+      if (!toUpdate || toUpdate.length === 0) {
+        throw new NotFoundException('No sviato found in given date range');
       }
-    });
 
-    // Очікуємо всі запити
-    const results = await Promise.all(updatePromises);
+      const updatePromises = toUpdate.map(async (item) => {
+        const content = await this.buildArticle(item._id.toString());
+        const postData = { content, title: item.name };
 
-    return results;
-  } catch (error) {
-    console.error('updateMany error:', error);
-    throw new InternalServerErrorException(error.message || 'Update failed');
+        try {
+          const postResponse = await axios.post(
+            `${process.env.BASE_URL}/posts/${item.articleId}`,
+            postData,
+            {
+              auth: {
+                username: process.env.APP_USER,
+                password: process.env.APP_PASSWORD,
+              },
+              headers: {
+                'Content-Type': 'application/json',
+              },
+            },
+          );
+
+          console.log('Post updated:', postResponse.data);
+          return { id: item._id, success: true };
+        } catch (err) {
+          console.error(
+            `Failed to update post ${item.articleId}:`,
+            err.message,
+          );
+          return { id: item._id, success: false, error: err.message };
+        }
+      });
+
+      // Очікуємо всі запити
+      const results = await Promise.all(updatePromises);
+
+      return results;
+    } catch (error) {
+      console.error('updateMany error:', error);
+      throw new InternalServerErrorException(error.message || 'Update failed');
+    }
   }
-}
-
 
   async delete(id: string) {
     try {
