@@ -138,10 +138,12 @@ export class GenerateFromCsvService {
 
             const $ = cheerio.load(html);
             const h1Text = $('h1').first().text().trim();
+            $('h1').first().remove();
             const metaTitle = $('meta[name="title"]').attr('content') || '';
             const metaDescription =
               $('meta[name="description"]').attr('content') || '';
             const teaser = $('meta[name="teaser"]').attr('content') || '';
+            const updatedHtml = $.html();
 
             await this.sviatoModel.create({
               tags: data[index].tags,
@@ -151,7 +153,7 @@ export class GenerateFromCsvService {
               title: metaTitle,
               description: metaDescription,
               teaser: teaser,
-              seoText: html,
+              seoText: updatedHtml,
               status: CompleteStatus.OPENAI,
             });
 
@@ -208,8 +210,12 @@ export class GenerateFromCsvService {
         - Не роби акцент на одному святі, намагайся узагальнити.
       `;
       const description = await this.generateHtmlForPrompt(prompt);
-      await this.dayModel.create({ date, description, status: CompleteStatus.OPENAI });
-      return { success:true };
+      await this.dayModel.create({
+        date,
+        description,
+        status: CompleteStatus.OPENAI,
+      });
+      return { success: true };
     } catch (error) {
       throw error;
     }

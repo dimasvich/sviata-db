@@ -9,6 +9,7 @@ import * as sharp from 'sharp';
 import * as path from 'path';
 import * as fs from 'fs';
 import { exiftool } from 'exiftool-vendored';
+import * as crypto from 'crypto';
 
 const uploadDir = path.join(__dirname, '..', '..', 'uploads');
 if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
@@ -34,9 +35,11 @@ export class SviatoImageProcessingMiddleware implements NestMiddleware {
 
         const processedImages = [];
 
+        let seoText = req.body.seoText || '';
+
         for (const file of req.files as Express.Multer.File[]) {
-          const originalName = path.parse(file.originalname).name;
-          const outputFilename = `${originalName}.webp`;
+          const uuid = crypto.randomUUID();
+          const outputFilename = `${uuid}.webp`;
           const outputPath = path.join(targetDir, outputFilename);
 
           const image = sharp(file.buffer);
@@ -67,9 +70,36 @@ export class SviatoImageProcessingMiddleware implements NestMiddleware {
             alt: req.body.alt || 'Зображення без опису',
             mimetype: 'image/webp',
           });
+
+          // Підготовка назв для безпечного використання у RegExp
+          const escapedName = file.originalname.replace(
+            /[.*+?^${}()|[\]\\]/g,
+            '\\$&',
+          );
+
+          // Звичайна заміна (напряму у тексті)
+          const regexNormal = new RegExp(escapedName, 'g');
+          seoText = seoText.replace(regexNormal, outputFilename);
+
+          // Додаткова заміна для HTML-екранованих тегів <img>
+          const regexEscaped = new RegExp(
+            `(&lt;img[^&]*src=&quot;)${escapedName}(&quot;[^&]*&gt;)`,
+            'g',
+          );
+          seoText = seoText.replace(regexEscaped, `$1${outputFilename}$2`);
+
+          // Також варіант, якщо у тебе src="..." екрановано через &lt; і &gt;, але не через &quot;
+          const regexMixed = new RegExp(
+            `(&lt;img[^&]*src=")${escapedName}(".*?&gt;)`,
+            'g',
+          );
+          seoText = seoText.replace(regexMixed, `$1${outputFilename}$2`);
         }
 
+        req.body.seoText = seoText;
+
         req['processedImages'] = processedImages;
+
         next();
       } catch (error) {
         console.error('❌ Помилка при обробці зображення:', error);

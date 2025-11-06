@@ -111,6 +111,8 @@ export class BuildService {
 
       content = $.html();
       content = groupSequentialImages(content);
+      const postcardPath =
+        'https://dev25.gosta.media/wp-content/themes/gosta/img/holiday/postcard/';
 
       const blockTemplates: Record<string, string> = {
         'when-section-title': `<h1>В який день будемо відзначати ${sviato.name} в наступні 5 років</h1>`,
@@ -260,7 +262,7 @@ export class BuildService {
         ${sviato.sources
           .map(
             (item) => `
-            <a href="${item.link}"><span>${item.link}</span></a>
+            <a href="${item.link}"><span>${item.title}</span></a>
     `,
           )
           .join('')}
@@ -269,8 +271,70 @@ export class BuildService {
         'related-section': sviato?.related
           ? `<div class="related" data-id="[${sviato.related.map((item) => item)}]"></div>`
           : '',
-        'moreIdeas-section': sviato?.moreIdeas
-          ? `<div class="moreIdeas" data-id="[${sviato.moreIdeas.map((item) => item)}]"></div>`
+        'moreIdeas-section': `<div class="moreIdeas"></div>`,
+        leaflets: sviato?.leaflets
+          ? `
+          <div class="postcard-block" bis_skin_checked="1">
+          ${sviato.leaflets
+            .map(
+              (item) => `
+            <figure class="wp-block-image size-full">
+            <img src="${postcardPath}${item}" alt="" />
+            <div class="postcard__btns" bis_skin_checked="1">
+              <a
+                href="${postcardPath}${item}"
+                download=""
+                class="btn"
+              >
+                Завантажити
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="16"
+                  height="16"
+                  fill="none"
+                  viewBox="0 0 16 16"
+                >
+                  <path
+                    stroke="currentColor"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    d="M2 11.336c0 .62 0 .93.068 1.184a2 2 0 0 0 1.414 1.415c.255.068.565.068 1.185.068h6.666c.62 0 .93 0 1.185-.069a2 2 0 0 0 1.414-1.414c.068-.254.068-.564.068-1.184m-3-3.669s-2.21 3-3 3-3-3-3-3M8 10V2"
+                  ></path>
+                </svg>
+              </a>
+              <span
+                class="btn share-image"
+                data-image="${postcardPath}${item}"
+              >
+                Поділитись
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="16"
+                  height="16"
+                  fill="none"
+                  viewBox="0 0 16 16"
+                >
+                  <path
+                    stroke="currentColor"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    d="M6.263 3H5.57c-1.964 0-2.946 0-3.556.586-.61.586-.61 1.528-.61 3.414v2.667c0 1.885 0 2.828.61 3.414.61.586 1.592.586 3.556.586h2.804c1.965 0 2.947 0 3.557-.586.395-.38.534-.91.583-1.748"
+                  ></path>
+                  <path
+                    stroke="currentColor"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    d="M10.778 4.67V2.571c0-.13.11-.236.245-.236a.25.25 0 0 1 .174.069l3.155 3.029c.157.15.245.355.245.569a.789.789 0 0 1-.245.569L11.197 9.6a.25.25 0 0 1-.174.07.24.24 0 0 1-.245-.236V7.336H8.744c-2.827 0-3.869 2.333-3.869 2.333V8.003c0-1.841 1.555-3.334 3.472-3.334h2.43Z"
+                  ></path>
+                </svg>
+              </span>
+            </div>
+          </figure>  
+          `,
+            )
+            .join('')}
+        </div>
+        `
           : '',
       };
 
@@ -431,6 +495,7 @@ export class BuildService {
         tags,
         meta: {
           holiday_date,
+          isAlternative: sviato.checkedAlternative,
         },
         seofo_title: sviato.title,
         seofo_description: sviato.description
@@ -459,7 +524,17 @@ export class BuildService {
         articleId: postResponse.data.id,
         link: postResponse.data.link,
       });
-
+      if (sviato.related) {
+        for (let i = 0; i < sviato.related.length; i++) {
+          const realtedSviato = await this.sviatoModel.findOne({
+            articleId: sviato.related[i],
+          });
+          await this.sviatoModel.findOneAndUpdate(
+            { articleId: sviato.related[i] },
+            { related: [...realtedSviato.related, postResponse.data.id] },
+          );
+        }
+      }
       return postResponse.data;
     } catch (error) {
       console.error('Error publishing:', error);
@@ -497,11 +572,16 @@ export class BuildService {
 
       const mediaId = mediaResponse.data.id;
       console.log('Media uploaded, ID:', mediaId);
+      const tags = sviato.tags.map((item) => SviatoTagToIdMap[item]);
       const postData = {
         content,
-        categories: [567],
+        categories: [12771],
         featured_media: mediaId,
         title: sviato.name,
+        meta: {
+          isAlternative: sviato.checkedAlternative,
+        },
+        tags,
       };
       const imageDir2 = path.join(
         __dirname,
@@ -587,6 +667,17 @@ export class BuildService {
         articleId: postResponse.data.id,
         link: postResponse.data.link,
       });
+      if (sviato.related) {
+        for (let i = 0; i < sviato.related.length; i++) {
+          const realtedSviato = await this.sviatoModel.findOne({
+            articleId: sviato.related[i],
+          });
+          await this.sviatoModel.findOneAndUpdate(
+            { articleId: sviato.related[i] },
+            { related: [...(realtedSviato.related || []), postResponse.data.id] },
+          );
+        }
+      }
       return postResponse.data;
     } catch (error) {
       throw error;
