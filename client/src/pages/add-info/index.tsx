@@ -26,6 +26,8 @@ import Head from 'next/head';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
+dayjs.extend(localeData);
+
 export default function AddInfo() {
   const searchParams = useSearchParams();
   const id = searchParams.get('id');
@@ -33,7 +35,6 @@ export default function AddInfo() {
   const [week, setWeek] = useState('');
   const [month, setMonth] = useState('');
   const [alternativeDate, setAlternativeDate] = useState(false);
-  dayjs.extend(localeData);
   const [loading, setLoading] = useState(false);
   const [sviato, setSviato] = useState({
     title: '',
