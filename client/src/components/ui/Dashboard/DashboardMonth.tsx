@@ -60,7 +60,7 @@ export default function DashboardMonth({
     if (el) {
       el.scrollIntoView({
         behavior: 'smooth',
-        block: 'center',
+        block: 'start',
       });
     }
   }, [date]);
