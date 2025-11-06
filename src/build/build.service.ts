@@ -388,7 +388,7 @@ export class BuildService {
 
       const mainImage = sviato.mainImage;
 
-      const imageDir1 = path.join(__dirname, '..', '..', 'uploads', id, 'main');
+      const imageDir1 = path.join(__dirname, '..', '..', 'uploads', id);
       const imageName1 = mainImage;
       const fullImagePath1 = path.join(imageDir1, imageName1);
 
@@ -548,7 +548,7 @@ export class BuildService {
       const content = await this.buildArticle(id);
       const mainImage = sviato.mainImage;
 
-      const imageDir1 = path.join(__dirname, '..', '..', 'uploads', id, 'main');
+      const imageDir1 = path.join(__dirname, '..', '..', 'uploads', id);
       const imageName1 = mainImage;
       const fullImagePath1 = path.join(imageDir1, imageName1);
 
