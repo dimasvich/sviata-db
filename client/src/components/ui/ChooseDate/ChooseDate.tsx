@@ -4,9 +4,12 @@ import { useEffect, useState } from 'react';
 import Calendar from '@/components/ui/Calendar';
 import Select from '@/components/ui/Select';
 import Button from '@/components/ui/Button';
-import Input from '@/components/ui/Input'; // ⚠️ якщо у тебе ще немає Input — підключи твій компонент
+import Input from '@/components/ui/Input';
 import { getNthWeekdayOfMonth } from '@/utils';
 import Typography from '../Typography';
+import dayjs from 'dayjs';
+import dayOfYearPlugin from 'dayjs/plugin/dayOfYear';
+dayjs.extend(dayOfYearPlugin);
 
 interface ChooseDateProps {
   sviatoDate: string;
@@ -89,9 +92,10 @@ export default function ChooseDate({
       const num = parseInt(dayOfYear);
       if (!isNaN(num) && num >= 1 && num <= 366) {
         const currentYear = new Date().getFullYear();
-        const date = new Date(currentYear, 0); // 1 січня
-        date.setDate(num);
-        const formatted = date.toISOString().split('T')[0];
+        const formatted = dayjs()
+          .year(currentYear)
+          .dayOfYear(num)
+          .format('YYYY-MM-DD');
         onChangeDate(formatted);
       }
     }
@@ -142,12 +146,10 @@ export default function ChooseDate({
 
           {/* 🔹 Новий блок: день року */}
           <div className="flex flex-col items-start w-full">
-            <Typography type='text'>
-              або встановіть день року (наприклад, 256)
-            </Typography>
+            <Typography type="text">або встановіть день року</Typography>
             <Input
               id="dayOfYear"
-              label=''
+              label=""
               type="number"
               value={dayOfYear}
               onChange={(e) => setDayOfYear(e.target.value)}
