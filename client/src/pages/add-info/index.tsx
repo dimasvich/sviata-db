@@ -133,16 +133,22 @@ export default function AddInfo() {
 
   const handleUpload = async () => {
     if (!id) return;
-    if (!sviato.articleId) {
-      await fetch(`${baseUrl}/api/build/${id}`, {
-        method: 'Post',
-        headers: { 'Content-Type': 'application/json' },
-      });
-    } else {
-      await fetch(`${baseUrl}/api/build/update/${id}`, {
-        method: 'Post',
-        headers: { 'Content-Type': 'application/json' },
-      });
+    try {
+      if (!sviato.articleId) {
+        const res = await fetch(`${baseUrl}/api/build/${id}`, {
+          method: 'Post',
+          headers: { 'Content-Type': 'application/json' },
+        });
+        if (res.ok) alert('Зміни збережено');
+      } else {
+        const res = await fetch(`${baseUrl}/api/build/update/${id}`, {
+          method: 'Post',
+          headers: { 'Content-Type': 'application/json' },
+        });
+        if (res.ok) alert('Зміни збережено');
+      }
+    } catch (error) {
+      console.log(error);
     }
   };
   useEffect(() => {
