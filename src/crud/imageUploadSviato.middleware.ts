@@ -226,7 +226,7 @@ export class ImageUploadSviato implements NestMiddleware {
             .toFile(outputPath);
 
           await exiftool.write(outputPath, {}, ['-all=']);
-          req['mainImagePath'] = path.join('main', outputFilename);
+          req['mainImagePath'] = outputFilename;
           console.log('✅ [MAIN IMAGE] збережено ->', req['mainImagePath']);
         }
 
