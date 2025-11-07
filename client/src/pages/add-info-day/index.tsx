@@ -399,27 +399,6 @@ export default function AddInfoDay() {
                 <ImageUpload onFileSelect={(file) => setNewFile(file)} />
 
                 <div className="flex flex-wrap gap-2 mt-1">
-                  {newFiles.map((f, i) => (
-                    <div
-                      key={i}
-                      className="flex items-center gap-2 bg-border text-primary px-3 py-1 rounded-full text-sm"
-                    >
-                      <p>{f.name}</p>
-                      <button
-                        onClick={() =>
-                          setNewFiles((prev) =>
-                            prev.filter((_, idx) => idx !== i),
-                          )
-                        }
-                        className="text-red-500 hover:text-red-700"
-                      >
-                        ✕
-                      </button>
-                    </div>
-                  ))}
-                </div>
-
-                <div className="flex flex-wrap gap-2 mt-1">
                   {day.whoWasBornToday.map((item, idx) => (
                     <div
                       key={idx}
