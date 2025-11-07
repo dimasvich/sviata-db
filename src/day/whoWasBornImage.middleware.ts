@@ -52,6 +52,7 @@ export class WhoWasBornImageMiddleware implements NestMiddleware {
             await exiftool.write(outputPath, {}, ['-all=']);
 
             processedImages.push({
+              originalName: file.originalname,
               filename: outputFilename,
               path: outputPath,
               mimetype: 'image/webp',
