@@ -118,7 +118,7 @@ export class BuildService {
       content = groupSequentialImages(content);
       content = convertYouTubeLinks(content);
       const postcardPath =
-        'https://dev25.gosta.media/wp-content/themes/gosta/img/holiday/postcard/';
+        'https://gosta.ua/wp-content/themes/gosta/img/holiday/postcard/';
 
       const blockTemplates: Record<string, string> = {
         'when-section-title': `<h1>В який день будемо відзначати ${sviato.name} в наступні 5 років</h1>`,
