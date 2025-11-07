@@ -54,16 +54,16 @@ export default function DashboardMonth({
     fetchData();
   }, [month]);
 
-  useEffect(() => {
-    if (!date) return;
-    const el = document.getElementById(`row-${date}`);
-    if (el) {
-      el.scrollIntoView({
-        behavior: 'smooth',
-        block: 'start',
-      });
-    }
-  }, [date]);
+  // useEffect(() => {
+  //   if (!date) return;
+  //   const el = document.getElementById(`row-${date}`);
+  //   if (el) {
+  //     el.scrollIntoView({
+  //       behavior: 'smooth',
+  //       block: 'start',
+  //     });
+  //   }
+  // }, [date]);
 
   if (loading)
     return <p className="text-center text-secondary">Завантаження...</p>;

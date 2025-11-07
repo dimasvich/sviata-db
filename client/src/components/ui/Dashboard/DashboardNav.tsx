@@ -77,8 +77,19 @@ export default function DashBoardNav({
     setMonthCurrent(dayjs(date).month() + 1);
   }, [date]);
 
+  const handleNav = (dateStr: string) => {
+    const el = document.getElementById(`row-${dateStr}`);
+    if (el) {
+      el.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start',
+      });
+    }
+  };
+
   const handleSelect = (dateStr: string) => {
     setSelectedDay(dateStr);
+    handleNav(dateStr);
   };
 
   const handlePrevMonth = () => {
