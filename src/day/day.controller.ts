@@ -54,18 +54,16 @@ export class DayController {
   async update(@Param('date') date: string, @Req() req, @Res() res) {
     const { processedImages, mainImagePath } = req;
     const dayData = JSON.parse(req.body.dayData);
-
     if (processedImages?.length) {
       dayData.whoWasBornToday = dayData.whoWasBornToday.map((person) => {
         const match = processedImages.find(
           (img) => img.originalName === person.image, 
         );
         return match
-          ? { ...person, image: match.filename, imagePath: match.path }
+          ? { ...person, image: match.filename }
           : person;
       });
     }
-
     if (mainImagePath) {
       dayData.mainImage = mainImagePath;
     }
