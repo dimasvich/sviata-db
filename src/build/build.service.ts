@@ -16,6 +16,7 @@ import { SviatoImages } from 'src/crud/schema/sviatoimages.schema';
 import { DayRulesEnum, SviatoTagToIdMap } from 'src/types';
 import {
   capitalizeFirstLetter,
+  convertYouTubeLinks,
   getNext5YearsForecast,
   groupSequentialImages,
   removeBisSkinChecked,
@@ -42,7 +43,7 @@ export class BuildService {
       const dayrules = await this.dayRulesModel.find({ date: sviato.date });
       let content = sviato.seoText;
       const next5 = getNext5YearsForecast(sviato.date);
-      const celebrateBlock = `<div class="holiday-date" bis_skin_checked="1">
+      const celebrateBlock = sviato?.celebrate ? `<div class="holiday-date" bis_skin_checked="1">
                             <div class="holiday-date__block" bis_skin_checked="1">
                                 <div class="holiday-date__head" bis_skin_checked="1">
                                     <img src="/wp-content/themes/gosta/img/holiday/icon__holiday-date-1.svg" alt="Icon" width="20" height="20" loading="lazy" decoding="async">
@@ -64,7 +65,7 @@ export class BuildService {
                                 </div>
                                 <div class="holiday-date__content" bis_skin_checked="1">${sviato.celebrate.isDayoff ? 'Так' : 'Ні'}</div>
                             </div>
-                        </div>`;
+                        </div>` : "";
 
       const host = process.env.HOST || 'https://gosta.ua/wp-content/uploads';
       const $ = cheerio.load(content);
@@ -115,6 +116,7 @@ export class BuildService {
 
       content = $.html();
       content = groupSequentialImages(content);
+      content = convertYouTubeLinks(content);
       const postcardPath =
         'https://dev25.gosta.media/wp-content/themes/gosta/img/holiday/postcard/';
 

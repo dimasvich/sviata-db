@@ -25,7 +25,7 @@ export interface Celebrate {
 export interface WhoWasBornToday {
   title: string;
   html: string;
-  image: boolean;
+  image: string;
 }
 export enum SviatoType {
   'Державні свята',

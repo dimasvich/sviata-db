@@ -72,8 +72,14 @@ const SeoTextEditor: React.FC<SeoTextEditorProps> = ({
 }) => {
   const [showUpload, setShowUpload] = useState(false);
   const [showLinkModal, setShowLinkModal] = useState(false);
+  const [showVideoModal, setShowVideoModal] = useState(false);
+
   const [linkUrl, setLinkUrl] = useState('');
   const [linkText, setLinkText] = useState('');
+
+  const [videoUrl, setVideoUrl] = useState('');
+  const [videoCaption, setVideoCaption] = useState('');
+
   const [, forceUpdate] = useState(0);
 
   const editor = useEditor({
@@ -109,7 +115,7 @@ const SeoTextEditor: React.FC<SeoTextEditorProps> = ({
 
   if (!editor) return <div>Loading editor...</div>;
 
-  // 🔄 Повертаємо старий метод завантаження зображень
+  // 🔹 Завантаження зображення
   const handleFileSelect = (file: File) => {
     setNewFiles((prev) => [...prev, file]);
     const fileName = file.name;
@@ -123,6 +129,7 @@ const SeoTextEditor: React.FC<SeoTextEditorProps> = ({
     setShowUpload(false);
   };
 
+  // 🔹 Додавання посилання
   const handleAddLink = () => {
     if (!linkUrl.trim()) return;
     const textToInsert = linkText.trim() || linkUrl;
@@ -137,6 +144,26 @@ const SeoTextEditor: React.FC<SeoTextEditorProps> = ({
     setLinkUrl('');
     setLinkText('');
     setShowLinkModal(false);
+  };
+
+  // 🔹 Додавання відео YouTube
+  const handleAddVideo = () => {
+    if (!videoUrl.trim()) return;
+
+    const videoHTML = `
+    <a class="youtube-video" href="${videoUrl}" target="_blank" rel="nofollow">${videoUrl}</a>
+    ${
+      videoCaption
+        ? `<p class="video-caption">${videoCaption}</p>`
+        : ''
+    }
+  `;
+
+    editor.chain().focus().insertContent(videoHTML).run();
+
+    setVideoUrl('');
+    setVideoCaption('');
+    setShowVideoModal(false);
   };
 
   return (
@@ -190,41 +217,19 @@ const SeoTextEditor: React.FC<SeoTextEditorProps> = ({
         </button>
 
         <button
+          onClick={() => setShowVideoModal(true)}
+          className="px-2 py-1 rounded hover:bg-gray-100"
+        >
+          Відео
+        </button>
+
+        <button
           onClick={() => setShowLinkModal(true)}
           className={`px-2 py-1 rounded hover:bg-gray-100 ${
             editor.isActive('link') ? 'bg-blue-100 text-blue-700' : ''
           }`}
         >
           🔗 Посилання
-        </button>
-
-        <button
-          onClick={() =>
-            editor
-              .chain()
-              .focus()
-              .insertContent(
-                '<figure class="wp-block-pullquote"><blockquote><p></p></blockquote></figure>',
-              )
-              .run()
-          }
-          className="px-2 py-1 rounded hover:bg-gray-100"
-        >
-          ❝ blockquote
-        </button>
-        <button
-          onClick={() =>
-            editor
-              .chain()
-              .focus()
-              .insertContent(
-                '<figure class="wp-block-pullquote"><blockquote><p></p></blockquote></figure>',
-              )
-              .run()
-          }
-          className="px-2 py-1 rounded hover:bg-gray-100"
-        >
-          ❝ pullquote
         </button>
 
         {BLOCKS.map((block) => (
@@ -304,6 +309,54 @@ const SeoTextEditor: React.FC<SeoTextEditorProps> = ({
               </button>
               <button
                 onClick={() => setShowLinkModal(false)}
+                className="flex-1 py-2 bg-gray-100 rounded hover:bg-gray-200"
+              >
+                Скасувати
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Модалка для вставки відео */}
+      {showVideoModal && (
+        <div className="absolute inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white p-4 rounded-lg shadow-lg w-[450px]">
+            <h3 className="text-lg font-semibold mb-3 text-center">
+              Додати відео з YouTube
+            </h3>
+
+            <label className="block mb-2 text-sm font-medium">
+              Посилання на YouTube
+            </label>
+            <input
+              type="text"
+              value={videoUrl}
+              onChange={(e) => setVideoUrl(e.target.value)}
+              placeholder="https://www.youtube.com/watch?v=..."
+              className="w-full border rounded p-2 mb-3 text-sm"
+            />
+
+            <label className="block mb-2 text-sm font-medium">
+              Підпис до відео
+            </label>
+            <input
+              type="text"
+              value={videoCaption}
+              onChange={(e) => setVideoCaption(e.target.value)}
+              placeholder="Додайте підпис"
+              className="w-full border rounded p-2 mb-3 text-sm"
+            />
+
+            <div className="flex gap-2">
+              <button
+                onClick={handleAddVideo}
+                className="flex-1 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+              >
+                Додати відео
+              </button>
+              <button
+                onClick={() => setShowVideoModal(false)}
                 className="flex-1 py-2 bg-gray-100 rounded hover:bg-gray-200"
               >
                 Скасувати
