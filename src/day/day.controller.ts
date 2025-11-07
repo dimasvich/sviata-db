@@ -58,9 +58,11 @@ export class DayController {
     if (processedImages?.length) {
       dayData.whoWasBornToday = dayData.whoWasBornToday.map((person) => {
         const match = processedImages.find(
-          (img) => img.filename === person.image,
+          (img) => img.originalName === person.image, 
         );
-        return match ? { ...person, imagePath: match.path } : person;
+        return match
+          ? { ...person, image: match.filename, imagePath: match.path }
+          : person;
       });
     }
 

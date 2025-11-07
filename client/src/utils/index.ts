@@ -13,30 +13,30 @@ export function getNthWeekdayOfMonth({
   month,
   year = dayjs().year(),
 }: GetNthWeekdayOfMonthParams): string {
-const weekdays = [
-  'Понеділок',
-  'Вівторок',
-  'Середа',
-  'Четвер',
-  'П’ятниця',
-  'Субота',
-  'Неділя',
-];
+  const weekdays = [
+    'Неділя',
+    'Понеділок',
+    'Вівторок',
+    'Середа',
+    'Четвер',
+    'П’ятниця',
+    'Субота',
+  ];
 
-const months = [
-  'Січень',
-  'Лютий',
-  'Березень',
-  'Квітень',
-  'Травень',
-  'Червень',
-  'Липень',
-  'Серпень',
-  'Вересень',
-  'Жовтень',
-  'Листопад',
-  'Грудень',
-];
+  const months = [
+    'Січень',
+    'Лютий',
+    'Березень',
+    'Квітень',
+    'Травень',
+    'Червень',
+    'Липень',
+    'Серпень',
+    'Вересень',
+    'Жовтень',
+    'Листопад',
+    'Грудень',
+  ];
 
   const dayOfWeekNum = weekdays.findIndex(
     (d) => d.toLowerCase() === dayOfWeek.toLowerCase(),
@@ -61,6 +61,52 @@ const months = [
   );
 
   return resultDate.format('YYYY-MM-DD');
+}
+export function getWeekdayOrderFromDate(dateString: string) {
+  const weekdays = [
+    'Неділя',
+    'Понеділок',
+    'Вівторок',
+    'Середа',
+    'Четвер',
+    'П’ятниця',
+    'Субота',
+  ];
+
+  const months = [
+    'Січень',
+    'Лютий',
+    'Березень',
+    'Квітень',
+    'Травень',
+    'Червень',
+    'Липень',
+    'Серпень',
+    'Вересень',
+    'Жовтень',
+    'Листопад',
+    'Грудень',
+  ];
+
+  const date = dayjs(dateString);
+
+  if (!date.isValid()) {
+    throw new Error('Invalid date provided to getWeekdayOrderFromDate');
+  }
+
+  const dayOfWeekNum = date.day(); // 0=Неділя ... 6=Субота
+  const dayOfWeek = weekdays[dayOfWeekNum];
+  const month = months[date.month()]; // month() → 0..11
+
+  // обчислення порядку тижня у місяці
+  const dayOfMonth = date.date(); // число дня у місяці (1..31)
+  const weekOrder = Math.ceil(dayOfMonth / 7).toString();
+
+  return {
+    dayOfWeek,
+    week: weekOrder,
+    month,
+  };
 }
 
 export function getNextThreeYearsForecast(date: string): {

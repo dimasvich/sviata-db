@@ -54,16 +54,15 @@ export default function DashboardMonth({
     fetchData();
   }, [month]);
 
-  // useEffect(() => {
-  //   if (!date) return;
-  //   const el = document.getElementById(`row-${date}`);
-  //   if (el) {
-  //     el.scrollIntoView({
-  //       behavior: 'smooth',
-  //       block: 'start',
-  //     });
-  //   }
-  // }, [date]);
+  const createNew = async (dateStr: string) => {
+    const res = await fetch(`${baseUrl}/api/crud`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ date: dateStr }),
+    });
+    const json = await res.json();
+    router.push(`/add-info?id=${json._id}`);
+  };
 
   if (loading)
     return <p className="text-center text-secondary">Завантаження...</p>;
@@ -148,21 +147,8 @@ export default function DashboardMonth({
                             <Typography type="text">{index + 1}.</Typography>
                             <div className="flex flex-wrap items-center gap-1">
                               <Typography type="text">{item.name} |</Typography>
-                              <div
-                                className="text-blue-700 underline cursor-pointer"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  window.open(
-                                    item.document,
-                                    '_blank',
-                                    'noopener,noreferrer',
-                                  );
-                                }}
-                              >
-                                Google Doc
-                              </div>
                               <Typography type="text">
-                                | #{item.tags.map((item) => item)}
+                                #{item.tags.map((item) => item)}
                               </Typography>
                             </div>
                           </div>
@@ -175,9 +161,9 @@ export default function DashboardMonth({
 
                   <td className="py-2 px-4 border-b border-border text-center">
                     <button
-                      onClick={(e) => {
+                      onClick={async (e) => {
                         e.stopPropagation();
-                        router.push('/create-sviato');
+                        await createNew(dateStr);
                       }}
                       className="px-3 py-1 bg-accent text-white rounded-xl hover:bg-green-600 transition"
                     >

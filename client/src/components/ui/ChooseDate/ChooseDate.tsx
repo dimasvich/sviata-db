@@ -5,7 +5,7 @@ import Calendar from '@/components/ui/Calendar';
 import Select from '@/components/ui/Select';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
-import { getNthWeekdayOfMonth } from '@/utils';
+import { getNthWeekdayOfMonth, getWeekdayOrderFromDate } from '@/utils';
 import Typography from '../Typography';
 import dayjs from 'dayjs';
 import dayOfYearPlugin from 'dayjs/plugin/dayOfYear';
@@ -24,13 +24,13 @@ interface ChooseDateProps {
 }
 
 const weekdays = [
+  'Неділя',
   'Понеділок',
   'Вівторок',
   'Середа',
   'Четвер',
   'П’ятниця',
   'Субота',
-  'Неділя',
 ];
 
 const months = [
@@ -58,7 +58,7 @@ export default function ChooseDate({
   const [dayOfWeek, setDayOfWeek] = useState('');
   const [week, setWeek] = useState('');
   const [month, setMonth] = useState('');
-  const [dayOfYear, setDayOfYear] = useState<string>(''); // 🔹 нове поле для “дня року”
+  const [dayOfYear, setDayOfYear] = useState<string>('');
 
   const handleAlternativeChange = (field: string, value: string) => {
     if (field === 'dayOfWeek') setDayOfWeek(value);
@@ -76,7 +76,7 @@ export default function ChooseDate({
 
   // 🔹 коли всі три поля альтернативної дати заповнені — обчислюємо реальну дату
   useEffect(() => {
-    if (dayOfWeek && week && month) {
+    if (dayOfWeek && week && month && !alternativeDate) {
       const d = getNthWeekdayOfMonth({
         dayOfWeek,
         weekOrder: week,
@@ -84,7 +84,7 @@ export default function ChooseDate({
       });
       onChangeDate(d);
     }
-  }, [dayOfWeek, week, month, onChangeDate]);
+  }, [dayOfWeek, week, month, onChangeDate, alternativeDate]);
 
   // 🔹 коли заповнено день року — конвертуємо в дату
   useEffect(() => {
@@ -101,9 +101,34 @@ export default function ChooseDate({
     }
   }, [dayOfYear, onChangeDate]);
 
+  useEffect(() => {
+    if (alternativeDate && sviatoDate) {
+      try {
+        const alt = getWeekdayOrderFromDate(sviatoDate);
+        setDayOfWeek(alt.dayOfWeek);
+        setWeek(alt.week);
+        setMonth(alt.month);
+
+        if (onChangeAlternative) {
+          onChangeAlternative({
+            dayOfWeek: alt.dayOfWeek,
+            week: alt.week,
+            month: alt.month,
+          });
+        }
+      } catch (e) {
+        console.error('Помилка конвертації дати в альтернативну форму:', e);
+      }
+    } else if (!alternativeDate) {
+      setDayOfWeek('');
+      setWeek('');
+      setMonth('');
+      setDayOfYear('');
+    }
+  }, [alternativeDate, sviatoDate, onChangeAlternative]);
+
   return (
     <div className="flex gap-2 items-end flex-col">
-      {/* Якщо є точна дата */}
       {!alternativeDate && (
         <Calendar
           id="date"
@@ -114,50 +139,59 @@ export default function ChooseDate({
         />
       )}
 
-      {/* Якщо альтернативна дата */}
       {alternativeDate && (
         <div className="flex flex-col gap-3 w-full">
-          <div className="flex gap-1">
-            <Select
-              id="dayOfWeek"
-              value={dayOfWeek}
-              onChange={(v) => handleAlternativeChange('dayOfWeek', v)}
-              label="День тижня"
-              options={weekdays}
-              error=""
-            />
-            <Select
-              id="weekOrder"
-              value={week}
-              onChange={(v) => handleAlternativeChange('week', v)}
-              label="Порядок у місяці"
-              options={['1', '2', '3', '4', '5']}
-              error=""
-            />
-            <Select
-              id="month"
-              value={month}
-              onChange={(v) => handleAlternativeChange('month', v)}
-              label="Місяць"
-              options={months}
-              error=""
-            />
-          </div>
+          {!dayOfYear.trim() ? (
+            <div className="flex gap-1">
+              <Select
+                id="dayOfWeek"
+                value={dayOfWeek}
+                onChange={(v) => handleAlternativeChange('dayOfWeek', v)}
+                label="День тижня"
+                options={weekdays}
+                error=""
+              />
+              <Select
+                id="weekOrder"
+                value={week}
+                onChange={(v) => handleAlternativeChange('week', v)}
+                label="Порядок у місяці"
+                options={['1', '2', '3', '4', '5']}
+                error=""
+              />
+              <Select
+                id="month"
+                value={month}
+                onChange={(v) => handleAlternativeChange('month', v)}
+                label="Місяць"
+                options={months}
+                error=""
+              />
+            </div>
+          ) : (
+            ''
+          )}
 
           {/* 🔹 Новий блок: день року */}
-          <div className="flex flex-col items-start w-full">
-            <Typography type="text">або встановіть день року</Typography>
-            <Input
-              id="dayOfYear"
-              label=""
-              type="number"
-              value={dayOfYear}
-              onChange={(e) => setDayOfYear(e.target.value)}
-              placeholder="1–366"
-              min={1}
-              max={366}
-            />
-          </div>
+          {!dayOfWeek.trim().length &&
+          !week.trim().length &&
+          !month.trim().length ? (
+            <div className="flex flex-col items-start w-full">
+              <Typography type="text">або встановіть день року</Typography>
+              <Input
+                id="dayOfYear"
+                label=""
+                type="number"
+                value={dayOfYear}
+                onChange={(e) => setDayOfYear(e.target.value)}
+                placeholder="1–366"
+                min={1}
+                max={366}
+              />
+            </div>
+          ) : (
+            ''
+          )}
         </div>
       )}
 

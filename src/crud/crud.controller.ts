@@ -94,20 +94,6 @@ export class CrudController {
     return this.sviatoService.updateDescriptionByDate(date, description);
   }
 
-  // @Put('make-related')
-  // async makeRelated(
-  //   @Body()
-  //   body: {
-  //     id: string;
-  //     related: { _id: string; name: string; articleId: string };
-  //   },
-  // ) {
-  //   if (!body.id || !Array.isArray(body.related)) {
-  //     throw new BadRequestException('Невірні дані у запиті');
-  //   }
-  //   return this.sviatoService.makeRelated(body);
-  // }
-
   @Put(':id')
   async update(
     @Param('id') id: string,
