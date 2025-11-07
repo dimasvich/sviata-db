@@ -483,23 +483,12 @@ export default function AddInfo() {
                   />
                 </div>
               </div>
-              {sviato.seoText ? (
-                <SeoTextEditor
-                  value={sviato.seoText || ''}
-                  onChange={(html) => handleChange('seoText', html)}
-                  newFiles={newFiles}
-                  setNewFiles={setNewFiles}
-                />
-              ) : (
-                ''
-              )}
-              {/* <Textarea
-            id="seoText"
-            label="SEO текст (HTML)"
-            maxLength={100000}
-            value={sviato.seoText || ''}
-            onChange={(e) => handleChange('seoText', e.target.value)}
-          /> */}
+              <SeoTextEditor
+                value={sviato.seoText || '<p></p>'}
+                onChange={(html) => handleChange('seoText', html)}
+                newFiles={newFiles}
+                setNewFiles={setNewFiles}
+              />
 
               <Button onClick={handleSubmit}>
                 {loading ? 'Оновлюється...' : 'Зберегти зміни'}
