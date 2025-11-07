@@ -379,7 +379,10 @@ export default function AddInfo() {
         <Layout>
           <div className="flex justify-between">
             <Typography type="title">Редагування свята</Typography>
-            <Button onClick={() => router.push('/')}>Назад</Button>
+
+            <Button onClick={() => setIsOpenModal(true)} type="danger">
+              Видалити свято
+            </Button>
           </div>
           <div className="flex gap-6 p-2 relative w-full">
             <div className="flex flex-col gap-6 w-1/2">
@@ -502,11 +505,9 @@ export default function AddInfo() {
                 {loading ? 'Оновлюється...' : 'Зберегти зміни'}
               </Button>
               <Button onClick={handleUpload}>Вивантажити статтю</Button>
-              <Button onClick={() => setIsOpenModal(true)} type="danger">
-                Видалити свято
-              </Button>
+              <Button onClick={() => router.push('/')}>Назад</Button>
             </div>
-            <div className="border-l-[2px] p-2 flex flex-col w-1/2">
+            <div className="border-l-[2px] p-2 flex flex-col gap-2 w-1/2">
               <div className="flex flex-col gap-2">
                 <div className="flex items-center justify-between">
                   <Typography type="text">Timeline</Typography>
@@ -657,7 +658,7 @@ export default function AddInfo() {
                   ))}
                 </div>
               </div> */}
-              <div className="flex flex-col gap-2 my-[8px]">
+              <div className="flex flex-col gap-2">
                 <Typography type="text">Листівки</Typography>
                 <MoreGallery
                   existingImages={sviato.leaflets.map(
