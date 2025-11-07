@@ -420,10 +420,10 @@ export class BuildService {
             fs.createReadStream(fullImagePath2),
             safeImageName,
           );
-
+          
           try {
             const mediaResponse2 = await axios.post(
-              `${process.env.BASE_URL}/postcard`,
+              `https://gosta.ua/wp-json/gosta/v1/postcard`,
               formData,
               {
                 auth: {
