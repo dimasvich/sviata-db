@@ -434,11 +434,7 @@ export class BuildDayService {
               .replaceAll(' ', '_')
               .replaceAll(',', '')}" 
               alt="Img" width="447" height="224" loading="eager" decoding="async">
-            <div class="year-day"></div>
-            <div class="ny-block">
-                <strong>До Нового Року <span>залишилося:</span></strong>
-                <div id="countdown"></div>
-            </div>
+              <div class="date-block-info"></div>
         </div>
         <div class="text-block">
             <h1>${dayjs(day.date).locale('uk').format('D MMMM YYYY')} — яке свято, церковне свято, день янгола, історичні події, народні прикмети та заборони?</h1>
