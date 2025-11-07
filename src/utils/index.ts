@@ -116,3 +116,23 @@ export function groupSequentialImages(html: string): string {
   console.log('\n=== Фінальний HTML ===\n', output);
   return output;
 }
+export function convertYouTubeLinks(html: string): string {
+  return html.replace(
+    /<p>\s*<a[^>]*class=["'][^"']*youtube-video[^"']*["'][^>]*href=["']([^"']+)["'][^>]*>.*?<\/a>\s*<\/p>\s*(?:<p>(.*?)<\/p>)?/g,
+    (_, hrefLink, captionText = '') => {
+      const figcaption = captionText
+        ? `<figcaption class="wp-element-caption">${captionText.trim()}</figcaption>`
+        : '';
+
+      return `
+          <iframe 
+            src="${hrefLink}"  
+            title="YouTube video" 
+            frameborder="0" 
+            allowfullscreen
+          ></iframe>
+          ${figcaption}
+      `;
+    },
+  );
+}

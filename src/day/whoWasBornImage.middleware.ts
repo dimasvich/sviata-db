@@ -9,6 +9,7 @@ import * as fs from 'fs';
 import * as multer from 'multer';
 import * as path from 'path';
 import * as sharp from 'sharp';
+import * as crypto from 'crypto';
 
 const uploadDir = path.join(__dirname, '..', '..', 'uploads');
 if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
@@ -38,34 +39,13 @@ export class WhoWasBornImageMiddleware implements NestMiddleware {
 
         const processedImages = [];
 
+        // 🔹 Обробка звичайних зображень (UUID + оригінальний розмір)
         if (req.files && Array.isArray(req.files['images'])) {
           for (const file of req.files['images'] as Express.Multer.File[]) {
-            const originalNameUtf8 = Buffer.from(
-              file.originalname,
-              'latin1',
-            ).toString('utf8');
-            const originalName = path.parse(originalNameUtf8).name;
-            const outputFilename = `${originalName}.webp`;
+            const outputFilename = `${crypto.randomUUID()}.webp`;
             const outputPath = path.join(whoWasBornDir, outputFilename);
 
-            const image = sharp(file.buffer);
-            const metadata = await image.metadata();
-
-            const targetAspect = 16 / 9;
-            let cropWidth = metadata.width || 0;
-            let cropHeight = Math.round(cropWidth / targetAspect);
-
-            if (cropHeight > (metadata.height || 0)) {
-              cropHeight = metadata.height || 0;
-              cropWidth = Math.round(cropHeight * targetAspect);
-            }
-
-            const left = Math.round(((metadata.width || 0) - cropWidth) / 2);
-            const top = Math.round(((metadata.height || 0) - cropHeight) / 2);
-
-            await image
-              .extract({ left, top, width: cropWidth, height: cropHeight })
-              .resize(1280, 720)
+            await sharp(file.buffer)
               .toFormat('webp', { quality: 90 })
               .toFile(outputPath);
 
@@ -79,14 +59,19 @@ export class WhoWasBornImageMiddleware implements NestMiddleware {
           }
         }
 
+        // 🔹 mainImage — без змін
         if (req.files && Array.isArray(req.files['mainImage'])) {
           const file = req.files['mainImage'][0];
           const mainImageDir = path.join(targetDir, 'main');
           if (!fs.existsSync(mainImageDir))
             fs.mkdirSync(mainImageDir, { recursive: true });
 
-          // 🔸 Генеруємо унікальну назву через UUID
-          const outputFilename = `${crypto.randomUUID()}.webp`;
+          const originalNameUtf8 = Buffer.from(
+            file.originalname,
+            'latin1',
+          ).toString('utf8');
+          const originalName = path.parse(originalNameUtf8).name;
+          const outputFilename = `${originalName}.webp`;
           const outputPath = path.join(mainImageDir, outputFilename);
 
           const image = sharp(file.buffer);
