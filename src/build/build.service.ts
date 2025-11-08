@@ -560,7 +560,7 @@ export class BuildService {
           }
         }
       }
-      await this.uploadLeaflets(id);
+      if(sviato?.leaflets) await this.uploadLeaflets(id);
       const tags = sviato.tags.map((item) => SviatoTagToIdMap[item]);
       const holiday_date = [
         sviato.date,
@@ -655,7 +655,7 @@ export class BuildService {
 
       const mediaId = mediaResponse.data.id;
       console.log('Media uploaded, ID:', mediaId);
-      await this.uploadLeaflets(id);
+      if(sviato?.leaflets) await this.uploadLeaflets(id);
       const tags = sviato.tags.map((item) => SviatoTagToIdMap[item]);
       const holiday_date = [
         sviato.date,
