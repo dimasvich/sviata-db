@@ -63,3 +63,7 @@ export interface DayInfo {
   dayOfYear: number;
   isFilled: boolean;
 }
+export interface Faq {
+  question:string;
+  answer:string;
+}

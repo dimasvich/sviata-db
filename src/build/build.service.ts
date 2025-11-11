@@ -43,7 +43,8 @@ export class BuildService {
       const dayrules = await this.dayRulesModel.find({ date: sviato.date });
       let content = sviato.seoText;
       const next5 = getNext5YearsForecast(sviato.date);
-      const celebrateBlock = sviato?.celebrate ? `<div class="holiday-date" bis_skin_checked="1">
+      const celebrateBlock = sviato?.celebrate
+        ? `<div class="holiday-date" bis_skin_checked="1">
                             <div class="holiday-date__block" bis_skin_checked="1">
                                 <div class="holiday-date__head" bis_skin_checked="1">
                                     <img src="/wp-content/themes/gosta/img/holiday/icon__holiday-date-1.svg" alt="Icon" width="20" height="20" loading="lazy" decoding="async">
@@ -65,7 +66,8 @@ export class BuildService {
                                 </div>
                                 <div class="holiday-date__content" bis_skin_checked="1">${sviato.celebrate.isDayoff ? 'Так' : 'Ні'}</div>
                             </div>
-                        </div>` : "";
+                        </div>`
+        : '';
 
       const host = process.env.HOST || 'https://gosta.ua/wp-content/uploads';
       const $ = cheerio.load(content);
@@ -118,7 +120,7 @@ export class BuildService {
       content = groupSequentialImages(content);
       content = convertYouTubeLinks(content);
       const postcardPath =
-        'https://dev25.gosta.media/wp-content/themes/gosta/img/holiday/postcard/';
+        'https://gosta.ua/wp-content/themes/gosta/img/holiday/postcard/';
 
       const blockTemplates: Record<string, string> = {
         'when-section-title': `<h1>В який день будемо відзначати ${sviato.name} в наступні 5 років</h1>`,
@@ -420,7 +422,7 @@ export class BuildService {
             fs.createReadStream(fullImagePath2),
             safeImageName,
           );
-          
+
           try {
             const mediaResponse2 = await axios.post(
               `https://gosta.ua/wp-json/gosta/v1/postcard`,
@@ -558,7 +560,7 @@ export class BuildService {
           }
         }
       }
-      await this.uploadLeaflets(id);
+      if(sviato?.leaflets.length) await this.uploadLeaflets(id);
       const tags = sviato.tags.map((item) => SviatoTagToIdMap[item]);
       const holiday_date = [
         sviato.date,
@@ -653,8 +655,13 @@ export class BuildService {
 
       const mediaId = mediaResponse.data.id;
       console.log('Media uploaded, ID:', mediaId);
-      await this.uploadLeaflets(id);
+      if(sviato?.leaflets.length) await this.uploadLeaflets(id);
       const tags = sviato.tags.map((item) => SviatoTagToIdMap[item]);
+      const holiday_date = [
+        sviato.date,
+        `${new Date(sviato.date).getFullYear() + 1}-${dayjs(sviato.date).format('MM-DD')}`,
+        `${new Date(sviato.date).getFullYear() + 2}-${dayjs(sviato.date).format('MM-DD')}`,
+      ];
       const postData = {
         content,
         categories: [12771],
@@ -662,6 +669,7 @@ export class BuildService {
         title: sviato.name,
         meta: {
           isAlternative: sviato.checkedAlternative,
+          holiday_date,
         },
         tags,
       };

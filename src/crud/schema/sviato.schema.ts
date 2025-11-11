@@ -3,6 +3,7 @@ import { Document } from 'mongoose';
 import {
   Celebrate,
   CompleteStatus,
+  Faq,
   Source,
   SviatoTag,
   SviatoType,
@@ -57,6 +58,9 @@ export class Sviato {
 
   @Prop({ type: {}, required: false })
   celebrate: Celebrate;
+
+  @Prop({ type: [], required: false })
+  faq: Faq[];
 
   @Prop({ type: String, required: false })
   seoText: string;
