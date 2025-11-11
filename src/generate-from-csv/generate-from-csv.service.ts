@@ -31,7 +31,6 @@ export class GenerateFromCsvService {
   private async parseCsvFile(file: Express.Multer.File): Promise<
     {
       date: string;
-      type: string;
       tags: string[];
       name: string;
     }[]
@@ -39,7 +38,6 @@ export class GenerateFromCsvService {
     return new Promise((resolve, reject) => {
       const results: {
         date: string;
-        type: string;
         tags: string[];
         name: string;
       }[] = [];
@@ -51,7 +49,6 @@ export class GenerateFromCsvService {
         .on('data', (row) => {
           const parsed = {
             date: row['дата']?.trim(),
-            type: row['тип свята']?.trim(),
             tags: row['список тегів']
               ? row['список тегів']
                   .split(',')
@@ -70,14 +67,13 @@ export class GenerateFromCsvService {
   public async parseUploadedFile(
     data: {
       date: string;
-      type: string;
       tags: string[];
       name: string;
     }[],
   ) {
     const prompts = data.map(
       (item) => `PROMPT:
-        Створи коротку інформаційну статтю про свято {${item.name}}, яке відзначають {${item.date}}, що належить до категорії {${item.type}}, 
+        Створи коротку інформаційну статтю про свято {${item.name}}, яке відзначають {${item.date}}, 
         а також має наступний список тегів: {${item.tags.map((t) => t)}}.
 
         Мета: дати користувачу лаконічне, але змістовне пояснення про це свято, щоб він одразу зрозумів його суть, історію і значення.
@@ -148,7 +144,6 @@ export class GenerateFromCsvService {
             await this.sviatoModel.create({
               tags: data[index].tags,
               date: data[index].date,
-              type: data[index].type,
               name: h1Text || data[index].name,
               title: metaTitle,
               description: metaDescription,

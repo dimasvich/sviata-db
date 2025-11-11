@@ -437,7 +437,7 @@ export class BuildDayService {
               <div class="date-block-info"></div>
         </div>
         <div class="text-block">
-            <h1>${dayjs(day.date).locale('uk').format('D MMMM YYYY')} — яке свято, церковне свято, день янгола, історичні події, народні прикмети та заборони?</h1>
+            <h1>${dayjs(day.date).locale('uk').format('D MMMM YYYY')} — яке сьогодні свято, церковне свято, день янгола, історичні події, народні прикмети та заборони?</h1>
             ${day?.description || ''}
             <p>Нижче ви знайдете добірку свят, іменин, народних прикмет та історичних подій цього дня.</p>
         </div>
@@ -666,7 +666,7 @@ export class BuildDayService {
           holiday_date: day.date,
           isAlternative: day.checkedAlternative,
         },
-        seofo_title: `Яке свято ${dayjs(day.date).locale('uk').format('D MMMM YYYY')} - церковне свято, іменини`,
+        seofo_title: `${dayjs(day.date).locale('uk').format('D MMMM YYYY')} - – яке сьогодні свято, церковне свято, день янгола, історичні події, народні прикмети та заборони?`,
         seofo_description: `Дізнайтеся яке свято ${dayjs(day.date).locale('uk').format('D MMMM YYYY')} в Україні та світі`,
       };
       const postResponse = await axios.post(
