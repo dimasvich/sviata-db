@@ -4,21 +4,25 @@ import AutoSearch from '@/components/ui/AutoSearch';
 import Button from '@/components/ui/Button';
 import CheckBox from '@/components/ui/CheckBox';
 import ChooseDate from '@/components/ui/ChooseDate/ChooseDate';
+import DefaultTextEditor from '@/components/ui/editor/DefaultTextEditor';
 import ListOnlyEditor from '@/components/ui/editor/ListOnlyEditor';
 import SeoTextEditor from '@/components/ui/editor/SeoTextEditor';
+import FaqBlock from '@/components/ui/FAQ/FaqBlock';
 import HeaderEditSviato from '@/components/ui/Header/HeaderEditSviato';
+import EditableTimeline from '@/components/ui/HistoryBlock/HistoryBlock';
 import ImageUpload from '@/components/ui/ImageUpload';
 import Input from '@/components/ui/Input';
 import Layout from '@/components/ui/Layout';
 import Loader from '@/components/ui/Loader';
 import MoreGallery from '@/components/ui/MoreGallery';
 import Select from '@/components/ui/Select';
+import EditableStringList from '@/components/ui/StringList/StringList';
 import SviatoDeleteModal from '@/components/ui/sviato/SviatoDeleteModal';
 import Textarea from '@/components/ui/Textarea';
 import Typography from '@/components/ui/Typography';
 import { baseUrl } from '@/http';
 import { deleteSviato } from '@/http/crud';
-import { Celebrate, DayRulesEnum } from '@/types';
+import { Celebrate } from '@/types';
 import dayjs from 'dayjs';
 import 'dayjs/locale/uk';
 import localeData from 'dayjs/plugin/localeData';
@@ -39,7 +43,12 @@ export default function AddInfo() {
     description: '',
     name: '',
     teaser: '',
+    status: '',
     mainImage: '',
+    faq: [] as {
+      question: string;
+      answer: string;
+    }[],
     checkedAlternative: false,
     tags: [] as string[],
     sources: [] as {
@@ -62,11 +71,6 @@ export default function AddInfo() {
     date: '',
     leaflets: [] as string[],
   });
-  const [newGreeting, setNewGreeting] = useState('');
-  const [newIdea, setNewIdea] = useState('');
-  const [newFact, setNewFact] = useState('');
-  const [newRelated, setNewRelated] = useState('');
-  const [newMore, setNewMore] = useState('');
   const [newTag, setNewTag] = useState('');
 
   const [celebrateWhen, setCelebrateWhen] = useState('');
@@ -89,9 +93,6 @@ export default function AddInfo() {
   const [newSourceTitle, setNewSourceTitle] = useState('');
   const [newSourceLink, setNewSourceLink] = useState('');
 
-  const [newTimeBlockYear, setNewTimeBlockYear] = useState('');
-  const [newTimeBlockHtml, setNewTimeBlockHtml] = useState('');
-
   const [tags, setTags] = useState([]);
 
   const [mainFile, setMainFile] = useState<File | null>(null);
@@ -103,6 +104,8 @@ export default function AddInfo() {
   const [searchList, setSearchList] = useState<
     { _id: string; name: string; articleId: string }[]
   >([]);
+
+  const [filled, setFilled] = useState<boolean>(false);
 
   const selectRelated = (item: {
     _id: string;
@@ -176,7 +179,7 @@ export default function AddInfo() {
           sources: json.sources || [],
         });
         setAlternativeDate(json.checkedAlternative);
-
+        setFilled(json.status === 'FILLED' ? true : false);
         const rulesRes = await fetch(`${baseUrl}/api/day-rules/${json.date}`);
         const jsonRules = (await rulesRes.json()) || [];
         setSelectedRule1(jsonRules[0].title || 'Що можна робити сьогоді?');
@@ -208,56 +211,11 @@ export default function AddInfo() {
     }
   };
 
-  const handleChange = (field: string, value: string | boolean) => {
+  const handleChange = (
+    field: string,
+    value: string | boolean | { question: string; answer: string },
+  ) => {
     setSviato((prev) => ({ ...prev, [field]: value }));
-  };
-
-  const handleAddGreeting = () => {
-    if (newGreeting.trim() && !sviato.greetings.includes(newGreeting.trim())) {
-      setSviato((prev) => ({
-        ...prev,
-        greetings: [...prev.greetings, newGreeting.trim()],
-      }));
-      setNewGreeting('');
-    }
-  };
-  const handleRemoveGreeting = (greeting: string) => {
-    setSviato((prev) => ({
-      ...prev,
-      greetings: prev.greetings.filter((t) => t !== greeting),
-    }));
-  };
-
-  const handleAddIdea = () => {
-    if (newIdea.trim() && !sviato.ideas.includes(newIdea.trim())) {
-      setSviato((prev) => ({
-        ...prev,
-        ideas: [...prev.ideas, newIdea.trim()],
-      }));
-      setNewIdea('');
-    }
-  };
-  const handleRemoveIdea = (idea: string) => {
-    setSviato((prev) => ({
-      ...prev,
-      ideas: prev.ideas.filter((t) => t !== idea),
-    }));
-  };
-
-  const handleAddFact = () => {
-    if (newFact.trim() && !sviato.facts.includes(newFact.trim())) {
-      setSviato((prev) => ({
-        ...prev,
-        facts: [...prev.facts, newFact.trim()],
-      }));
-      setNewFact('');
-    }
-  };
-  const handleRemoveFact = (fact: string) => {
-    setSviato((prev) => ({
-      ...prev,
-      facts: prev.facts.filter((t) => t !== fact),
-    }));
   };
 
   const handleRemoveRelated = (related: string) => {
@@ -282,14 +240,40 @@ export default function AddInfo() {
       tags: prev.tags.filter((t) => t !== tag),
     }));
   };
+  function convertHtmlToList(html: string): string {
+    if (!html) return '';
+
+    // прибираємо порожні абзаци
+    const cleaned = html.replace(/<p>\s*<\/p>/gi, '');
+
+    // розбиваємо на рядки по <br> і </p>
+    const lines = cleaned
+      .split(/<br\s*\/?>|<\/p>/i)
+      .map((line) =>
+        line
+          .replace(/<p>/gi, '') // прибираємо <p>
+          .replace(/&nbsp;/g, '') // прибираємо &nbsp;
+          .trim(),
+      )
+      .filter((line) => line.length > 0);
+
+    // додаємо <li> до кожного рядка
+    const listItems = lines.map((line) => {
+      // прибираємо дефіси на початку
+      line = line.replace(/^–\s*/, '');
+      return `<li>${line}</li>`;
+    });
+
+    return `<ul>${listItems.join('')}</ul>`;
+  }
 
   const handleSubmitRules = async () => {
     const requests = [];
 
     if (selectedRule1 && html1.trim()) {
       requests.push({
-        title: 'Що можна робити сьогоді?',
-        html: html1.replaceAll('<p></p>', ''),
+        title: selectedRule1,
+        html: convertHtmlToList(html1),
         date: sviato.date,
         id: rule1Id,
       });
@@ -297,8 +281,8 @@ export default function AddInfo() {
 
     if (selectedRule2 && html2.trim()) {
       requests.push({
-        title: 'Що не можна робити сьогоді?',
-        html: html2.replaceAll('<p></p>', ''),
+        title: selectedRule2,
+        html: convertHtmlToList(html2),
         date: sviato.date,
         id: rule2Id,
       });
@@ -347,7 +331,13 @@ export default function AddInfo() {
     try {
       await handleSubmitRules();
       const formData = new FormData();
-      formData.append('sviatoData', JSON.stringify(sviato));
+      formData.append(
+        'sviatoData',
+        JSON.stringify({
+          ...sviato,
+          status: filled ? 'FILLED' : sviato.status,
+        }),
+      );
 
       newFiles.forEach((file) => formData.append('images', file));
       leaflets.forEach((file) => formData.append('leaflets', file));
@@ -396,6 +386,11 @@ export default function AddInfo() {
             </div>
             <div className="flex gap-6 p-2 relative w-full">
               <div className="flex flex-col gap-6 w-1/2">
+                <CheckBox
+                  label={'Заповнено?'}
+                  value={filled}
+                  setValue={setFilled}
+                />
                 <ChooseDate
                   sviatoDate={sviato.date}
                   onChangeDate={(d) => handleChange('date', d)}
@@ -501,128 +496,26 @@ export default function AddInfo() {
                 />
               </div>
               <div className="border-l-[2px] p-2 flex flex-col gap-2 w-1/2">
-                <div className="flex flex-col gap-2">
-                  <div className="flex items-center justify-between">
-                    <Typography type="text">Timeline</Typography>
-                    <Button
-                      onClick={() => {
-                        const year = newTimeBlockYear.trim();
-                        const html = newTimeBlockHtml.trim();
-                        if (year && html) {
-                          setSviato((prev) => ({
-                            ...prev,
-                            timeline: [...prev.timeline, { year, html }],
-                          }));
-                          setNewTimeBlockYear('');
-                          setNewTimeBlockHtml('');
-                        }
-                      }}
-                    >
-                      +
-                    </Button>
-                  </div>
-                  <div className="flex flex-col gap-2">
-                    <Input
-                      id="newTimeBlockYear"
-                      label=""
-                      placeholder="Рік"
-                      value={newTimeBlockYear}
-                      onChange={(e) => setNewTimeBlockYear(e.target.value)}
-                    />
-                    <Textarea
-                      id="newTimeBlockHtml"
-                      label=""
-                      maxLength={500}
-                      placeholder="Текст (HTML)"
-                      value={newTimeBlockHtml}
-                      onChange={(e) => setNewTimeBlockHtml(e.target.value)}
-                    />
-                  </div>
-
-                  <div className="flex flex-wrap gap-2 mt-1">
-                    {sviato.timeline.map((timeblock, idx) => (
-                      <div
-                        key={idx}
-                        className="flex items-center gap-2 bg-border text-primary px-3 py-1 rounded-full text-sm"
-                      >
-                        <p>{timeblock.html}</p>
-                        <button
-                          onClick={() =>
-                            setSviato((prev) => ({
-                              ...prev,
-                              timeline: prev.timeline.filter(
-                                (_, i) => i !== idx,
-                              ),
-                            }))
-                          }
-                          className="text-red-500 hover:text-red-700"
-                        >
-                          ✕
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-                <div className="flex flex-col gap-2">
-                  <Typography type="text">Короткі привітання</Typography>
-                  <div className="flex items-end gap-2">
-                    <Input
-                      id="newGreeting"
-                      label=""
-                      placeholder="Додайте привітання"
-                      value={newGreeting}
-                      onChange={(e) => setNewGreeting(e.target.value)}
-                    />
-                    <Button onClick={handleAddGreeting}>+</Button>
-                  </div>
-
-                  <div className="flex flex-wrap gap-2 mt-1">
-                    {sviato.greetings.map((greeting) => (
-                      <div
-                        key={greeting}
-                        className="flex items-center gap-1 bg-border text-primary px-3 py-1 rounded-full text-sm"
-                      >
-                        <span>{greeting}</span>
-                        <button
-                          onClick={() => handleRemoveGreeting(greeting)}
-                          className="text-red-500 hover:text-red-700"
-                        >
-                          ✕
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-                <div className="flex flex-col gap-2">
-                  <Typography type="text">Цитати для інстаграму</Typography>
-                  <div className="flex items-end gap-2">
-                    <Input
-                      id="newIdea"
-                      label=""
-                      placeholder="Додайте ідею"
-                      value={newIdea}
-                      onChange={(e) => setNewIdea(e.target.value)}
-                    />
-                    <Button onClick={handleAddIdea}>+</Button>
-                  </div>
-
-                  <div className="flex flex-wrap gap-2 mt-1">
-                    {sviato.ideas.map((idea) => (
-                      <div
-                        key={idea}
-                        className="flex items-center gap-1 bg-border text-primary px-3 py-1 rounded-full text-sm"
-                      >
-                        <span>{idea}</span>
-                        <button
-                          onClick={() => handleRemoveIdea(idea)}
-                          className="text-red-500 hover:text-red-700"
-                        >
-                          ✕
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
+                <EditableTimeline
+                  timeline={sviato.timeline}
+                  setTimeline={(timeline) =>
+                    setSviato((prev) => ({ ...prev, timeline }))
+                  }
+                />
+                <EditableStringList
+                  items={sviato.greetings}
+                  setItems={(greetings) =>
+                    setSviato((prev) => ({ ...prev, greetings }))
+                  }
+                  label="Короткі привітання"
+                />
+                <EditableStringList
+                  items={sviato.ideas}
+                  setItems={(ideas) =>
+                    setSviato((prev) => ({ ...prev, ideas }))
+                  }
+                  label="Цитати для інстаграму"
+                />
                 <div className="flex flex-col gap-2">
                   <Typography type="text">Листівки</Typography>
                   <MoreGallery
@@ -633,17 +526,27 @@ export default function AddInfo() {
                     maxImages={20}
                   />
                 </div>
+                <FaqBlock
+                  faqs={sviato.faq}
+                  setFaqs={(updatedFaqs) =>
+                    setSviato((prev) => ({ ...prev, faq: updatedFaqs }))
+                  }
+                />
+
                 <div className="w-full">
                   <Typography type="title">
                     Що можна і що не можна робити сьогодні
                   </Typography>
                   <div className="flex flex-col gap-2 w-full">
                     <div className="flex flex-col gap-2">
-                      <Typography type="text">
-                        Що можна робити{' '}
-                        {dayjs(sviato.date).locale('uk').format('D MMMM')}
-                      </Typography>
-                      <ListOnlyEditor
+                      <Input
+                        id=""
+                        label="Заголовок"
+                        value={selectedRule1}
+                        onChange={(e) => setSelectedRule1(e.target.value)}
+                      />
+                      <DefaultTextEditor
+                        key={html1}
                         value={html1 || ''}
                         onChange={(val) =>
                           setHtml1(val.replaceAll('<p></p>', ''))
@@ -654,11 +557,14 @@ export default function AddInfo() {
 
                   <div className="flex flex-col gap-2 w-full">
                     <div className="flex flex-col gap-2">
-                      <Typography type="text">
-                        Що не можна робити{' '}
-                        {dayjs(sviato.date).locale('uk').format('D MMMM')}
-                      </Typography>
-                      <ListOnlyEditor
+                      <Input
+                        id=""
+                        label="Заголовок"
+                        value={selectedRule2}
+                        onChange={(e) => setSelectedRule2(e.target.value)}
+                      />
+                      <DefaultTextEditor
+                        key={html2}
                         value={html2 || ''}
                         onChange={(val) =>
                           setHtml2(val.replaceAll('<p></p>', ''))
@@ -667,37 +573,13 @@ export default function AddInfo() {
                     </div>
                   </div>
                 </div>
-                <div className="flex flex-col gap-2">
-                  <Typography type="text">Цікаві факти</Typography>
-                  <div className="flex items-start gap-2">
-                    <Textarea
-                      id="newFact"
-                      label=""
-                      maxLength={1000}
-                      placeholder="Додайте факт"
-                      value={newFact}
-                      onChange={(e) => setNewFact(e.target.value)}
-                    />
-                    <Button onClick={handleAddFact}>+</Button>
-                  </div>
-
-                  <div className="flex flex-wrap gap-2 mt-1">
-                    {sviato.facts.map((fact) => (
-                      <div
-                        key={fact}
-                        className="flex items-center gap-1 bg-border text-primary px-3 py-1 rounded-full text-sm"
-                      >
-                        <span>{fact}</span>
-                        <button
-                          onClick={() => handleRemoveFact(fact)}
-                          className="text-red-500 hover:text-red-700"
-                        >
-                          ✕
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
+                <EditableStringList
+                  items={sviato.facts}
+                  setItems={(facts) =>
+                    setSviato((prev) => ({ ...prev, facts }))
+                  }
+                  label="Цікаві факти"
+                />
                 <div className="flex flex-col gap-2">
                   <Typography type="text">Пов&apos;язані події</Typography>
                   <div className="flex items-end gap-2">

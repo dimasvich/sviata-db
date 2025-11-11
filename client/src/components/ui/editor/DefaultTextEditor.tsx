@@ -2,11 +2,33 @@
 
 import { EditorContent, useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 
 interface DefaultTextEditorProps {
   value: string;
   onChange: (html: string) => void;
+}
+
+// Функція для конвертації з <ul><li> у <p>
+function convertListToParagraphs(html: string): string {
+  if (!html) return '';
+
+  // Прибираємо обгортку <ul>
+  let cleaned = html.replace(/<\/?ul>/gi, '');
+
+  // Замінюємо <li> на <p>
+  cleaned = cleaned.replace(/<li>/gi, '<p>');
+
+  // Замінюємо </li> на </p>
+  cleaned = cleaned.replace(/<\/li>/gi, '</p>');
+
+  // Прибираємо зайві дефіси або символи на початку рядка
+  cleaned = cleaned.replace(/^–\s*/gm, '');
+
+  // Прибираємо &nbsp;
+  cleaned = cleaned.replace(/&nbsp;/g, ' ');
+
+  return cleaned.trim();
 }
 
 const DefaultTextEditor: React.FC<DefaultTextEditorProps> = ({
@@ -14,9 +36,10 @@ const DefaultTextEditor: React.FC<DefaultTextEditorProps> = ({
   onChange,
 }) => {
   const [, forceUpdate] = useState(0);
+
   const editor = useEditor({
     extensions: [StarterKit.configure({ heading: false })],
-    content: value || '',
+    content: '', // пусто при старті
     editorProps: {
       attributes: {
         class: 'editor-content focus:outline-none min-h-[200px]',
@@ -30,6 +53,14 @@ const DefaultTextEditor: React.FC<DefaultTextEditorProps> = ({
     },
   });
 
+  // Оновлюємо контент після отримання value
+  useEffect(() => {
+    if (editor && value) {
+      editor.commands.setContent(convertListToParagraphs(value));
+      alert(value)
+    }
+  }, [editor, value]);
+
   if (!editor) return <div>Loading editor...</div>;
 
   return (
@@ -37,13 +68,17 @@ const DefaultTextEditor: React.FC<DefaultTextEditorProps> = ({
       <div className="flex gap-2 border-b pb-2 mb-2">
         <button
           onClick={() => editor.chain().focus().toggleBold().run()}
-          className={`px-2 py-1 rounded ${editor.isActive('bold') ? 'bg-gray-200 font-bold' : ''}`}
+          className={`px-2 py-1 rounded ${
+            editor.isActive('bold') ? 'bg-gray-200 font-bold' : ''
+          }`}
         >
           B
         </button>
         <button
           onClick={() => editor.chain().focus().toggleItalic().run()}
-          className={`px-2 py-1 rounded ${editor.isActive('italic') ? 'bg-gray-200 italic' : ''}`}
+          className={`px-2 py-1 rounded ${
+            editor.isActive('italic') ? 'bg-gray-200 italic' : ''
+          }`}
         >
           I
         </button>

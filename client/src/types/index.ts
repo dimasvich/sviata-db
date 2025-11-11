@@ -26,3 +26,25 @@ export interface Celebrate {
   date: string;
   isDayoff: boolean;
 }
+export interface WhoWasBornTodayItem {
+  title: string;
+  html: string;
+  image: string;
+  year?: string;
+}
+
+export interface DayType {
+  title: string;
+  description: string;
+  date: string;
+  checkedAlternative: boolean;
+  dayRules: { title: string; html: string; _id?: string }[];
+  whoWasBornToday: WhoWasBornTodayItem[];
+  omens: string[];
+  bornNames: string[];
+  images: string[];
+  mainImage: string | null;
+  seoText: string;
+  articleId: string | null;
+  timeline: { year: string; html: string }[];
+}

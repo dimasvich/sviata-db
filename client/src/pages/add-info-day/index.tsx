@@ -3,17 +3,19 @@
 import Button from '@/components/ui/Button';
 import Calendar from '@/components/ui/Calendar';
 import CheckBox from '@/components/ui/CheckBox';
+import HeaderEditSviato from '@/components/ui/Header/HeaderEditSviato';
 import ImageUpload from '@/components/ui/ImageUpload';
 import Input from '@/components/ui/Input';
 import Layout from '@/components/ui/Layout';
 import Loader from '@/components/ui/Loader';
 import Textarea from '@/components/ui/Textarea';
 import Typography from '@/components/ui/Typography';
+import WhoWasBornTodaySection from '@/components/ui/WhoWasBornToday/WhoWasBornTodaySection';
 import DaySeoTextEditor from '@/components/ui/editor/DaySeoTextEditor';
 import DefaultTextEditor from '@/components/ui/editor/DefaultTextEditor';
 import ListOnlyEditor from '@/components/ui/editor/ListOnlyEditor';
 import { baseUrl } from '@/http';
-import { DayRulesEnum } from '@/types';
+import { DayRulesEnum, WhoWasBornTodayItem } from '@/types';
 import { getNthWeekdayOfMonth } from '@/utils';
 import dayjs from 'dayjs';
 import Head from 'next/head';
@@ -67,8 +69,10 @@ export default function AddInfoDay() {
   const [newTimeBlockYear, setNewTimeBlockYear] = useState('');
   const [newTimeBlockHtml, setNewTimeBlockHtml] = useState('');
 
+  const [newWhoWasBornTodayYear, setNewWhoWasBornTodayYear] = useState('');
   const [newWhoWasBornTodayTitle, setNewWhoWasBornTodayTitle] = useState('');
   const [newWhoWasBornTodayHtml, setNewWhoWasBornTodayHtml] = useState('');
+
   const [newFiles, setNewFiles] = useState<File[]>([]);
   const [newFile, setNewFile] = useState<File | null>(null);
   const [mainFile, setMainFile] = useState<File | null>(null);
@@ -154,7 +158,10 @@ export default function AddInfoDay() {
     }
   };
 
-  const handleChange = (field: string, value: string | boolean) => {
+  const handleChange = (
+    field: string,
+    value: string | boolean | WhoWasBornTodayItem[] | WhoWasBornTodayItem,
+  ) => {
     setDay((prev) => ({ ...prev, [field]: value }));
   };
   const handleSubmitRules = async () => {
@@ -162,7 +169,7 @@ export default function AddInfoDay() {
 
     if (selectedRule1 && html1.trim()) {
       requests.push({
-        title: 'Що можна робити сьогоді?',
+        title: selectedRule1,
         html: html1.replaceAll('<p></p>', ''),
         date: day.date,
         id: rule1Id,
@@ -171,7 +178,7 @@ export default function AddInfoDay() {
 
     if (selectedRule2 && html2.trim()) {
       requests.push({
-        title: 'Що не можна робити сьогоді?',
+        title: selectedRule2,
         html: html2.replaceAll('<p></p>', ''),
         date: day.date,
         id: rule2Id,
@@ -269,149 +276,86 @@ export default function AddInfoDay() {
       </Head>
 
       {!loading ? (
-        <Layout>
-          <div className="flex flex-col gap-6 w-full max-w-3xl mx-auto">
-            <div className="flex justify-between">
-              <Typography type="title">Редагування дня</Typography>
-              <Button onClick={() => router.push('/')}>Назад</Button>
-            </div>
-            <div className="flex flex-col gap-2">
-              <Typography type="text">Головне зображення</Typography>
-              <ImageUpload
-                previewImg={mainImageUrl}
-                onFileSelect={(file) => setMainFile(file)}
-              />
-            </div>
-            <div className="flex flex-col gap-2">
-              <Typography type="text">Опис</Typography>
-              <DefaultTextEditor
-                value={day.description || ''}
-                onChange={(val) => handleChange('description', val)}
-              />
-            </div>
-
-            <div className="flex flex-col gap-2">
-              <div className="flex items-center justify-between">
-                <Typography type="text">Історичні події</Typography>
-                <Button
-                  onClick={() => {
-                    const year = newTimeBlockYear.trim();
-                    const html = newTimeBlockHtml.trim();
-                    if (year && html) {
-                      setDay((prev) => ({
-                        ...prev,
-                        timeline: [...prev.timeline, { year, html }],
-                      }));
-                      setNewTimeBlockYear('');
-                      setNewTimeBlockHtml('');
-                    }
-                  }}
-                >
-                  +
-                </Button>
+        <>
+          <HeaderEditSviato>
+            <Button onClick={() => router.push('/')}>Назад</Button>
+            <Button onClick={handleSubmit}>
+              {loading ? 'Збереження...' : 'Зберегти'}
+            </Button>
+            <Button onClick={() => handleUpload(day.date)}>
+              Вивантажити статтю
+            </Button>
+          </HeaderEditSviato>
+          <Layout>
+            <div className="flex flex-col gap-6 w-full max-w-3xl mx-auto">
+              <div className="flex justify-between">
+                <Typography type="title">Редагування дня</Typography>
               </div>
               <div className="flex flex-col gap-2">
-                <Input
-                  id="newTimeBlockYear"
-                  label=""
-                  placeholder="Рік"
-                  value={newTimeBlockYear}
-                  onChange={(e) => setNewTimeBlockYear(e.target.value)}
+                <Typography type="text">Головне зображення</Typography>
+                <ImageUpload
+                  previewImg={mainImageUrl}
+                  onFileSelect={(file) => setMainFile(file)}
                 />
-                <Textarea
-                  id="newTimeBlockHtml"
-                  label=""
-                  maxLength={500}
-                  placeholder="Текст (HTML)"
-                  value={newTimeBlockHtml}
-                  onChange={(e) => setNewTimeBlockHtml(e.target.value)}
+              </div>
+              <div className="flex flex-col gap-2">
+                <Typography type="text">Опис</Typography>
+                <DefaultTextEditor
+                  value={day.description || ''}
+                  onChange={(val) => handleChange('description', val)}
                 />
               </div>
 
-              <div className="flex flex-wrap gap-2 mt-1">
-                {day.timeline.map((timeblock, idx) => (
-                  <div
-                    key={idx}
-                    className="flex items-center gap-2 bg-border text-primary px-3 py-1 rounded-full text-sm"
-                  >
-                    <p>{timeblock.html}</p>
-                    <button
-                      onClick={() =>
+              <div className="flex flex-col gap-2">
+                <div className="flex items-center justify-between">
+                  <Typography type="text">Історичні події</Typography>
+                  <Button
+                    onClick={() => {
+                      const year = newTimeBlockYear.trim();
+                      const html = newTimeBlockHtml.trim();
+                      if (year && html) {
                         setDay((prev) => ({
                           ...prev,
-                          timeline: prev.timeline.filter((_, i) => i !== idx),
-                        }))
+                          timeline: [...prev.timeline, { year, html }],
+                        }));
+                        setNewTimeBlockYear('');
+                        setNewTimeBlockHtml('');
                       }
-                      className="text-red-500 hover:text-red-700"
-                    >
-                      ✕
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="flex flex-col gap-2">
-              <div className="flex items-center justify-between">
-                <Typography type="text">Хто народився у цей день</Typography>
-                <Button
-                  onClick={() => {
-                    const title = newWhoWasBornTodayTitle.trim();
-                    const html = newWhoWasBornTodayHtml.trim();
-                    if (title && html && newFiles.length > 0) {
-                      setDay((prev) => ({
-                        ...prev,
-                        whoWasBornToday: [
-                          ...prev.whoWasBornToday,
-                          ...newFiles.map((file) => ({
-                            title,
-                            html,
-                            image: file.name,
-                          })),
-                        ],
-                      }));
-                      setNewWhoWasBornTodayTitle('');
-                      setNewWhoWasBornTodayHtml('');
-                      setNewFile(null);
-                    }
-                  }}
-                >
-                  +
-                </Button>
-              </div>
-
-              <div className="flex flex-col gap-2">
-                <Input
-                  label=""
-                  id="newWhoWasBornTodayTitle"
-                  placeholder="Ім'я"
-                  value={newWhoWasBornTodayTitle}
-                  onChange={(e) => setNewWhoWasBornTodayTitle(e.target.value)}
-                />
-                <Textarea
-                  label=""
-                  id="newWhoWasBornTodayHtml"
-                  maxLength={500}
-                  placeholder="Текст (HTML)"
-                  value={newWhoWasBornTodayHtml}
-                  onChange={(e) => setNewWhoWasBornTodayHtml(e.target.value)}
-                />
-                <ImageUpload onFileSelect={(file) => setNewFile(file)} />
+                    }}
+                  >
+                    +
+                  </Button>
+                </div>
+                <div className="flex flex-col gap-2">
+                  <Input
+                    id="newTimeBlockYear"
+                    label=""
+                    placeholder="Рік"
+                    value={newTimeBlockYear}
+                    onChange={(e) => setNewTimeBlockYear(e.target.value)}
+                  />
+                  <Textarea
+                    id="newTimeBlockHtml"
+                    label=""
+                    maxLength={500}
+                    placeholder="Текст (HTML)"
+                    value={newTimeBlockHtml}
+                    onChange={(e) => setNewTimeBlockHtml(e.target.value)}
+                  />
+                </div>
 
                 <div className="flex flex-wrap gap-2 mt-1">
-                  {day.whoWasBornToday.map((item, idx) => (
+                  {day.timeline.map((timeblock, idx) => (
                     <div
                       key={idx}
                       className="flex items-center gap-2 bg-border text-primary px-3 py-1 rounded-full text-sm"
                     >
-                      <p>{item.title}</p>
+                      <p>{timeblock.html}</p>
                       <button
                         onClick={() =>
                           setDay((prev) => ({
                             ...prev,
-                            whoWasBornToday: prev.whoWasBornToday.filter(
-                              (_, i) => i !== idx,
-                            ),
+                            timeline: prev.timeline.filter((_, i) => i !== idx),
                           }))
                         }
                         className="text-red-500 hover:text-red-700"
@@ -424,26 +368,69 @@ export default function AddInfoDay() {
               </div>
 
               <div className="flex flex-col gap-2">
-                <Typography type="text">Іменини на цей день</Typography>
+                <WhoWasBornTodaySection day={day} handleChange={handleChange} />
+
+                <div className="flex flex-col gap-2">
+                  <Typography type="text">Іменини на цей день</Typography>
+                  <div className="flex items-end gap-2">
+                    <Input
+                      id="newName"
+                      label=""
+                      placeholder="Додайте ім`я"
+                      value={newName}
+                      onChange={(e) => setNewName(e.target.value)}
+                    />
+                    <Button onClick={handleAddName}>+</Button>
+                  </div>
+                  <div className="flex flex-wrap gap-2 mt-1">
+                    {day.bornNames.map((bornName) => (
+                      <div
+                        key={bornName}
+                        className="flex items-center gap-1 bg-border text-primary px-3 py-1 rounded-full text-sm"
+                      >
+                        <span>{bornName}</span>
+                        <button
+                          onClick={() => handleRemoveName(bornName)}
+                          className="text-red-500 hover:text-red-700"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex gap-2 items-end flex-col">
+                <Calendar
+                  id="date"
+                  label="Дата"
+                  value={day.date}
+                  onChange={(d) => handleChange('date', d)}
+                  error={''}
+                />
+              </div>
+              <div className="flex flex-col gap-2">
+                <Typography type="text">Прикмети</Typography>
                 <div className="flex items-end gap-2">
                   <Input
-                    id="newName"
+                    id="newOmen"
                     label=""
-                    placeholder="Додайте ім`я"
-                    value={newName}
-                    onChange={(e) => setNewName(e.target.value)}
+                    placeholder="Додайте прикмету"
+                    value={newOmen}
+                    onChange={(e) => setNewOmen(e.target.value)}
                   />
-                  <Button onClick={handleAddName}>+</Button>
+                  <Button onClick={handleAddOmen}>+</Button>
                 </div>
                 <div className="flex flex-wrap gap-2 mt-1">
-                  {day.bornNames.map((bornName) => (
+                  {day.omens.map((omen) => (
                     <div
-                      key={bornName}
+                      key={omen}
                       className="flex items-center gap-1 bg-border text-primary px-3 py-1 rounded-full text-sm"
                     >
-                      <span>{bornName}</span>
+                      <span>{omen}</span>
                       <button
-                        onClick={() => handleRemoveName(bornName)}
+                        onClick={() => handleRemoveOmen(omen)}
                         className="text-red-500 hover:text-red-700"
                       >
                         ✕
@@ -452,101 +439,55 @@ export default function AddInfoDay() {
                   ))}
                 </div>
               </div>
-            </div>
-
-            <div className="flex gap-2 items-end flex-col">
-              {!alternativeDate && (
-                <Calendar
-                  id="date"
-                  label="Дата"
-                  value={day.date}
-                  onChange={(d) => handleChange('date', d)}
-                  error={''}
-                />
-              )}
-            </div>
-            <div className="p-4">
-              <CheckBox
-                label="Плаваюча дата"
-                value={day.checkedAlternative}
-                setValue={(val) => handleChange('checkedAlternative', val)}
-              />
-            </div>
-            <div className="flex flex-col gap-2">
-              <Typography type="text">Прикмети</Typography>
-              <div className="flex items-end gap-2">
-                <Input
-                  id="newOmen"
-                  label=""
-                  placeholder="Додайте прикмету"
-                  value={newOmen}
-                  onChange={(e) => setNewOmen(e.target.value)}
-                />
-                <Button onClick={handleAddOmen}>+</Button>
-              </div>
-              <div className="flex flex-wrap gap-2 mt-1">
-                {day.omens.map((omen) => (
-                  <div
-                    key={omen}
-                    className="flex items-center gap-1 bg-border text-primary px-3 py-1 rounded-full text-sm"
-                  >
-                    <span>{omen}</span>
-                    <button
-                      onClick={() => handleRemoveOmen(omen)}
-                      className="text-red-500 hover:text-red-700"
-                    >
-                      ✕
-                    </button>
+              <div className="w-full">
+                <Typography type="title">
+                  Що можна і що не можна робити сьогодні
+                </Typography>
+                <div className="flex flex-col gap-2 w-full">
+                  <div className="flex flex-col gap-2">
+                    <Input
+                      id=""
+                      label="Заголовок"
+                      value={selectedRule1}
+                      onChange={(e) => setSelectedRule1(e.target.value)}
+                    />
+                    <DefaultTextEditor
+                      value={html1 || ''}
+                      onChange={(val) =>
+                        setHtml1(val.replaceAll('<p></p>', ''))
+                      }
+                    />
                   </div>
-                ))}
-              </div>
-            </div>
-            <div className="w-full">
-              <Typography type="title">
-                Що можна і що не можна робити сьогодні
-              </Typography>
-              <div className="flex flex-col gap-2 w-full">
-                <div className="flex flex-col gap-2">
-                  <Typography type="text">
-                    Що можна робити{' '}
-                    {dayjs(day.date).locale('uk').format('D MMMM')}
-                  </Typography>
-                  <ListOnlyEditor
-                    value={html1 || ''}
-                    onChange={(val) => setHtml1(val.replaceAll('<p></p>', ''))}
-                  />
+                </div>
+
+                <div className="flex flex-col gap-2 w-full">
+                  <div className="flex flex-col gap-2">
+                    <Input
+                      id=""
+                      label="Заголовок"
+                      value={selectedRule2}
+                      onChange={(e) => setSelectedRule2(e.target.value)}
+                    />
+                    <DefaultTextEditor
+                      value={html2 || ''}
+                      onChange={(val) =>
+                        setHtml2(val.replaceAll('<p></p>', ''))
+                      }
+                    />
+                  </div>
                 </div>
               </div>
 
-              <div className="flex flex-col gap-2 w-full">
-                <div className="flex flex-col gap-2">
-                  <Typography type="text">
-                    Що не можна робити{' '}
-                    {dayjs(day.date).locale('uk').format('D MMMM')}
-                  </Typography>
-                  <ListOnlyEditor
-                    value={html2 || ''}
-                    onChange={(val) => setHtml2(val.replaceAll('<p></p>', ''))}
-                  />
-                </div>
+              <Typography type="text">SEO текст</Typography>
+              <div className="width-[1200px]">
+                <DaySeoTextEditor
+                  value={day.seoText || ''}
+                  onChange={(html) => handleChange('seoText', html)}
+                />
               </div>
             </div>
-
-            <Typography type="text">SEO текст</Typography>
-            <div className="width-[1200px]">
-              <DaySeoTextEditor
-                value={day.seoText || ''}
-                onChange={(html) => handleChange('seoText', html)}
-              />
-            </div>
-            <Button onClick={handleSubmit}>
-              {loading ? 'Збереження...' : 'Зберегти'}
-            </Button>
-            <Button onClick={() => handleUpload(day.date)}>
-              Вивантажити статтю
-            </Button>
-          </div>
-        </Layout>
+          </Layout>
+        </>
       ) : (
         <Loader />
       )}
