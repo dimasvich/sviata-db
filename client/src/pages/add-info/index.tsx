@@ -4,13 +4,11 @@ import AutoSearch from '@/components/ui/AutoSearch';
 import Button from '@/components/ui/Button';
 import CheckBox from '@/components/ui/CheckBox';
 import ChooseDate from '@/components/ui/ChooseDate/ChooseDate';
-import DefaultTextEditor from '@/components/ui/editor/DefaultTextEditor';
-import ListOnlyEditor from '@/components/ui/editor/ListOnlyEditor';
+import DayRulesSection from '@/components/ui/DayRules/DayRulesSection';
 import SeoTextEditor from '@/components/ui/editor/SeoTextEditor';
 import FaqBlock from '@/components/ui/FAQ/FaqBlock';
 import HeaderEditSviato from '@/components/ui/Header/HeaderEditSviato';
 import EditableTimeline from '@/components/ui/HistoryBlock/HistoryBlock';
-import ImageUpload from '@/components/ui/ImageUpload';
 import Input from '@/components/ui/Input';
 import Layout from '@/components/ui/Layout';
 import Loader from '@/components/ui/Loader';
@@ -83,10 +81,6 @@ export default function AddInfo() {
   const [selectedRule2, setSelectedRule2] = useState(
     'Що не можна робити сьогоді?',
   );
-  const [html1, setHtml1] = useState('');
-  const [html2, setHtml2] = useState('');
-  const [rule1Id, setRule1Id] = useState('');
-  const [rule2Id, setRule2Id] = useState('');
   const router = useRouter();
   const [isOpenModal, setIsOpenModal] = useState(false);
 
@@ -95,9 +89,9 @@ export default function AddInfo() {
 
   const [tags, setTags] = useState([]);
 
-  const [mainFile, setMainFile] = useState<File | null>(null);
+  const [mainFiles, setMainFiles] = useState<File[]>([]);
+  const [mainExisting, setMainExisting] = useState<string[]>([]);
 
-  const [mainImageUrl, setMainImageUrl] = useState<string | null>(null);
   const [newFiles, setNewFiles] = useState<File[]>([]);
   const [leaflets, setLeaflets] = useState<File[]>([]);
   const [search, setSearch] = useState('');
@@ -154,11 +148,37 @@ export default function AddInfo() {
       setLoading(false);
     }
   };
+  function convertListToParagraphs(html: string): string {
+    if (!html) return '';
+
+    // Прибираємо обгортку <ul>
+    let cleaned = html.replace(/<\/?ul>/gi, '');
+
+    // Замінюємо <li> на <p>
+    cleaned = cleaned.replace(/<li>/gi, '<p>');
+
+    // Замінюємо </li> на </p>
+    cleaned = cleaned.replace(/<\/li>/gi, '</p>');
+
+    // Прибираємо зайві дефіси або символи на початку рядка
+    cleaned = cleaned.replace(/^–\s*/gm, '');
+
+    // Прибираємо &nbsp;
+    cleaned = cleaned.replace(/&nbsp;/g, ' ');
+
+    return cleaned.trim();
+  }
   useEffect(() => {
     if (sviato.mainImage) {
-      setMainImageUrl(`${baseUrl}/uploads/${id}/main/${sviato.mainImage}`);
+      const imgs = Array.isArray(sviato.mainImage)
+        ? sviato.mainImage
+        : [sviato.mainImage];
+      setMainExisting(
+        imgs.map((img) => `${baseUrl}/uploads/${id}/main/${img}`),
+      );
     }
   }, [sviato]);
+
   useEffect(() => {
     if (!id) return;
     const fetchData = async () => {
@@ -180,14 +200,6 @@ export default function AddInfo() {
         });
         setAlternativeDate(json.checkedAlternative);
         setFilled(json.status === 'FILLED' ? true : false);
-        const rulesRes = await fetch(`${baseUrl}/api/day-rules/${json.date}`);
-        const jsonRules = (await rulesRes.json()) || [];
-        setSelectedRule1(jsonRules[0].title || 'Що можна робити сьогоді?');
-        setSelectedRule2(jsonRules[1].title || 'Що не можна робити сьогоді?');
-        setHtml1(jsonRules[0].html);
-        setHtml2(jsonRules[1].html);
-        setRule1Id(jsonRules[0]._id);
-        setRule2Id(jsonRules[1]._id);
       } catch (error) {
         console.log(error);
       } finally {
@@ -240,75 +252,10 @@ export default function AddInfo() {
       tags: prev.tags.filter((t) => t !== tag),
     }));
   };
-  function convertHtmlToList(html: string): string {
-    if (!html) return '';
 
-    // прибираємо порожні абзаци
-    const cleaned = html.replace(/<p>\s*<\/p>/gi, '');
-
-    // розбиваємо на рядки по <br> і </p>
-    const lines = cleaned
-      .split(/<br\s*\/?>|<\/p>/i)
-      .map((line) =>
-        line
-          .replace(/<p>/gi, '') // прибираємо <p>
-          .replace(/&nbsp;/g, '') // прибираємо &nbsp;
-          .trim(),
-      )
-      .filter((line) => line.length > 0);
-
-    // додаємо <li> до кожного рядка
-    const listItems = lines.map((line) => {
-      // прибираємо дефіси на початку
-      line = line.replace(/^–\s*/, '');
-      return `<li>${line}</li>`;
-    });
-
-    return `<ul>${listItems.join('')}</ul>`;
-  }
-
-  const handleSubmitRules = async () => {
-    const requests = [];
-
-    if (selectedRule1 && html1.trim()) {
-      requests.push({
-        title: selectedRule1,
-        html: convertHtmlToList(html1),
-        date: sviato.date,
-        id: rule1Id,
-      });
-    }
-
-    if (selectedRule2 && html2.trim()) {
-      requests.push({
-        title: selectedRule2,
-        html: convertHtmlToList(html2),
-        date: sviato.date,
-        id: rule2Id,
-      });
-    }
-
-    setLoading(true);
-    try {
-      for (const req of requests) {
-        const method = req.id ? 'PUT' : 'POST';
-        const url = req.id
-          ? `${baseUrl}/api/day-rules/${req.id}`
-          : `${baseUrl}/api/day-rules`;
-
-        await fetch(url, {
-          method,
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(req),
-        });
-      }
-    } catch (e) {
-      console.error(e);
-      alert('Помилка при створенні правил або прикмет');
-    } finally {
-      setLoading(false);
-    }
-  };
+  const [handleSubmitRulesFn, setHandleSubmitRulesFn] = useState<
+    () => Promise<void>
+  >(async () => {});
   useEffect(() => {
     if (celebrateWhen && celebrateDate && celebrateDayoff)
       setSviato((prev) => ({
@@ -329,7 +276,9 @@ export default function AddInfo() {
 
     setLoading(true);
     try {
-      await handleSubmitRules();
+      // 🔹 Викликаємо handleSubmitRules з дочірнього компонента
+      await handleSubmitRulesFn();
+
       const formData = new FormData();
       formData.append(
         'sviatoData',
@@ -341,10 +290,8 @@ export default function AddInfo() {
 
       newFiles.forEach((file) => formData.append('images', file));
       leaflets.forEach((file) => formData.append('leaflets', file));
+      mainFiles.forEach((file) => formData.append('mainImages', file));
 
-      if (mainFile) {
-        formData.append('mainImage', mainFile);
-      }
       const res = await fetch(`${baseUrl}/api/crud/${id}`, {
         method: 'PUT',
         body: formData,
@@ -403,6 +350,7 @@ export default function AddInfo() {
                 <Input
                   id="title"
                   label="Title"
+                  maxLength={65}
                   value={sviato.title || ''}
                   onChange={(e) => handleChange('title', e.target.value)}
                 />
@@ -419,12 +367,17 @@ export default function AddInfo() {
                   onChange={(e) => handleChange('teaser', e.target.value)}
                 />
                 <div className="flex flex-col gap-2">
-                  <Typography type="text">Головне зображення</Typography>
-                  <ImageUpload
-                    previewImg={mainImageUrl}
-                    onFileSelect={(file) => setMainFile(file)}
+                  <Typography type="text">Головні зображення</Typography>
+                  <MoreGallery
+                    existingImages={mainExisting}
+                    onImagesChange={setMainFiles}
+                    maxImages={5}
+                    onRemoveExisting={(img) => {
+                      setMainExisting((prev) => prev.filter((i) => i !== img));
+                    }}
                   />
                 </div>
+
                 <div className="flex flex-col gap-2">
                   <div className="flex items-end gap-2">
                     <Select
@@ -533,46 +486,12 @@ export default function AddInfo() {
                   }
                 />
 
-                <div className="w-full">
-                  <Typography type="title">
-                    Що можна і що не можна робити сьогодні
-                  </Typography>
-                  <div className="flex flex-col gap-2 w-full">
-                    <div className="flex flex-col gap-2">
-                      <Input
-                        id=""
-                        label="Заголовок"
-                        value={selectedRule1}
-                        onChange={(e) => setSelectedRule1(e.target.value)}
-                      />
-                      <DefaultTextEditor
-                        key={html1}
-                        value={html1 || ''}
-                        onChange={(val) =>
-                          setHtml1(val.replaceAll('<p></p>', ''))
-                        }
-                      />
-                    </div>
-                  </div>
+                <DayRulesSection
+                  date={sviato.date}
+                  baseUrl={baseUrl}
+                  onInit={(fn) => setHandleSubmitRulesFn(() => fn)}
+                />
 
-                  <div className="flex flex-col gap-2 w-full">
-                    <div className="flex flex-col gap-2">
-                      <Input
-                        id=""
-                        label="Заголовок"
-                        value={selectedRule2}
-                        onChange={(e) => setSelectedRule2(e.target.value)}
-                      />
-                      <DefaultTextEditor
-                        key={html2}
-                        value={html2 || ''}
-                        onChange={(val) =>
-                          setHtml2(val.replaceAll('<p></p>', ''))
-                        }
-                      />
-                    </div>
-                  </div>
-                </div>
                 <EditableStringList
                   items={sviato.facts}
                   setItems={(facts) =>

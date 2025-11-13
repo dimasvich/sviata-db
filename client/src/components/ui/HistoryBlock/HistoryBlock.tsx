@@ -58,7 +58,7 @@ const EditableTimeline: React.FC<EditableTimelineProps> = ({
   return (
     <div className="flex flex-col gap-2">
       <div className="flex items-center justify-between">
-        <Typography type="text">Timeline</Typography>
+        <Typography type="text">Таймлайн</Typography>
         <Button onClick={handleAddOrUpdate}>
           {editingIndex !== null ? 'Оновити' : '+'}
         </Button>

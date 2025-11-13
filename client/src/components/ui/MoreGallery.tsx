@@ -1,6 +1,6 @@
 'use client';
 import { baseUrl } from '@/http';
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import MoreImageUpload from './MoreImageUpload';
 
 type PreviewFile = File & { previewUrl: string };
@@ -44,53 +44,27 @@ export default function MoreGallery({
     onImagesChange?.(realFiles.map((f) => f as File));
   };
 
-  const handleFileSelect = (index: number, file: File) => {
-    const previewFile: PreviewFile = Object.assign(file, {
-      previewUrl: URL.createObjectURL(file),
-    });
+  const addFiles = (selectedFiles: File[]) => {
+    const previewFiles = selectedFiles.map((file) =>
+      Object.assign(file, { previewUrl: URL.createObjectURL(file) }),
+    );
 
-    const newFiles = [...files];
-    newFiles[index] = previewFile;
+    const current = files.filter((f): f is PreviewFile | null => f !== null);
+    const totalCount = current.length + existing.length;
 
-    // додаємо null-слот, якщо ще є місце
-    const totalCount = newFiles.filter(Boolean).length + existing.length;
-    if (totalCount < maxImages && !newFiles.includes(null)) newFiles.push(null);
+    const newFiles = [...current, ...previewFiles].slice(0, maxImages);
+
+    if (newFiles.length + existing.length < maxImages) newFiles.push(null);
 
     updateFiles(newFiles);
-  };
-
-  const handleMultipleFilesSelect = (startIndex: number, selectedFiles: File[]) => {
-    const newFiles = [...files];
-    let insertPos = startIndex;
-
-    selectedFiles.forEach((file) => {
-      const previewFile: PreviewFile = Object.assign(file, {
-        previewUrl: URL.createObjectURL(file),
-      });
-
-      while (insertPos < maxImages && newFiles[insertPos] !== null) insertPos++;
-      if (insertPos >= maxImages) return;
-      newFiles[insertPos] = previewFile;
-      insertPos++;
-    });
-
-    // забезпечуємо null-слот, якщо ще можна додавати
-    const totalCount = newFiles.filter(Boolean).length + existing.length;
-    if (totalCount < maxImages && !newFiles.includes(null)) newFiles.push(null);
-
-    updateFiles(newFiles.slice(0, maxImages));
   };
 
   const handleRemoveNew = (index: number) => {
     const newFiles = [...files];
     const removed = newFiles.splice(index, 1);
+    if (removed[0]) URL.revokeObjectURL(removed[0].previewUrl);
 
-    // очищаємо URL тільки для існуючого файлу
-    if (removed[0]) {
-      URL.revokeObjectURL(removed[0].previewUrl);
-    }
-
-    // забезпечуємо null-слот
+    // додаємо null-слот
     const totalCount = newFiles.filter(Boolean).length + existing.length;
     if (totalCount < maxImages && !newFiles.includes(null)) newFiles.push(null);
 
@@ -103,8 +77,23 @@ export default function MoreGallery({
     onRemoveExisting?.(img);
   };
 
+  // drag & drop
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    const dtFiles = Array.from(e.dataTransfer.files).slice(0, maxImages);
+    addFiles(dtFiles);
+  };
+
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+  };
+
   return (
-    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+    <div
+      className="grid grid-cols-2 md:grid-cols-3 gap-4"
+      onDrop={handleDrop}
+      onDragOver={handleDragOver}
+    >
       {existing.map((img, idx) => (
         <div key={`existing-${idx}`} className="relative">
           <img
@@ -141,11 +130,13 @@ export default function MoreGallery({
         ) : (
           <MoreImageUpload
             key={`upload-${idx}`}
-            onFileSelect={(f) => handleFileSelect(idx, f)}
-            onMultipleSelect={(files) => handleMultipleFilesSelect(idx, files)}
-            disabled={files.filter(Boolean).length + existing.length >= maxImages}
+            onFileSelect={(f) => addFiles([f])}
+            onMultipleSelect={(files) => addFiles(files)}
+            disabled={
+              files.filter(Boolean).length + existing.length >= maxImages
+            }
           />
-        )
+        ),
       )}
     </div>
   );

@@ -39,13 +39,29 @@ export class WhoWasBornImageMiddleware implements NestMiddleware {
 
         const processedImages = [];
 
-        // 🔹 Обробка звичайних зображень (UUID + оригінальний розмір)
+        // 🔹 Обробка звичайних зображень — тепер з кропом 50x50 px
         if (req.files && Array.isArray(req.files['images'])) {
           for (const file of req.files['images'] as Express.Multer.File[]) {
             const outputFilename = `${crypto.randomUUID()}.webp`;
             const outputPath = path.join(whoWasBornDir, outputFilename);
 
-            await sharp(file.buffer)
+            const image = sharp(file.buffer);
+            const metadata = await image.metadata();
+
+            // Центрований кроп 50x50
+            const cropWidth = 50;
+            const cropHeight = 50;
+            const left = Math.max(
+              0,
+              Math.round(((metadata.width || 0) - cropWidth) / 2),
+            );
+            const top = Math.max(
+              0,
+              Math.round(((metadata.height || 0) - cropHeight) / 2),
+            );
+
+            await image
+              .extract({ left, top, width: cropWidth, height: cropHeight })
               .toFormat('webp', { quality: 90 })
               .toFile(outputPath);
 

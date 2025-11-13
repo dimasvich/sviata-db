@@ -19,7 +19,7 @@ const BLOCKS = [
     insert: 'signs-block-inner',
   },
   { name: 'Міжнародні свята', insert: 'holiday-world' },
-  { name: 'Правила на день', insert: 'day-rules' },
+  { name: 'Що не/можна робити', insert: 'day-rules' },
   { name: 'Історичні події (верхня частина)', insert: 'day-history-top' },
   { name: 'Історичні події (внутрішня частина)', insert: 'day-history-inner' },
   { name: 'Памʼятні дні', insert: 'memory-date' },

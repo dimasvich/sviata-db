@@ -71,7 +71,7 @@ export default function WhoWasBornTodaySection({
         title,
         html,
         year,
-        image: file ? file.name : existing.image, // якщо файл новий — оновлюємо, інакше залишаємо старий
+        image: file ? file.name : existing.image,
       };
     } else {
       if (!file) return;

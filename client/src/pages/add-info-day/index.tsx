@@ -2,7 +2,6 @@
 
 import Button from '@/components/ui/Button';
 import Calendar from '@/components/ui/Calendar';
-import CheckBox from '@/components/ui/CheckBox';
 import HeaderEditSviato from '@/components/ui/Header/HeaderEditSviato';
 import ImageUpload from '@/components/ui/ImageUpload';
 import Input from '@/components/ui/Input';
@@ -13,11 +12,9 @@ import Typography from '@/components/ui/Typography';
 import WhoWasBornTodaySection from '@/components/ui/WhoWasBornToday/WhoWasBornTodaySection';
 import DaySeoTextEditor from '@/components/ui/editor/DaySeoTextEditor';
 import DefaultTextEditor from '@/components/ui/editor/DefaultTextEditor';
-import ListOnlyEditor from '@/components/ui/editor/ListOnlyEditor';
 import { baseUrl } from '@/http';
 import { DayRulesEnum, WhoWasBornTodayItem } from '@/types';
 import { getNthWeekdayOfMonth } from '@/utils';
-import dayjs from 'dayjs';
 import Head from 'next/head';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
@@ -49,9 +46,6 @@ export default function AddInfoDay() {
 
   const [newOmen, setNewOmen] = useState('');
   const [newName, setNewName] = useState('');
-  const [selectedRule, setSelectedRule] = useState('');
-  const [ruleHtml, setRuleHtml] = useState('');
-  const enumOptions = Object.values(DayRulesEnum);
   const [selectedRule1, setSelectedRule1] = useState(
     'Що можна робити сьогоді?',
   );
@@ -65,13 +59,8 @@ export default function AddInfoDay() {
   const [dayOfWeek, setDayOfWeek] = useState('');
   const [week, setWeek] = useState('');
   const [month, setMonth] = useState('');
-  const [alternativeDate, setAlternativeDate] = useState(false);
   const [newTimeBlockYear, setNewTimeBlockYear] = useState('');
   const [newTimeBlockHtml, setNewTimeBlockHtml] = useState('');
-
-  const [newWhoWasBornTodayYear, setNewWhoWasBornTodayYear] = useState('');
-  const [newWhoWasBornTodayTitle, setNewWhoWasBornTodayTitle] = useState('');
-  const [newWhoWasBornTodayHtml, setNewWhoWasBornTodayHtml] = useState('');
 
   const [newFiles, setNewFiles] = useState<File[]>([]);
   const [newFile, setNewFile] = useState<File | null>(null);
@@ -440,9 +429,7 @@ export default function AddInfoDay() {
                 </div>
               </div>
               <div className="w-full">
-                <Typography type="title">
-                  Що можна і що не можна робити сьогодні
-                </Typography>
+                <Typography type="title">Що не/можна робити</Typography>
                 <div className="flex flex-col gap-2 w-full">
                   <div className="flex flex-col gap-2">
                     <Input

@@ -21,14 +21,18 @@ export default function Textarea({
   maxLength?: number;
 }) {
   const [currentLength, setCurrentLength] = useState(value.length);
+  const [isOverLimit, setIsOverLimit] = useState(false);
+
   useEffect(() => {
     setCurrentLength(value.length);
-  }, [value]);
+    setIsOverLimit(value.length > maxLength);
+  }, [value, maxLength]);
+
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    if (e.target.value.length <= maxLength) {
-      setCurrentLength(e.target.value.length);
-      onChange(e);
-    }
+    const newValue = e.target.value;
+    setCurrentLength(newValue.length);
+    setIsOverLimit(newValue.length > maxLength);
+    onChange(e);
   };
 
   return (
@@ -43,14 +47,19 @@ export default function Textarea({
         value={value}
         onChange={handleChange}
         rows={rows}
-        maxLength={maxLength}
         className={`px-3 py-2 rounded-lg border focus:outline-none focus:ring-2 text-primary bg-surface resize-y
-          ${error ? 'border-red-500 focus:ring-red-500' : 'border-border focus:ring-primary'}`}
+          ${
+            error || isOverLimit
+              ? 'border-red-500 focus:ring-red-500'
+              : 'border-border focus:ring-primary'
+          }`}
       />
 
       <div className="flex justify-between items-center">
         {error && <span className="text-sm text-red-500">{error}</span>}
-        <span className="text-sm text-muted">
+        <span
+          className={`text-sm ${isOverLimit ? 'text-red-500' : 'text-muted'}`}
+        >
           {currentLength}/{maxLength}
         </span>
       </div>
