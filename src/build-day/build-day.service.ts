@@ -336,7 +336,7 @@ export class BuildDayService {
             />
           </div>
           <div class="info">
-            <div class="name">${item.title}</div>
+            <div class="name">${item.title + item.year ? `(${item.year})` : ""}</div>
             <div class="desc">${item.html}</div>
           </div>
         </div>

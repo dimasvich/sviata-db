@@ -23,6 +23,7 @@ export interface Celebrate {
   isDayoff: boolean;
 }
 export interface WhoWasBornToday {
+  year: string;
   title: string;
   html: string;
   image: string;
@@ -53,8 +54,8 @@ export const SviatoTagToIdMap: Record<SviatoTag, number> = {
   [SviatoTag['Професійні свята']]: 6076,
   [SviatoTag['Релігійні свята']]: 1824,
   [SviatoTag['Національні свята']]: 13052,
-  [SviatoTag['Державні свята']]: 4999, 
-}
+  [SviatoTag['Державні свята']]: 4999,
+};
 export interface DayInfo {
   dayOfMonth: number;
   year: number;
@@ -64,6 +65,6 @@ export interface DayInfo {
   isFilled: boolean;
 }
 export interface Faq {
-  question:string;
-  answer:string;
+  question: string;
+  answer: string;
 }

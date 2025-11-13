@@ -148,6 +148,7 @@ export class BuildService {
                 </tbody>
             </table>
             </figure>
+            <figcaption class="wp-element-caption">В який день будемо відзначати ${sviato.name} у найближчі 5 років</figcaption>
             `,
         'timeline-section': `
             ${

@@ -100,7 +100,7 @@ export class CrudController {
     @Req() req,
     @Res() res,
   ): Promise<Sviato> {
-    const { processedImages, mainImagePath, leafletsPath } = req;
+    const { processedImages, mainImagesPath, leafletsPath } = req;
     const sviatoData = JSON.parse(req.body.sviatoData);
 
     if (processedImages?.length) {
@@ -111,8 +111,8 @@ export class CrudController {
       sviatoData.leaflets = leafletsPath.map((item) => item.outputFilename);
     }
 
-    if (mainImagePath) {
-      sviatoData.mainImage = mainImagePath;
+    if (mainImagesPath?.length) {
+      sviatoData.mainImage = mainImagesPath[0];
     }
     const updated = await this.sviatoService.update(id, sviatoData);
     return res.json(updated);
