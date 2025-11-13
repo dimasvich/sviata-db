@@ -2,44 +2,20 @@
 
 import { EditorContent, useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 
 interface DefaultTextEditorProps {
   value: string;
   onChange: (html: string) => void;
 }
 
-// Функція для конвертації з <ul><li> у <p>
-function convertListToParagraphs(html: string): string {
-  if (!html) return '';
-
-  // Прибираємо обгортку <ul>
-  let cleaned = html.replace(/<\/?ul>/gi, '');
-
-  // Замінюємо <li> на <p>
-  cleaned = cleaned.replace(/<li>/gi, '<p>');
-
-  // Замінюємо </li> на </p>
-  cleaned = cleaned.replace(/<\/li>/gi, '</p>');
-
-  // Прибираємо зайві дефіси або символи на початку рядка
-  cleaned = cleaned.replace(/^–\s*/gm, '');
-
-  // Прибираємо &nbsp;
-  cleaned = cleaned.replace(/&nbsp;/g, ' ');
-
-  return cleaned.trim();
-}
-
 const DefaultTextEditor: React.FC<DefaultTextEditorProps> = ({
   value,
   onChange,
 }) => {
-  const [, forceUpdate] = useState(0);
-
   const editor = useEditor({
     extensions: [StarterKit.configure({ heading: false })],
-    content: '', // пусто при старті
+    content: value || '', 
     editorProps: {
       attributes: {
         class: 'editor-content focus:outline-none min-h-[200px]',
@@ -48,18 +24,7 @@ const DefaultTextEditor: React.FC<DefaultTextEditorProps> = ({
     onUpdate: ({ editor }) => {
       onChange(editor.getHTML());
     },
-    onSelectionUpdate: () => {
-      forceUpdate((x) => x + 1);
-    },
   });
-
-  // Оновлюємо контент після отримання value
-  useEffect(() => {
-    if (editor && value) {
-      editor.commands.setContent(convertListToParagraphs(value));
-      alert(value)
-    }
-  }, [editor, value]);
 
   if (!editor) return <div>Loading editor...</div>;
 
@@ -89,7 +54,6 @@ const DefaultTextEditor: React.FC<DefaultTextEditorProps> = ({
           ¶
         </button>
       </div>
-
       <EditorContent editor={editor} />
     </div>
   );

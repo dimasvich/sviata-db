@@ -34,12 +34,13 @@ export default function MoreImageUpload({
     >
       <input
         type="file"
-        multiple
+        multiple={true}
         className="hidden"
         onChange={handleChange}
         disabled={disabled}
         accept="image/*"
       />
+
       <span className="text-gray-500 text-2xl">+</span>
     </label>
   );

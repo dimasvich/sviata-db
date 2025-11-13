@@ -7,17 +7,16 @@ import { EditorContent, useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import React, { useState } from 'react';
 import ImageUpload from '../ImageUpload';
-import { ImageNode } from './ImageNode';
-import { QuoteBlock } from './QuoteBlock';
 import { PullQuote } from './PullQuote';
+import { QuoteBlock } from './QuoteBlock';
 
 const BLOCKS = [
   { name: 'Коли святкуємо (таблиця)', insert: 'when-section' },
   { name: 'Таймлайн', insert: 'timeline-section' },
   { name: 'Привітання', insert: 'greetings-section' },
-  { name: 'Ідеї для постів', insert: 'ideas-section' },
+  { name: 'Цитати для інстаграму', insert: 'ideas-section' },
   { name: 'Правила на день', insert: 'rules-section' },
-  { name: 'Факти', insert: 'facts-section' },
+  { name: 'Цікаві факти ', insert: 'facts-section' },
   { name: 'Джерела', insert: 'sources-section' },
   { name: 'Пов`язані події', insert: 'related-section' },
   { name: 'Більше ідей для привітання', insert: 'moreIdeas-section' },
@@ -152,11 +151,7 @@ const SeoTextEditor: React.FC<SeoTextEditorProps> = ({
 
     const videoHTML = `
     <a class="youtube-video" href="${videoUrl}" target="_blank" rel="nofollow">${videoUrl}</a>
-    ${
-      videoCaption
-        ? `<p class="video-caption">${videoCaption}</p>`
-        : ''
-    }
+    ${videoCaption ? `<p class="video-caption">${videoCaption}</p>` : ''}
   `;
 
     editor.chain().focus().insertContent(videoHTML).run();
