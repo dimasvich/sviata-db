@@ -95,14 +95,10 @@ export default function AddInfo() {
 
   const [filled, setFilled] = useState<boolean>(false);
 
-  const selectRelated = (item: {
-    _id: string;
-    name: string;
-    articleId: string;
-  }) => {
+  const selectRelated = (item: { _id: string; name: string }) => {
     setSviato((prev) => ({
       ...prev,
-      related: [...prev.related, item.articleId],
+      related: [...prev.related, item._id],
     }));
     setSearch('');
     setSearchList([]);
@@ -114,6 +110,7 @@ export default function AddInfo() {
       const res = await fetch(`${baseUrl}/api/crud/search?query=${search}`);
       if (!res.ok) return;
       const json = await res.json();
+
       setSearchList(json);
     };
     fetchData();
@@ -292,7 +289,13 @@ export default function AddInfo() {
       {!loading ? (
         <>
           <HeaderEditSviato>
-            <Button onClick={() => {router.push('/')}}>Назад</Button>
+            <Button
+              onClick={() => {
+                router.push('/');
+              }}
+            >
+              Назад
+            </Button>
             <Button onClick={handleSubmit}>
               {loading ? 'Оновлюється...' : 'Зберегти зміни'}
             </Button>
@@ -477,6 +480,9 @@ export default function AddInfo() {
                   <Typography type="text">Пов&apos;язані події</Typography>
                   <div className="flex items-end gap-2">
                     <AutoSearch
+                      id={id || ''}
+                      setLoader={setLoading}
+                      tags={tags}
                       label="Пошук свят по H1"
                       value={search}
                       placeholder="H1 свята"
