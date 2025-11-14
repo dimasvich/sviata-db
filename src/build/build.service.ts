@@ -8,7 +8,7 @@ import * as cheerio from 'cheerio';
 import * as FormData from 'form-data';
 import * as fs from 'fs';
 import { html as beautifyHtml } from 'js-beautify';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import * as path from 'path';
 import { DayRules, DayRulesDocument } from 'src/crud/schema/dayrules.schema';
 import { Sviato, SviatoDocument } from 'src/crud/schema/sviato.schema';
@@ -121,6 +121,23 @@ export class BuildService {
       content = convertYouTubeLinks(content);
       const postcardPath =
         'https://gosta.ua/wp-content/themes/gosta/img/holiday/postcard/';
+
+      const getRelatedIds = async () => {
+        const results = await Promise.all(
+          sviato.related.map(async (item) => {
+            const doc = await this.sviatoModel
+              .findOne({ _id: new Types.ObjectId(item) })
+              .select('articleId')
+              .lean();
+
+            return doc?.articleId || null;
+          }),
+        );
+
+        return results.length ? results.filter((id) => id !== null) : null;
+      };
+
+      const related = await getRelatedIds();
 
       const blockTemplates: Record<string, string> = {
         'when-section-title': `<h1>В який день будемо відзначати ${sviato.name} в наступні 5 років</h1>`,
@@ -275,8 +292,8 @@ export class BuildService {
           .join('')}
                </div> `
           : '',
-        'related-section': sviato?.related
-          ? `<div class="related" data-id="[${sviato.related.map((item) => item)}]"></div>`
+        'related-section': related
+          ? `<div class="related" data-id="[${related.map((item) => item)}]"></div>`
           : '',
         'moreIdeas-section': `<div class="moreIdeas"></div>`,
         'leaflets-section': sviato?.leaflets
@@ -561,7 +578,7 @@ export class BuildService {
           }
         }
       }
-      if(sviato?.leaflets.length) await this.uploadLeaflets(id);
+      if (sviato?.leaflets.length) await this.uploadLeaflets(id);
       const tags = sviato.tags.map((item) => SviatoTagToIdMap[item]);
       const holiday_date = [
         sviato.date,
@@ -608,17 +625,7 @@ export class BuildService {
         articleId: postResponse.data.id,
         link: postResponse.data.link,
       });
-      if (sviato.related) {
-        for (let i = 0; i < sviato.related.length; i++) {
-          const realtedSviato = await this.sviatoModel.findOne({
-            articleId: sviato.related[i],
-          });
-          await this.sviatoModel.findOneAndUpdate(
-            { articleId: sviato.related[i] },
-            { related: [...realtedSviato.related, postResponse.data.id] },
-          );
-        }
-      }
+
       return postResponse.data;
     } catch (error) {
       console.error('Error publishing:', error);
@@ -656,7 +663,7 @@ export class BuildService {
 
       const mediaId = mediaResponse.data.id;
       console.log('Media uploaded, ID:', mediaId);
-      if(sviato?.leaflets.length) await this.uploadLeaflets(id);
+      if (sviato?.leaflets.length) await this.uploadLeaflets(id);
       const tags = sviato.tags.map((item) => SviatoTagToIdMap[item]);
       const holiday_date = [
         sviato.date,
@@ -758,19 +765,7 @@ export class BuildService {
         articleId: postResponse.data.id,
         link: postResponse.data.link,
       });
-      if (sviato.related) {
-        for (let i = 0; i < sviato.related.length; i++) {
-          const realtedSviato = await this.sviatoModel.findOne({
-            articleId: sviato.related[i],
-          });
-          await this.sviatoModel.findOneAndUpdate(
-            { articleId: sviato.related[i] },
-            {
-              related: [...(realtedSviato.related || []), postResponse.data.id],
-            },
-          );
-        }
-      }
+
       return postResponse.data;
     } catch (error) {
       throw error;

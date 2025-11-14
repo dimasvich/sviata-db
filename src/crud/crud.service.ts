@@ -21,12 +21,21 @@ export class CrudService {
   async create(sviatoData: Partial<Sviato>): Promise<Sviato> {
     const sviato = new this.sviatoModel(sviatoData);
 
-    const date = LocalDate.parse(sviato.date);
-
-    sviato.dayOfMonth = date.dayOfMonth();
-    sviato.dayOfYear = date.dayOfYear();
-    sviato.dayOfWeek = date.dayOfWeek().toString();
-    sviato.month = date.monthValue();
+    if (
+      sviato.date &&
+      typeof sviato.date === 'string' &&
+      sviato.date.includes('-')
+    ) {
+      try {
+        const date = LocalDate.parse(sviato.date);
+        sviato.dayOfMonth = date.dayOfMonth();
+        sviato.dayOfYear = date.dayOfYear();
+        sviato.dayOfWeek = date.dayOfWeek().toString();
+        sviato.month = date.monthValue();
+      } catch (e) {
+        console.warn('Invalid date, skipping date parsing:', sviato.date);
+      }
+    }
 
     return sviato.save();
   }
@@ -117,10 +126,24 @@ export class CrudService {
     try {
       if (!query) return [];
 
+      // нормалізація
+      const normalized = query
+        .trim()
+        .replace(/\s+/g, ' ') // замінюємо багато пробілів на один
+        .toLowerCase();
+
+      const words = normalized.split(' ');
+
+      const regexConditions = words.map((word) => ({
+        name: {
+          $regex: new RegExp(word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i'),
+        },
+      }));
+
       const results = await this.sviatoModel
         .find(
           {
-            name: { $regex: query, $options: 'i' },
+            $and: regexConditions,
             articleId: { $exists: true, $ne: '' },
           },
           { _id: 1, name: 1, articleId: 1 },
