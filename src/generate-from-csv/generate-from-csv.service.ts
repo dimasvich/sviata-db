@@ -5,7 +5,7 @@ import {
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import * as csv from 'csv-parser';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import OpenAI from 'openai';
 import { Sviato, SviatoDocument } from 'src/crud/schema/sviato.schema';
 import { Readable } from 'stream';
@@ -176,6 +176,77 @@ export class GenerateFromCsvService {
       );
 
       return { total: data.length, successCount, failedCount, results };
+    } catch (error) {
+      console.error('Error in uploadGenerateAndSave:', error);
+      throw error;
+    }
+  }
+  public async readGenerateAndSave(data: {
+    date: string;
+    tags: string[];
+    name: string;
+  }, id:string) {
+    try {
+      const prompts = await this.parseUploadedFile([data]);
+
+      const results = await Promise.all(
+        prompts.map(async (prompt, index) => {
+          try {
+            console.log(
+              `Генерація ${index + 1}/${[data].length}: ${[data][index].name}`,
+            );
+
+            const html = await this.generateHtmlForPrompt(prompt);
+
+            if (!html) {
+              console.warn(`Порожній результат для: ${[data][index].name}`);
+              return { name: [data][index].name, success: false };
+            }
+
+            const $ = cheerio.load(html);
+            const h1Text = $('h1').first().text().trim();
+            $('h1').first().remove();
+            const metaTitle = $('meta[name="title"]').attr('content') || '';
+            const metaDescription =
+              $('meta[name="description"]').attr('content') || '';
+            const teaser = $('meta[name="teaser"]').attr('content') || '';
+            const updatedHtml = $.html();
+
+            await this.sviatoModel.findByIdAndUpdate(new Types.ObjectId(id),{
+              tags: [data][index].tags,
+              date: [data][index].date,
+              name: h1Text || [data][index].name,
+              title: metaTitle,
+              description: metaDescription,
+              teaser: teaser,
+              seoText: updatedHtml,
+              status: CompleteStatus.OPENAI,
+            });
+
+            console.log(`Збережено: ${[data][index].name}`);
+            return { name: [data][index].name, success: true };
+          } catch (err) {
+            console.error(
+              `Помилка при обробці ${[data][index].name}:`,
+              err.message,
+            );
+            return {
+              name: [data][index].name,
+              success: false,
+              error: err.message,
+            };
+          }
+        }),
+      );
+
+      const successCount = results.filter((r) => r.success).length;
+      const failedCount = results.filter((r) => !r.success).length;
+
+      console.log(
+        `Завершено. Успішно: ${successCount}, Помилок: ${failedCount}`,
+      );
+
+      return { successCount, failedCount, results };
     } catch (error) {
       console.error('Error in uploadGenerateAndSave:', error);
       throw error;

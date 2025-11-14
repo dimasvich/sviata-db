@@ -1,4 +1,5 @@
 import {
+  Body,
   Controller,
   Get,
   Param,
@@ -20,6 +21,17 @@ export class GenerateFromCsvController {
   async uploadCsv(@UploadedFile() file: Express.Multer.File) {
     const result =
       await this.generateFromCsvService.uploadGenerateAndSave(file);
+    return {
+      data: result,
+    };
+  }
+  @Post('read/:id')
+  async readAndGenerate(
+    @Body() body: { date: string; tags: string[]; name: string },
+    @Param('id') id: string
+  ) {
+    const result =
+      await this.generateFromCsvService.readGenerateAndSave(body, id);
     return {
       data: result,
     };
