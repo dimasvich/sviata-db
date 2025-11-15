@@ -5,6 +5,7 @@ import 'dayjs/locale/uk';
 import { baseUrl } from '@/http';
 import Button from '../Button';
 import Typography from '../Typography';
+import { apiFetch } from '@/http/api';
 
 interface Sviato {
   date: string;
@@ -42,7 +43,7 @@ export default function DashboardMonth({
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const res = await fetch(`${baseUrl}/api/day/by-month?month=${month}`);
+        const res = await apiFetch(`${baseUrl}/api/day/by-month?month=${month}`);
         const json: Sviato[] = await res.json();
         setData(json || []);
       } catch (err) {
@@ -55,7 +56,7 @@ export default function DashboardMonth({
   }, [month]);
 
   const createNew = async (dateStr: string) => {
-    const res = await fetch(`${baseUrl}/api/crud`, {
+    const res = await apiFetch(`${baseUrl}/api/crud`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ date: dateStr }),

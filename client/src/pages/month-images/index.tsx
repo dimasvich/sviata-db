@@ -11,6 +11,7 @@ import Loader from '@/components/ui/Loader';
 import Gallery from '@/components/ui/Gallery';
 import MoreGallery from '@/components/ui/MoreGallery';
 import MonthYearPicker from '@/components/ui/MonthYearPicker';
+import { apiFetch } from '@/http/api';
 
 export default function AutoGeneratePage() {
   const [files, setFiles] = useState<File[]>([]);
@@ -27,7 +28,7 @@ export default function AutoGeneratePage() {
       const formData = new FormData();
       files.forEach((file) => formData.append('images', file));
 
-      const res = await fetch(`${baseUrl}/api/day/images/${date}`, {
+      const res = await apiFetch(`${baseUrl}/api/day/images/${date}`, {
         method: 'POST',
         body: formData,
       });

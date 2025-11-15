@@ -19,6 +19,7 @@ import SviatoDeleteModal from '@/components/ui/sviato/SviatoDeleteModal';
 import Textarea from '@/components/ui/Textarea';
 import Typography from '@/components/ui/Typography';
 import { baseUrl } from '@/http';
+import { apiFetch } from '@/http/api';
 import { deleteSviato } from '@/http/crud';
 import { Celebrate } from '@/types';
 import dayjs from 'dayjs';
@@ -107,7 +108,7 @@ export default function AddInfo() {
   useEffect(() => {
     if (!search.length) return;
     const fetchData = async () => {
-      const res = await fetch(`${baseUrl}/api/crud/search?query=${search}`);
+      const res = await apiFetch(`${baseUrl}/api/crud/search?query=${search}`);
       if (!res.ok) return;
       const json = await res.json();
 
@@ -121,13 +122,13 @@ export default function AddInfo() {
     setLoading(true);
     try {
       if (!sviato.articleId) {
-        const res = await fetch(`${baseUrl}/api/build/${id}`, {
+        const res = await apiFetch(`${baseUrl}/api/build/${id}`, {
           method: 'Post',
           headers: { 'Content-Type': 'application/json' },
         });
         if (res.status == 201) alert('Зміни вивантажено');
       } else {
-        const res = await fetch(`${baseUrl}/api/build/update/${id}`, {
+        const res = await apiFetch(`${baseUrl}/api/build/update/${id}`, {
           method: 'Post',
           headers: { 'Content-Type': 'application/json' },
         });
@@ -155,8 +156,8 @@ export default function AddInfo() {
     const fetchData = async () => {
       setLoading(true);
       try {
-        const res = await fetch(`${baseUrl}/api/crud/${id}`);
-        const resTags = await fetch(`${baseUrl}/api/crud/tags`);
+        const res = await apiFetch(`${baseUrl}/api/crud/${id}`);
+        const resTags = await apiFetch(`${baseUrl}/api/crud/tags`);
         if (!res.ok) {
           alert('Не вдалося завантажити дані');
           return;
@@ -263,7 +264,7 @@ export default function AddInfo() {
       leaflets.forEach((file) => formData.append('leaflets', file));
       mainFiles.forEach((file) => formData.append('mainImages', file));
 
-      const res = await fetch(`${baseUrl}/api/crud/${id}`, {
+      const res = await apiFetch(`${baseUrl}/api/crud/${id}`, {
         method: 'PUT',
         body: formData,
       });

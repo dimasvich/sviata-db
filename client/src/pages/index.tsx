@@ -5,6 +5,7 @@ import Header from '@/components/ui/Header/Header';
 import Layout from '@/components/ui/Layout';
 import Loader from '@/components/ui/Loader';
 import { baseUrl } from '@/http';
+import { apiFetch } from '@/http/api';
 import dayjs from 'dayjs';
 import Head from 'next/head';
 import { useEffect, useState } from 'react';
@@ -43,7 +44,7 @@ export default function Home() {
 
     const fetchData = async () => {
       try {
-        const res = await fetch(`${baseUrl}/api/day/status-by-year?year=${year}`);
+        const res = await apiFetch(`${baseUrl}/api/day/status-by-year?year=${year}`);
         const json: DayInfo[] = await res.json();
         const map: Record<string, DayInfo> = {};
         json.forEach((item) => {

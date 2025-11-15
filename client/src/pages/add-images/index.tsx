@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Gallery from '@/components/ui/Gallery';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { baseUrl } from '@/http';
+import { apiFetch } from '@/http/api';
 
 export default function AddImages() {
   const router = useRouter();
@@ -25,7 +26,7 @@ export default function AddImages() {
     try {
       setLoading(true);
       setError('');
-      const res = await fetch(`${baseUrl}/api/crud/images/${id}`, {
+      const res = await apiFetch(`${baseUrl}/api/crud/images/${id}`, {
         method: 'POST',
         body: formData,
       });

@@ -15,6 +15,7 @@ import Head from 'next/head';
 import dayjs from 'dayjs';
 import localeData from 'dayjs/plugin/localeData';
 import { getNthWeekdayOfMonth } from '@/utils';
+import { apiFetch } from '@/http/api';
 
 export default function CreateSviatoPage() {
   const [name, setName] = useState('');
@@ -53,7 +54,7 @@ export default function CreateSviatoPage() {
     setSuccessMessage('');
 
     try {
-      const res = await fetch(`${baseUrl}/api/crud`, {
+      const res = await apiFetch(`${baseUrl}/api/crud`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name, description, date, type, doc }),
@@ -75,11 +76,11 @@ export default function CreateSviatoPage() {
     const redirect = async () => {
       try {
         const [imagesRes, rulesRes] = await Promise.all([
-          fetch(`${baseUrl}/api/crud/sviato-images/${date}`, {
+          apiFetch(`${baseUrl}/api/crud/sviato-images/${date}`, {
             method: 'GET',
             headers: { 'Content-Type': 'application/json' },
           }),
-          fetch(`${baseUrl}/api/crud/day-rules/${date}`, {
+          apiFetch(`${baseUrl}/api/crud/day-rules/${date}`, {
             method: 'GET',
             headers: { 'Content-Type': 'application/json' },
           }),
