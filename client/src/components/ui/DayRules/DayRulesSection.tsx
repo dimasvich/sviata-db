@@ -4,6 +4,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import Typography from '../Typography';
 import Input from '../Input';
 import DefaultTextEditor from '../editor/DefaultTextEditor';
+import { apiFetch } from '@/http/api';
 
 interface DayRulesSectionProps {
   date: string;
@@ -70,7 +71,7 @@ const DayRulesSection: React.FC<DayRulesSectionProps> = ({
       if (!date) return;
       setLoading(true);
       try {
-        const res = await fetch(`${baseUrl}/api/day-rules/${date}`);
+        const res = await apiFetch(`${baseUrl}/api/day-rules/${date}`);
         if (res.ok) {
           const json = await res.json();
           setRule1({
@@ -125,7 +126,7 @@ const DayRulesSection: React.FC<DayRulesSectionProps> = ({
           ? `${baseUrl}/api/day-rules/${req.id}`
           : `${baseUrl}/api/day-rules`;
 
-        await fetch(url, {
+        await apiFetch(url, {
           method,
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(req),

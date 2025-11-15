@@ -8,6 +8,7 @@ import { motion } from 'framer-motion';
 import { baseUrl } from '@/http';
 import { useRouter } from 'next/navigation';
 import Loader from '@/components/ui/Loader';
+import { apiFetch } from '@/http/api';
 
 export default function AutoGeneratePage() {
   const [file, setFile] = useState<File | null>(null);
@@ -23,7 +24,7 @@ export default function AutoGeneratePage() {
       const formData = new FormData();
       formData.append('file', file);
 
-      const res = await fetch(`${baseUrl}/api/generate-from-csv/upload`, {
+      const res = await apiFetch(`${baseUrl}/api/generate-from-csv/upload`, {
         method: 'POST',
         body: formData,
       });

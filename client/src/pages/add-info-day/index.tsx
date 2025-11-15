@@ -13,6 +13,7 @@ import WhoWasBornTodaySection from '@/components/ui/WhoWasBornToday/WhoWasBornTo
 import DaySeoTextEditor from '@/components/ui/editor/DaySeoTextEditor';
 import DefaultTextEditor from '@/components/ui/editor/DefaultTextEditor';
 import { baseUrl } from '@/http';
+import { apiFetch } from '@/http/api';
 import { DayRulesEnum, WhoWasBornTodayItem } from '@/types';
 import { getNthWeekdayOfMonth } from '@/utils';
 import Head from 'next/head';
@@ -87,7 +88,7 @@ export default function AddInfoDay() {
           ...prev,
           date: dateParam,
         }));
-        const res = await fetch(`${baseUrl}/api/day/${dateParam}`);
+        const res = await apiFetch(`${baseUrl}/api/day/${dateParam}`);
         if (!res.ok) {
           alert('Не вдалося завантажити дані по даті');
           return;
@@ -109,7 +110,7 @@ export default function AddInfoDay() {
           checkedAlternative: json.checkedAlternative || false,
         });
 
-        const rulesRes = await fetch(`${baseUrl}/api/day-rules/${dateParam}`);
+        const rulesRes = await apiFetch(`${baseUrl}/api/day-rules/${dateParam}`);
         const jsonRules = await rulesRes.json();
         setSelectedRule1(jsonRules[0].title);
         setSelectedRule2(jsonRules[1].title);
@@ -135,12 +136,12 @@ export default function AddInfoDay() {
 
   const handleUpload = async (date: string) => {
     if (!day.articleId) {
-      await fetch(`${baseUrl}/api/build-day/${date}`, {
+      await apiFetch(`${baseUrl}/api/build-day/${date}`, {
         method: 'Post',
         headers: { 'Content-Type': 'application/json' },
       });
     } else {
-      await fetch(`${baseUrl}/api/build-day/update/${date}`, {
+      await apiFetch(`${baseUrl}/api/build-day/update/${date}`, {
         method: 'Post',
         headers: { 'Content-Type': 'application/json' },
       });
@@ -182,7 +183,7 @@ export default function AddInfoDay() {
           ? `${baseUrl}/api/day-rules/${req.id}`
           : `${baseUrl}/api/day-rules`;
 
-        await fetch(url, {
+        await apiFetch(url, {
           method,
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(req),
@@ -238,7 +239,7 @@ export default function AddInfoDay() {
         formData.append('mainImage', mainFile);
       }
 
-      const res = await fetch(`${baseUrl}/api/day/${day.date}`, {
+      const res = await apiFetch(`${baseUrl}/api/day/${day.date}`, {
         method: 'PUT',
         body: formData,
       });

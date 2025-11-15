@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import ModalDoesntExist from './ModalDoesntExist/ModalDoesntExist';
 import ModalAddHoliday from './ModalDoesntExist/ModalDoesntExistGenerate';
 import Typography from './Typography';
+import { apiFetch } from '@/http/api';
 
 interface SearchItem {
   _id: string;
@@ -46,7 +47,7 @@ export default function AutoSearch({
 
   const createNew = async (sviatoName: string) => {
     if (!sviatoName) return;
-    const res = await fetch(`${baseUrl}/api/crud`, {
+    const res = await apiFetch(`${baseUrl}/api/crud`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ name: sviatoName, related:[id] }),
@@ -67,7 +68,7 @@ export default function AutoSearch({
   async function startGeneration(data: { date: string; tags: string[] }) {
     setLoader(true);
     if (sviatoId && data) {
-      const res = await fetch(
+      const res = await apiFetch(
         `${baseUrl}/api/generate-from-csv/read/${sviatoId}`,
         {
           method: 'POST',

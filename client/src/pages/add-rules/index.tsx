@@ -15,6 +15,7 @@ import localeData from 'dayjs/plugin/localeData';
 import { getNthWeekdayOfMonth } from '@/utils';
 import Textarea from '@/components/ui/Textarea';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { apiFetch } from '@/http/api';
 
 export default function AddRules() {
   const [selectedRule1, setSelectedRule1] = useState('');
@@ -83,7 +84,7 @@ export default function AddRules() {
     setLoading(true);
     try {
       for (const req of requests) {
-        await fetch(`${baseUrl}/api/crud/day-rules`, {
+        await apiFetch(`${baseUrl}/api/crud/day-rules`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(req),
@@ -91,7 +92,7 @@ export default function AddRules() {
       }
 
       if (omens.length && id) {
-        await fetch(`${baseUrl}/api/crud/${id}`, {
+        await apiFetch(`${baseUrl}/api/crud/${id}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ omens }),

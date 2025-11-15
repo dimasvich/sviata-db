@@ -4,6 +4,7 @@ import Layout from '@/components/ui/Layout';
 import Loader from '@/components/ui/Loader';
 import Typography from '@/components/ui/Typography';
 import { baseUrl } from '@/http';
+import { apiFetch } from '@/http/api';
 import { getNthWeekdayOfMonth } from '@/utils';
 import dayjs from 'dayjs';
 import localeData from 'dayjs/plugin/localeData';
@@ -34,7 +35,7 @@ export default function AutoGeneratePage() {
     setLoading(true);
 
     try {
-      const res = await fetch(`${baseUrl}/api/generate-from-csv/day/${date}`, {
+      const res = await apiFetch(`${baseUrl}/api/generate-from-csv/day/${date}`, {
         method: 'POST',
       });
 
