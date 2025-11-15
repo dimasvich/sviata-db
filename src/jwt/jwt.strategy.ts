@@ -1,0 +1,19 @@
+import { Injectable } from '@nestjs/common';
+import { PassportStrategy } from '@nestjs/passport';
+import { ExtractJwt, Strategy } from 'passport-jwt';
+import * as fs from 'fs';
+
+@Injectable()
+export class JwtStrategy extends PassportStrategy(Strategy) {
+  constructor() {
+    super({
+      jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
+      algorithms: ['RS256'],
+      secretOrKey: fs.readFileSync('public.key'), 
+    });
+  }
+
+  async validate(payload: any) {
+    return payload;
+  }
+}

@@ -9,6 +9,9 @@ import { BuildModule } from './build/build.module';
 import { GenerateFromCsvModule } from './generate-from-csv/generate-from-csv.module';
 import { DayModule } from './day/day.module';
 import { BuildDayModule } from './build-day/build-day.module';
+import { JwtModule } from './jwt/jwt.module';
+import { APP_GUARD } from '@nestjs/core';
+import { JwtGuard } from './jwt/jwt.guard';
 
 @Module({
   imports: [
@@ -33,8 +36,14 @@ import { BuildDayModule } from './build-day/build-day.module';
     GenerateFromCsvModule,
     DayModule,
     BuildDayModule,
+    JwtModule,
   ],
   controllers: [],
-  providers: [],
+  providers: [
+    {
+      provide: APP_GUARD,
+      useClass: JwtGuard,
+    },
+  ],
 })
 export class AppModule {}

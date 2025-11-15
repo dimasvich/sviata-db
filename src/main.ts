@@ -1,9 +1,9 @@
+import { NestFactory } from '@nestjs/core';
 import { config } from 'dotenv';
 config();
-import { NestFactory } from '@nestjs/core';
-import { AppModule } from './app.module';
-import { join } from 'path';
 import * as express from 'express';
+import { join } from 'path';
+import { AppModule } from './app.module';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
