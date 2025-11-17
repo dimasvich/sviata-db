@@ -16,7 +16,7 @@ export class DayService {
   async update(date: string, dayData: Partial<Day>): Promise<Day> {
     const day = await this.dayModel.findOneAndUpdate(
       { date },
-      { $set: dayData },
+      { $set: { ...dayData, dateUpdate: dayjs().format('YYYY-MM-DD') } },
       {
         new: true,
         upsert: true,
@@ -27,13 +27,6 @@ export class DayService {
     return day;
   }
 
-  async getDaysRange(dateFrom: string, dateTo: string) {
-    try {
-    } catch (error) {
-      throw error;
-    }
-  }
-
   async getDay(date: string) {
     try {
       const day = await this.dayModel.findOne({ date });
@@ -42,78 +35,73 @@ export class DayService {
       throw error;
     }
   }
-async getByMonth(month: number): Promise<
-  {
-    date: string;
-    description: string;
-    sviata: {
-      id: string;
-      name: string;
-      document: string;
-      tags: string[];
-    }[];
-  }[]
-> {
-  const year = new Date().getFullYear();
-  const monthStr = month.toString().padStart(2, '0');
-  const regex = new RegExp(`^${year}-${monthStr}`);
-
-  const days = await this.dayModel
-    .find({ date: regex }, { date: 1, description: 1, _id: 0 })
-    .sort({ date: 1 })
-    .lean()
-    .exec();
-
-
-  const sviata = await this.sviatoModel
-    .find({ date: regex }, { date: 1, name: 1, doc: 1, tags: 1 })
-    .sort({ date: 1 })
-    .lean()
-    .exec();
-
-  const sviataByDate: Record<
-    string,
+  async getByMonth(month: number): Promise<
     {
-      id: string;
-      name: string;
-      document: string;
-      tags: string[];
+      date: string;
+      description: string;
+      sviata: {
+        id: string;
+        name: string;
+        document: string;
+        tags: string[];
+      }[];
     }[]
-  > = {};
+  > {
+    const year = new Date().getFullYear();
+    const monthStr = month.toString().padStart(2, '0');
+    const regex = new RegExp(`^${year}-${monthStr}`);
 
-  sviata.forEach((item) => {
-    const date = item.date?.trim?.();
-    if (!date) return;
-    if (!sviataByDate[date]) sviataByDate[date] = [];
-    sviataByDate[date].push({
-      id: item._id?.toString(),
-      name: item.name,
-      document: item.doc,
-      tags: item.tags,
+    const days = await this.dayModel
+      .find({ date: regex }, { date: 1, description: 1, _id: 0 })
+      .sort({ date: 1 })
+      .lean()
+      .exec();
+
+    const sviata = await this.sviatoModel
+      .find({ date: regex }, { date: 1, name: 1, doc: 1, tags: 1 })
+      .sort({ date: 1 })
+      .lean()
+      .exec();
+
+    const sviataByDate: Record<
+      string,
+      {
+        id: string;
+        name: string;
+        document: string;
+        tags: string[];
+      }[]
+    > = {};
+
+    sviata.forEach((item) => {
+      const date = item.date?.trim?.();
+      if (!date) return;
+      if (!sviataByDate[date]) sviataByDate[date] = [];
+      sviataByDate[date].push({
+        id: item._id?.toString(),
+        name: item.name,
+        document: item.doc,
+        tags: item.tags,
+      });
     });
-  });
 
-  const allDates = Array.from(
-    new Set([
-      ...days.map((d) => d.date),
-      ...Object.keys(sviataByDate),
-    ])
-  ).sort();
+    const allDates = Array.from(
+      new Set([...days.map((d) => d.date), ...Object.keys(sviataByDate)]),
+    ).sort();
 
-  const result = allDates.map((date) => {
-    const day = days.find((d) => d.date === date);
-    return {
-      date,
-      description: day?.description || '',
-      sviata: sviataByDate[date] || [],
-    };
-  });
+    const result = allDates.map((date) => {
+      const day = days.find((d) => d.date === date);
+      return {
+        date,
+        description: day?.description || '',
+        sviata: sviataByDate[date] || [],
+      };
+    });
 
-  return result;
-}
+    return result;
+  }
 
-
-async getStatusByYear(
+  async getStatusByYear(
     year: number,
   ): Promise<{ date: string; status: string | CompleteStatus }[]> {
     const regex = new RegExp(`^${year}-`);
@@ -124,7 +112,9 @@ async getStatusByYear(
       .lean()
       .exec();
 
-    const dayMap = new Map(daysFromDb.map((d) => [d.date, d.status as CompleteStatus]));
+    const dayMap = new Map(
+      daysFromDb.map((d) => [d.date, d.status as CompleteStatus]),
+    );
 
     const start = dayjs(`${year}-01-01`);
     const end = dayjs(`${year}-12-31`);

@@ -1,10 +1,16 @@
 import IconOpenAI from '@/components/svg/IconOpenAI';
+import { baseUrl } from '@/http';
+import { apiFetch } from '@/http/api';
+import { SearchItem } from '@/types';
+import { openNewTab } from '@/utils';
 import { ChevronLeft, ChevronRight } from '@mui/icons-material';
 import { IconButton, MenuItem, Select, Tooltip } from '@mui/material';
 import dayjs from 'dayjs';
 import 'dayjs/locale/uk';
 import dayOfYear from 'dayjs/plugin/dayOfYear';
+import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
+import AutoSearchDashboard from '../AutoSearch/AutoSearchDashboard';
 
 dayjs.extend(dayOfYear);
 dayjs.locale('uk');
@@ -27,6 +33,7 @@ export default function DashBoardNav({
   date: string;
 }) {
   const today = dayjs();
+  const router = useRouter();
   const savedMode =
     typeof window !== 'undefined' ? localStorage.getItem('viewMode') : null;
 
@@ -37,7 +44,9 @@ export default function DashBoardNav({
   const [selectedDay, setSelectedDay] = useState<string>(
     today.year() === year ? today.format('YYYY-MM-DD') : `${year}-01-01`,
   );
-
+  const [search, setSearch] = useState('');
+  const [searchList, setSearchList] = useState<SearchItem[]>([]);
+  const [searchItem, setSearchItem] = useState<SearchItem | null>(null);
   const totalDays =
     viewMode === 'year'
       ? dayjs(`${year}-12-31`).dayOfYear()
@@ -86,7 +95,17 @@ export default function DashBoardNav({
       });
     }
   };
+  useEffect(() => {
+    if (!search.length) return;
+    const fetchData = async () => {
+      const res = await apiFetch(`${baseUrl}/api/crud/search?query=${search}`);
+      if (!res.ok) return;
+      const json = await res.json();
 
+      setSearchList(json);
+    };
+    fetchData();
+  }, [search]);
   const handleSelect = (dateStr: string) => {
     setSelectedDay(dateStr);
     handleNav(dateStr);
@@ -98,6 +117,13 @@ export default function DashBoardNav({
 
   const handleNextMonth = () => {
     setMonth((prev) => (prev === 12 ? 1 : prev + 1));
+  };
+
+  const selectItem = (item: SearchItem) => {
+    setSearchItem(item);
+    setSearch(item.name);
+    setSearchList([]);
+    openNewTab(`/add-info?id=${item._id}`);
   };
 
   return (
@@ -205,6 +231,14 @@ export default function DashBoardNav({
           })}
         </div>
       </div>
+      <AutoSearchDashboard
+        id={'search'}
+        label={'Пошук свят по H1'}
+        value={search}
+        results={searchList}
+        onChange={(e) => setSearch(e.target.value)}
+        onSelect={(item) => selectItem(item)}
+      />
     </div>
   );
 }

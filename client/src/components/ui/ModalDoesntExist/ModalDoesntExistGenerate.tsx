@@ -11,12 +11,16 @@ interface ModalAddHolidayProps {
   tags: string[];
   onConfirm: (data: { date: string; tags: string[] }) => void;
   onCancel: () => void;
+  sviatoName: string;
+  setSviatoName: (s: string) => void;
 }
 
 export default function ModalAddHoliday({
   tags,
   onConfirm,
   onCancel,
+  sviatoName,
+  setSviatoName,
 }: ModalAddHolidayProps) {
   const [sviatoDate, setSviatoDate] = useState('');
   const [alternativeDate, setAlternativeDate] = useState(false);
@@ -46,6 +50,12 @@ export default function ModalAddHoliday({
       <Typography type="title">Додати нове свято</Typography>
 
       <div className="flex flex-col gap-4 mt-4">
+        <Input
+          id="name"
+          label="Офіційна назва свята (Н1)"
+          value={sviatoName}
+          onChange={(e) => setSviatoName(e.target.value)}
+        />
         <ChooseDate
           sviatoDate={sviatoDate}
           onChangeDate={setSviatoDate}

@@ -1,9 +1,9 @@
 'use client';
 import { baseUrl } from '@/http';
 import { useEffect, useState } from 'react';
-import ModalDoesntExist from './ModalDoesntExist/ModalDoesntExist';
-import ModalAddHoliday from './ModalDoesntExist/ModalDoesntExistGenerate';
-import Typography from './Typography';
+import ModalDoesntExist from '../ModalDoesntExist/ModalDoesntExist';
+import ModalAddHoliday from '../ModalDoesntExist/ModalDoesntExistGenerate';
+import Typography from '../Typography';
 import { apiFetch } from '@/http/api';
 
 interface SearchItem {
@@ -50,11 +50,11 @@ export default function AutoSearch({
     const res = await apiFetch(`${baseUrl}/api/crud`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name: sviatoName, related:[id] }),
+      body: JSON.stringify({ name: sviatoName, related: [{_id:id, name: sviatoName}] }),
     });
     const json = await res.json();
     onSelect({ _id: json._id, name: sviatoName });
-    setSviatoName(sviatoName);
+    setSviatoName(json.name);
     return json._id;
   };
 
@@ -138,22 +138,26 @@ export default function AutoSearch({
           </ul>
         )}
       </div>
-      {modalOpenGenerate && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
-          <div
-            className="absolute inset-0 bg-black bg-opacity-50"
-            onClick={() => setModalOpenGenerate(false)}
-          />
+      {sviatoName
+        ? modalOpenGenerate && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center">
+              <div
+                className="absolute inset-0 bg-black bg-opacity-50"
+                onClick={() => setModalOpenGenerate(false)}
+              />
 
-          <div className="relative z-60">
-            <ModalAddHoliday
-              tags={tags}
-              onConfirm={(data) => startGeneration(data)}
-              onCancel={() => setModalOpenGenerate(false)}
-            />
-          </div>
-        </div>
-      )}
+              <div className="relative z-60">
+                <ModalAddHoliday
+                  sviatoName={sviatoName}
+                  setSviatoName={setSviatoName}
+                  tags={tags}
+                  onConfirm={(data) => startGeneration(data)}
+                  onCancel={() => setModalOpenGenerate(false)}
+                />
+              </div>
+            </div>
+          )
+        : ''}
     </>
   );
 }

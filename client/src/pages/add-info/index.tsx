@@ -1,6 +1,6 @@
 'use client';
 
-import AutoSearch from '@/components/ui/AutoSearch';
+import AutoSearch from '@/components/ui/AutoSearch/AutoSearch';
 import Button from '@/components/ui/Button';
 import CheckBox from '@/components/ui/CheckBox';
 import ChooseDate from '@/components/ui/ChooseDate/ChooseDate';
@@ -18,6 +18,7 @@ import EditableStringList from '@/components/ui/StringList/StringList';
 import SviatoDeleteModal from '@/components/ui/sviato/SviatoDeleteModal';
 import Textarea from '@/components/ui/Textarea';
 import Typography from '@/components/ui/Typography';
+import { useNotification } from '@/hooks/Notification';
 import { baseUrl } from '@/http';
 import { apiFetch } from '@/http/api';
 import { deleteSviato } from '@/http/crud';
@@ -35,6 +36,7 @@ dayjs.extend(localeData);
 export default function AddInfo() {
   const searchParams = useSearchParams();
   const id = searchParams.get('id');
+  const notify = useNotification();
   const [alternativeDate, setAlternativeDate] = useState(false);
   const [loading, setLoading] = useState(false);
   const [sviato, setSviato] = useState({
@@ -58,7 +60,7 @@ export default function AddInfo() {
       year: string;
       html: string;
     }[],
-    related: [] as string[],
+    related: [] as {_id:string, name:string}[],
     moreIdeas: [] as string[],
     greetings: [] as string[],
     ideas: [] as string[],
@@ -68,13 +70,15 @@ export default function AddInfo() {
     seoText: null,
     type: '',
     date: '',
+    dateUpdate: '',
+    dateUpload: '',
     leaflets: [] as string[],
   });
   const [newTag, setNewTag] = useState('');
 
   const [celebrateWhen, setCelebrateWhen] = useState('');
   const [celebrateDate, setCelebrateDate] = useState('');
-  const [celebrateDayoff, setCelebrateDayoff] = useState('');
+  const [celebrateDayoff, setCelebrateDayoff] = useState('ні');
 
   const router = useRouter();
   const [isOpenModal, setIsOpenModal] = useState(false);
@@ -99,7 +103,7 @@ export default function AddInfo() {
   const selectRelated = (item: { _id: string; name: string }) => {
     setSviato((prev) => ({
       ...prev,
-      related: [...prev.related, item._id],
+      related: [...prev.related, item],
     }));
     setSearch('');
     setSearchList([]);
@@ -126,13 +130,13 @@ export default function AddInfo() {
           method: 'Post',
           headers: { 'Content-Type': 'application/json' },
         });
-        if (res.status == 201) alert('Зміни вивантажено');
+        if (res.status == 201) notify('Зміни вивантажено');
       } else {
         const res = await apiFetch(`${baseUrl}/api/build/update/${id}`, {
           method: 'Post',
           headers: { 'Content-Type': 'application/json' },
         });
-        if (res.status == 201) alert('Зміни вивантажено');
+        if (res.status == 201) notify('Зміни вивантажено');
       }
     } catch (error) {
       console.log(error);
@@ -159,7 +163,7 @@ export default function AddInfo() {
         const res = await apiFetch(`${baseUrl}/api/crud/${id}`);
         const resTags = await apiFetch(`${baseUrl}/api/crud/tags`);
         if (!res.ok) {
-          alert('Не вдалося завантажити дані');
+          notify('Не вдалося завантажити дані', true);
           return;
         }
         const json = await res.json();
@@ -172,6 +176,9 @@ export default function AddInfo() {
         });
         setAlternativeDate(json.checkedAlternative);
         setFilled(json.status === 'FILLED' ? true : false);
+        setCelebrateWhen(json.celebrate.when);
+        setCelebrateDate(json.celebrate.date);
+        setCelebrateDayoff(json.celebrate.isDayoff ? json.celebrate.isDayoff : 'ні');
       } catch (error) {
         console.log(error);
       } finally {
@@ -191,7 +198,7 @@ export default function AddInfo() {
       const res = await deleteSviato(id);
       if (res.ok) router.replace('/');
     } catch (error) {
-      alert(error);
+      notify(error as string, true);
     }
   };
 
@@ -202,10 +209,10 @@ export default function AddInfo() {
     setSviato((prev) => ({ ...prev, [field]: value }));
   };
 
-  const handleRemoveRelated = (related: string) => {
+  const handleRemoveRelated = (related: {_id:string, name:string}) => {
     setSviato((prev) => ({
       ...prev,
-      related: prev.related.filter((t) => t !== related),
+      related: prev.related.filter((t) => t.name !== related.name),
     }));
   };
 
@@ -242,7 +249,7 @@ export default function AddInfo() {
 
   const handleSubmit = async () => {
     if (!id) {
-      alert('Не вказано ID свята');
+      notify('Не вказано ID свята', true);
       return;
     }
 
@@ -270,13 +277,12 @@ export default function AddInfo() {
       });
 
       if (!res.ok) {
-        alert('Помилка при оновленні даних');
+        notify('Помилка при оновленні даних', true);
         return;
       }
-      if (res.ok) alert('Зміни збережено');
+      if (res.ok) notify('Зміни збережено');
     } catch (e) {
-      console.error(e);
-      alert('Помилка при відправленні запиту');
+      notify('Помилка при відправленні запиту', true);
     } finally {
       setLoading(false);
     }
@@ -297,10 +303,20 @@ export default function AddInfo() {
             >
               Назад
             </Button>
-            <Button onClick={handleSubmit}>
-              {loading ? 'Оновлюється...' : 'Зберегти зміни'}
-            </Button>
-            <Button onClick={handleUpload}>Вивантажити статтю</Button>
+            <div className="flex gap-1 items-center">
+              <Typography type="text">
+                Останнє редагування: {sviato.dateUpdate}
+              </Typography>
+              <Button onClick={handleSubmit}>
+                {loading ? 'Оновлюється...' : 'Зберегти зміни'}
+              </Button>
+            </div>
+            <div className="flex gap-1 items-center">
+              <Typography type="text">
+                Останнє вивантаження: {sviato.dateUpload}
+              </Typography>
+              <Button onClick={handleUpload}>Вивантажити статтю</Button>
+            </div>
             <Button onClick={() => setIsOpenModal(true)} type="danger">
               Видалити свято
             </Button>
@@ -496,10 +512,10 @@ export default function AddInfo() {
                   <div className="flex flex-wrap gap-2 mt-1">
                     {sviato.related.map((related) => (
                       <div
-                        key={related}
+                        key={related._id}
                         className="flex items-center gap-1 bg-border text-primary px-3 py-1 rounded-full text-sm"
                       >
-                        <span>{related}</span>
+                        <span>{related.name}</span>
                         <button
                           onClick={() => handleRemoveRelated(related)}
                           className="text-red-500 hover:text-red-700"

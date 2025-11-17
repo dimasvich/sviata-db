@@ -1,3 +1,4 @@
+import { NotificationProvider } from '@/hooks/Notification';
 import { baseUrlAuth } from '@/http';
 import '@/styles/globals.css';
 import type { AppProps } from 'next/app';
@@ -13,7 +14,9 @@ export default function App({ Component, pageProps }: AppProps) {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            refreshToken: JSON.parse(localStorage.getItem('refreshToken') as string)?.token || '',
+            refreshToken:
+              JSON.parse(localStorage.getItem('refreshToken') as string)
+                ?.token || '',
           }),
         });
 
@@ -27,5 +30,9 @@ export default function App({ Component, pageProps }: AppProps) {
 
     checkRefresh();
   }, []);
-  return <Component {...pageProps} />;
+  return (
+    <NotificationProvider>
+      <Component {...pageProps} />
+    </NotificationProvider>
+  );
 }

@@ -127,3 +127,6 @@ export function getNextThreeYearsForecast(date: string): {
     };
   });
 }
+export const openNewTab = (url: string) => {
+  window.open(url, '_blank');
+};

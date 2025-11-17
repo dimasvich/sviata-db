@@ -6,6 +6,7 @@ import { baseUrl } from '@/http';
 import Button from '../Button';
 import Typography from '../Typography';
 import { apiFetch } from '@/http/api';
+import Link from 'next/link';
 
 interface Sviato {
   date: string;
@@ -43,7 +44,9 @@ export default function DashboardMonth({
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const res = await apiFetch(`${baseUrl}/api/day/by-month?month=${month}`);
+        const res = await apiFetch(
+          `${baseUrl}/api/day/by-month?month=${month}`,
+        );
         const json: Sviato[] = await res.json();
         setData(json || []);
       } catch (err) {
@@ -137,22 +140,23 @@ export default function DashboardMonth({
                     {sviato?.sviata && sviato.sviata.length > 0 ? (
                       <div className="flex flex-col items-start gap-2">
                         {sviato.sviata.map((item, index) => (
-                          <div
+                          <Link
                             key={index}
-                            className="bg-[#dde2ef] p-2 flex justify-between gap-2 rounded-[4px] w-full cursor-pointer hover:bg-[#cfd6e8] flex-1"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              router.push(`/add-info?id=${item.id}`);
-                            }}
+                            href={`/add-info?id=${item.id}`}
+                            target="_blank"
                           >
-                            <Typography type="text">{index + 1}.</Typography>
-                            <div className="flex flex-wrap items-center gap-1">
-                              <Typography type="text">{item.name} |</Typography>
-                              <Typography type="text">
-                                #{item.tags.map((item) => item)}
-                              </Typography>
+                            <div className="bg-[#dde2ef] p-2 flex justify-between gap-2 rounded-[4px] w-full cursor-pointer hover:bg-[#cfd6e8] flex-1">
+                              <Typography type="text">{index + 1}.</Typography>
+                              <div className="flex flex-wrap items-center gap-1">
+                                <Typography type="text">
+                                  {item.name} |
+                                </Typography>
+                                <Typography type="text">
+                                  #{item.tags.map((item) => item)}
+                                </Typography>
+                              </div>
                             </div>
-                          </div>
+                          </Link>
                         ))}
                       </div>
                     ) : (

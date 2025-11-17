@@ -12,6 +12,7 @@ import Typography from '@/components/ui/Typography';
 import WhoWasBornTodaySection from '@/components/ui/WhoWasBornToday/WhoWasBornTodaySection';
 import DaySeoTextEditor from '@/components/ui/editor/DaySeoTextEditor';
 import DefaultTextEditor from '@/components/ui/editor/DefaultTextEditor';
+import { useNotification } from '@/hooks/Notification';
 import { baseUrl } from '@/http';
 import { apiFetch } from '@/http/api';
 import { DayRulesEnum, WhoWasBornTodayItem } from '@/types';
@@ -30,6 +31,8 @@ export default function AddInfoDay() {
     title: '',
     description: '',
     date: '',
+    dateUpdate: '',
+    dateUpload: '',
     checkedAlternative: false,
     dayRules: [] as { title: string; html: string; _id?: string }[],
     whoWasBornToday: [] as { title: string; html: string; image: string }[],
@@ -62,6 +65,7 @@ export default function AddInfoDay() {
   const [month, setMonth] = useState('');
   const [newTimeBlockYear, setNewTimeBlockYear] = useState('');
   const [newTimeBlockHtml, setNewTimeBlockHtml] = useState('');
+  const notify = useNotification();
 
   const [newFiles, setNewFiles] = useState<File[]>([]);
   const [newFile, setNewFile] = useState<File | null>(null);
@@ -90,11 +94,13 @@ export default function AddInfoDay() {
         }));
         const res = await apiFetch(`${baseUrl}/api/day/${dateParam}`);
         if (!res.ok) {
-          alert('Не вдалося завантажити дані по даті');
+          notify('Не вдалося завантажити дані по даті', true);
           return;
         }
         const json = await res.json();
         setDay({
+          dateUpdate: json.dateUpdate || '',
+          dateUpload: json.dateUpload || '',
           title: json.title || '',
           description: json.description || '',
           date: json.date || dateParam,
@@ -110,7 +116,9 @@ export default function AddInfoDay() {
           checkedAlternative: json.checkedAlternative || false,
         });
 
-        const rulesRes = await apiFetch(`${baseUrl}/api/day-rules/${dateParam}`);
+        const rulesRes = await apiFetch(
+          `${baseUrl}/api/day-rules/${dateParam}`,
+        );
         const jsonRules = await rulesRes.json();
         setSelectedRule1(jsonRules[0].title);
         setSelectedRule2(jsonRules[1].title);
@@ -136,15 +144,17 @@ export default function AddInfoDay() {
 
   const handleUpload = async (date: string) => {
     if (!day.articleId) {
-      await apiFetch(`${baseUrl}/api/build-day/${date}`, {
+      const res = await apiFetch(`${baseUrl}/api/build-day/${date}`, {
         method: 'Post',
         headers: { 'Content-Type': 'application/json' },
       });
+      if (res.ok) notify('Зміни збережено');
     } else {
-      await apiFetch(`${baseUrl}/api/build-day/update/${date}`, {
+      const res = await apiFetch(`${baseUrl}/api/build-day/update/${date}`, {
         method: 'Post',
         headers: { 'Content-Type': 'application/json' },
       });
+      if (res.ok) notify('Зміни оновлено');
     }
   };
 
@@ -191,7 +201,7 @@ export default function AddInfoDay() {
       }
     } catch (e) {
       console.error(e);
-      alert('Помилка при створенні правил або прикмет');
+      notify('Помилка при створенні правил або прикмет');
     } finally {
       setLoading(false);
     }
@@ -248,9 +258,10 @@ export default function AddInfoDay() {
         const text = await res.text();
         throw new Error(`Помилка при оновленні даних: ${text}`);
       }
+      if (res.ok) notify('Зміни збережено');
     } catch (error) {
       console.error('❌ handleSubmit error:', error);
-      alert('Помилка при збереженні');
+      notify('Помилка при збереженні', true);
     } finally {
       setLoading(false);
     }
@@ -269,12 +280,22 @@ export default function AddInfoDay() {
         <>
           <HeaderEditSviato>
             <Button onClick={() => router.push('/')}>Назад</Button>
-            <Button onClick={handleSubmit}>
-              {loading ? 'Збереження...' : 'Зберегти'}
-            </Button>
-            <Button onClick={() => handleUpload(day.date)}>
-              Вивантажити статтю
-            </Button>
+            <div className="flex gap-1 items-center">
+              <Typography type="text">
+                Останнє редагування: {day.dateUpdate}
+              </Typography>
+              <Button onClick={handleSubmit}>
+                {loading ? 'Оновлюється...' : 'Зберегти зміни'}
+              </Button>
+            </div>
+            <div className="flex gap-1 items-center">
+              <Typography type="text">
+                Останнє вивантаження: {day.dateUpload}
+              </Typography>
+              <Button onClick={() => handleUpload(day.date)}>
+                Вивантажити статтю
+              </Button>
+            </div>
           </HeaderEditSviato>
           <Layout>
             <div className="flex flex-col gap-6 w-full max-w-3xl mx-auto">

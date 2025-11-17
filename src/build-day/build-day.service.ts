@@ -336,7 +336,7 @@ export class BuildDayService {
             />
           </div>
           <div class="info">
-            <div class="name">${item.title + item.year ? `(${item.year})` : ""}</div>
+            <div class="name">${item.title + item.year ? `(${item.year})` : ''}</div>
             <div class="desc">${item.html}</div>
           </div>
         </div>
@@ -686,7 +686,12 @@ export class BuildDayService {
       console.log('Post created:', postResponse.data);
       await this.dayModel.updateOne(
         { date },
-        { $set: { articleId: postResponse.data.id } },
+        {
+          $set: {
+            articleId: postResponse.data.id,
+            dateUpload: dayjs().format('YYYY-MM-DD'),
+          },
+        },
       );
       return postResponse.data;
     } catch (error) {
@@ -719,7 +724,14 @@ export class BuildDayService {
         },
       );
 
-      console.log('Post updated:', postResponse.data);
+      await this.dayModel.updateOne(
+        { date },
+        {
+          $set: {
+            dateUpload: dayjs().format('YYYY-MM-DD'),
+          },
+        },
+      );
       return postResponse.data;
     } catch (error) {
       throw error;

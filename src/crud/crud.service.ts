@@ -1,12 +1,12 @@
 import { LocalDate } from '@js-joda/core';
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model, Types } from 'mongoose';
-import { Sviato, SviatoDocument } from './schema/sviato.schema';
-import * as crypto from 'crypto';
-import { SviatoImages } from './schema/sviatoimages.schema';
-import { DayRules, DayRulesDocument } from './schema/dayrules.schema';
+import * as dayjs from 'dayjs';
+import { Model } from 'mongoose';
 import { DayInfo, SviatoTag } from 'src/types';
+import { DayRules, DayRulesDocument } from './schema/dayrules.schema';
+import { Sviato, SviatoDocument } from './schema/sviato.schema';
+import { SviatoImages } from './schema/sviatoimages.schema';
 
 @Injectable()
 @Injectable()
@@ -36,7 +36,7 @@ export class CrudService {
         console.warn('Invalid date, skipping date parsing:', sviato.date);
       }
     }
-
+    sviato.dateUpdate = dayjs().format('YYYY-MM-DD');
     return sviato.save();
   }
 
@@ -52,7 +52,7 @@ export class CrudService {
   async update(id: string, sviatoData: Partial<Sviato>): Promise<Sviato> {
     const updated = await this.sviatoModel.findOneAndUpdate(
       { _id: id },
-      { $set: sviatoData },
+      { $set: { ...sviatoData, dateUpdate: dayjs().format('YYYY-MM-DD') } },
       { new: true, upsert: false, runValidators: true },
     );
 
@@ -126,10 +126,9 @@ export class CrudService {
     try {
       if (!query) return [];
 
-      // нормалізація
       const normalized = query
         .trim()
-        .replace(/\s+/g, ' ') // замінюємо багато пробілів на один
+        .replace(/\s+/g, ' ') 
         .toLowerCase();
 
       const words = normalized.split(' ');

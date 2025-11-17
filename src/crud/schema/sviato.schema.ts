@@ -1,15 +1,16 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
+import * as dayjs from 'dayjs';
 import { Document } from 'mongoose';
 import {
   Celebrate,
   CompleteStatus,
   Faq,
+  RelatedSviato,
   Source,
   SviatoTag,
   SviatoType,
   TimeBlock,
 } from 'src/types';
-
 export type SviatoDocument = Sviato & Document;
 
 @Schema({ collection: 'sviata' })
@@ -41,8 +42,8 @@ export class Sviato {
   @Prop({ type: [], required: false })
   timeline: TimeBlock[];
 
-  @Prop({ type: [String], required: false })
-  related: string[];
+  @Prop({ type: [], required: false })
+  related: RelatedSviato[];
 
   @Prop({ type: [String], required: false })
   moreIdeas: string[];
@@ -89,8 +90,23 @@ export class Sviato {
   @Prop({ type: Boolean, default: false })
   checkedAlternative: boolean;
 
-  @Prop({ type: String, default: Date.now })
+  @Prop({
+    type: String,
+    default: () => dayjs().format('YYYY-MM-DD'),
+  })
   date: string;
+
+  @Prop({
+    type: String,
+    default: () => dayjs().format('YYYY-MM-DD'),
+  })
+  dateUpdate: string;
+
+  @Prop({
+    type: String,
+    default: () => dayjs().format('YYYY-MM-DD'),
+  })
+  dateUpload: string;
 
   @Prop({ type: Number })
   dayOfYear: number;

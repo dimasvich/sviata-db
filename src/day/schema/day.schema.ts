@@ -1,4 +1,5 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
+import * as dayjs from 'dayjs';
 import { Document } from 'mongoose';
 import { CompleteStatus, TimeBlock, WhoWasBornToday } from 'src/types';
 
@@ -45,8 +46,23 @@ export class Day {
   @Prop({ type: Boolean, default: false })
   checkedAlternative: boolean;
 
-  @Prop({ type: String, default: Date.now })
+  @Prop({
+    type: String,
+    default: () => dayjs().format('YYYY-MM-DD'),
+  })
   date: string;
+
+  @Prop({
+    type: String,
+    default: () => dayjs().format('YYYY-MM-DD'),
+  })
+  dateUpdate: string;
+
+  @Prop({
+    type: String,
+    default: () => dayjs().format('YYYY-MM-DD'),
+  })
+  dateUpload: string;
 }
 
 export const DaySchema = SchemaFactory.createForClass(Day);

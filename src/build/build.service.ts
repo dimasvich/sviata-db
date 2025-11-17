@@ -126,7 +126,7 @@ export class BuildService {
         const results = await Promise.all(
           sviato.related.map(async (item) => {
             const doc = await this.sviatoModel
-              .findOne({ _id: new Types.ObjectId(item) })
+              .findOne({ _id: new Types.ObjectId(item._id) })
               .select('articleId')
               .lean();
 
@@ -624,6 +624,7 @@ export class BuildService {
       await this.sviatoModel.findByIdAndUpdate(id, {
         articleId: postResponse.data.id,
         link: postResponse.data.link,
+        dateUpload: dayjs().format('YYYY-MM-DD'),
       });
 
       return postResponse.data;
@@ -764,6 +765,7 @@ export class BuildService {
       await this.sviatoModel.findByIdAndUpdate(id, {
         articleId: postResponse.data.id,
         link: postResponse.data.link,
+        dateUpload: dayjs().format('YYYY-MM-DD'),
       });
 
       return postResponse.data;

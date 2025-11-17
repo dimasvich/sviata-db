@@ -48,3 +48,8 @@ export interface DayType {
   articleId: string | null;
   timeline: { year: string; html: string }[];
 }
+
+export interface SearchItem {
+  _id: string;
+  name: string;
+}
