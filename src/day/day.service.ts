@@ -5,6 +5,8 @@ import { Sviato, SviatoDocument } from 'src/crud/schema/sviato.schema';
 import { Day, DayDocument } from './schema/day.schema';
 import { CompleteStatus } from 'src/types';
 import * as dayjs from 'dayjs';
+import { countWebpImages } from 'src/utils/count-webp-images';
+import * as path from 'path';
 
 @Injectable()
 export class DayService {
@@ -35,70 +37,70 @@ export class DayService {
       throw error;
     }
   }
-  async getByMonth(month: number): Promise<
-    {
-      date: string;
-      description: string;
-      sviata: {
-        id: string;
-        name: string;
-        document: string;
-        tags: string[];
-      }[];
-    }[]
-  > {
+  async getByMonth(month: number) {
     const year = new Date().getFullYear();
     const monthStr = month.toString().padStart(2, '0');
     const regex = new RegExp(`^${year}-${monthStr}`);
 
     const days = await this.dayModel
-      .find({ date: regex }, { date: 1, description: 1, _id: 0 })
+      .find({ date: regex }, { date: 1, description: 1, dateUpload: 1, _id: 0 })
       .sort({ date: 1 })
-      .lean()
-      .exec();
+      .lean();
 
     const sviata = await this.sviatoModel
-      .find({ date: regex }, { date: 1, name: 1, doc: 1, tags: 1 })
+      .find(
+        { date: regex },
+        { date: 1, name: 1, description: 1, leaflets: 1, tags: 1 },
+      )
       .sort({ date: 1 })
-      .lean()
-      .exec();
+      .lean();
 
     const sviataByDate: Record<
       string,
       {
         id: string;
         name: string;
-        document: string;
+        hasDescription: boolean;
+        hasLeaflets: boolean;
         tags: string[];
+        images: number;
       }[]
     > = {};
 
-    sviata.forEach((item) => {
+    for (const item of sviata) {
       const date = item.date?.trim?.();
-      if (!date) return;
+      if (!date) continue;
+
+      const uploadDir = path.join('uploads', item._id.toString());
+      const imagesCount = await countWebpImages(uploadDir);
+
       if (!sviataByDate[date]) sviataByDate[date] = [];
+
       sviataByDate[date].push({
-        id: item._id?.toString(),
+        id: item._id.toString(),
         name: item.name,
-        document: item.doc,
+        hasDescription: Boolean(
+          item.description && item.description.trim().length > 0,
+        ),
+        hasLeaflets: Boolean(item.leaflets && item.leaflets.length > 0),
         tags: item.tags,
+        images: imagesCount,
       });
-    });
+    }
 
     const allDates = Array.from(
       new Set([...days.map((d) => d.date), ...Object.keys(sviataByDate)]),
     ).sort();
 
-    const result = allDates.map((date) => {
+    return allDates.map((date) => {
       const day = days.find((d) => d.date === date);
       return {
         date,
         description: day?.description || '',
+        dateUpload: day?.dateUpload || '',
         sviata: sviataByDate[date] || [],
       };
     });
-
-    return result;
   }
 
   async getStatusByYear(

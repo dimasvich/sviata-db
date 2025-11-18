@@ -1,21 +1,24 @@
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { baseUrl } from '@/http';
+import { apiFetch } from '@/http/api';
 import dayjs from 'dayjs';
 import 'dayjs/locale/uk';
-import { baseUrl } from '@/http';
-import Button from '../Button';
-import Typography from '../Typography';
-import { apiFetch } from '@/http/api';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
+import Typography from '../Typography';
+import TrueFalseMark from '../Marks/TrueFalseMark';
 
 interface Sviato {
   date: string;
   description: string;
+  dateUpload: string;
   sviata: {
     id: string;
     name: string;
-    document: string;
+    hasDescription: boolean;
+    hasLeaflets: boolean;
     tags: string[];
+    images: number;
   }[];
 }
 
@@ -83,11 +86,14 @@ export default function DashboardMonth({
             <tr>
               <th className="py-2 px-4 border-b border-border">Дата</th>
               <th className="py-2 px-4 border-b border-border">День тижня</th>
+              <th className="py-2 px-4 border-b border-border">
+                Останнє вивантаження
+              </th>
               <th className="py-2 px-4 border-b border-border">Опис</th>
               <th className="py-2 px-4 border-b border-border">
                 Свято
                 <div className="text-sm font-normal text-background/80">
-                  Назва / Документ / Тег
+                  Назва / Тег / Текст про свято / Кількість фото / Листівки
                 </div>
               </th>
               <th className="py-2 px-4 border-b border-border text-center">
@@ -116,7 +122,7 @@ export default function DashboardMonth({
                     isEmpty ? 'border-2 border-red-400' : ''
                   }`}
                 >
-                  <td className="py-2 px-4 border-b border-border text-center font-medium">
+                  <td className="py-2 px-4 border-b border-border text-center font-medium align-top">
                     <div
                       className={`${
                         isSelected
@@ -128,12 +134,25 @@ export default function DashboardMonth({
                     </div>
                   </td>
 
-                  <td className="py-2 px-4 border-b border-border text-center capitalize">
+                  <td className="py-2 px-4 border-b border-border text-center capitalize align-top">
                     {getDayOfWeek(currentDay)}
                   </td>
+                  <td className="py-2 px-4 border-b border-border text-center font-medium align-top">
+                    {sviato?.dateUpload || ''}
+                  </td>
 
-                  <td className="py-2 px-4 border-b border-border max-w-md h-auto text-left">
-                    {sviato?.description || '-'}
+                  <td className="py-2 px-4 border-b border-border max-w-md h-auto text-left align-top">
+                    {(() => {
+                      if (!sviato?.description) return '-';
+
+                      const match =
+                        sviato.description.match(/<p[^>]*>(.*?)<\/p>/i);
+                      return match ? (
+                        <span dangerouslySetInnerHTML={{ __html: match[0] }} />
+                      ) : (
+                        '-'
+                      );
+                    })()}
                   </td>
 
                   <td className="py-2 px-4 border-b border-border text-center align-top">
@@ -152,7 +171,16 @@ export default function DashboardMonth({
                                   {item.name} |
                                 </Typography>
                                 <Typography type="text">
-                                  #{item.tags.map((item) => item)}
+                                  #{item.tags.map((item) => item)} | 
+                                </Typography>
+                                <Typography type="text">
+                                  <TrueFalseMark value={item.hasDescription} /> | 
+                                </Typography>
+                                <Typography type="text">
+                                  {item.images} фото | 
+                                </Typography>
+                                <Typography type="text">
+                                  <TrueFalseMark value={item.hasLeaflets} />
                                 </Typography>
                               </div>
                             </div>
@@ -164,7 +192,7 @@ export default function DashboardMonth({
                     )}
                   </td>
 
-                  <td className="py-2 px-4 border-b border-border text-center">
+                  <td className="py-2 px-4 border-b border-border text-center align-top">
                     <button
                       onClick={async (e) => {
                         e.stopPropagation();
