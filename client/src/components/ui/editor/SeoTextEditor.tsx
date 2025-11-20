@@ -5,7 +5,7 @@ import Heading from '@tiptap/extension-heading';
 import Link from '@tiptap/extension-link';
 import { EditorContent, useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import ImageUpload from '../ImageUpload';
 import { PullQuote } from './PullQuote';
 import { QuoteBlock } from './QuoteBlock';
@@ -72,6 +72,16 @@ const SeoTextEditor: React.FC<SeoTextEditorProps> = ({
   const [showUpload, setShowUpload] = useState(false);
   const [showLinkModal, setShowLinkModal] = useState(false);
   const [showVideoModal, setShowVideoModal] = useState(false);
+  const [linkEditMode, setLinkEditMode] = useState<null | 'new' | 'edit'>(null);
+
+  const [linkMenu, setLinkMenu] = useState<{
+    x: number;
+    y: number;
+    href: string;
+    text: string;
+    from: number;
+    to: number;
+  } | null>(null);
 
   const [linkUrl, setLinkUrl] = useState('');
   const [linkText, setLinkText] = useState('');
@@ -80,6 +90,17 @@ const SeoTextEditor: React.FC<SeoTextEditorProps> = ({
   const [videoCaption, setVideoCaption] = useState('');
 
   const [, forceUpdate] = useState(0);
+  useEffect(() => {
+    const closeMenu = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (!target.closest('.link-context-menu')) {
+        setLinkMenu(null);
+      }
+    };
+
+    document.addEventListener('click', closeMenu);
+    return () => document.removeEventListener('click', closeMenu);
+  }, []);
 
   const editor = useEditor({
     extensions: [
@@ -103,6 +124,34 @@ const SeoTextEditor: React.FC<SeoTextEditorProps> = ({
         class:
           'editor-content focus:outline-none min-h-[500px] max-h-[80vh] overflow-y-auto p-3',
       },
+      handleDOMEvents: {
+        contextmenu: (view, event) => {
+          const e = event as MouseEvent;
+          const target = e.target as HTMLElement;
+
+          if (target.closest('a')) {
+            const a = target.closest('a')!;
+            const pos = view.posAtDOM(a, 0);
+            const end = pos + a.textContent!.length;
+
+            e.preventDefault();
+
+            setLinkMenu({
+              x: e.clientX,
+              y: e.clientY,
+              href: a.getAttribute('href') || '',
+              text: a.textContent || '',
+              from: pos,
+              to: end,
+            });
+
+            return true;
+          }
+
+          setLinkMenu(null);
+          return false;
+        },
+      },
     },
     onUpdate: ({ editor }) => {
       onChange(editor.getHTML());
@@ -114,7 +163,6 @@ const SeoTextEditor: React.FC<SeoTextEditorProps> = ({
 
   if (!editor) return <div>Loading editor...</div>;
 
-  // 🔹 Завантаження зображення
   const handleFileSelect = (file: File) => {
     setNewFiles((prev) => [...prev, file]);
     const fileName = file.name;
@@ -128,24 +176,82 @@ const SeoTextEditor: React.FC<SeoTextEditorProps> = ({
     setShowUpload(false);
   };
 
-  // 🔹 Додавання посилання
   const handleAddLink = () => {
     if (!linkUrl.trim()) return;
-    const textToInsert = linkText.trim() || linkUrl;
-    editor
-      .chain()
-      .focus()
-      .extendMarkRange('link')
-      .insertContent(
-        `<a href="${linkUrl}" target="_blank" rel="nofollow">${textToInsert}</a>`,
-      )
-      .run();
+
+    if (linkEditMode === 'edit' && editor) {
+      // редагуємо існуюче посилання
+      editor
+        .chain()
+        .focus()
+        .extendMarkRange('link')
+        .updateAttributes('link', { href: linkUrl })
+        .insertContent(linkText)
+        .run();
+    } else {
+      // створюємо нове
+      const textToInsert = linkText.trim() || linkUrl;
+      editor
+        .chain()
+        .focus()
+        .insertContent(
+          `<a href="${linkUrl}" target="_blank" rel="nofollow">${textToInsert}</a>`,
+        )
+        .run();
+    }
+
     setLinkUrl('');
     setLinkText('');
+    setLinkEditMode(null);
     setShowLinkModal(false);
   };
 
-  // 🔹 Додавання відео YouTube
+  const convertToText = () => {
+    if (!editor || !linkMenu) return;
+
+    editor
+      .chain()
+      .focus()
+      .setTextSelection({ from: linkMenu.from, to: linkMenu.to })
+      .unsetMark('link')
+      .insertContent(linkMenu.text)
+      .run();
+
+    setLinkMenu(null);
+  };
+  const editHref = () => {
+    const newUrl = prompt('Нове посилання:', linkMenu?.href || '');
+    if (!newUrl || !editor || !linkMenu) return;
+
+    editor
+      .chain()
+      .focus()
+      .setTextSelection({ from: linkMenu.from, to: linkMenu.to })
+      .extendMarkRange('link')
+      .updateAttributes('link', { href: newUrl })
+      .run();
+
+    setLinkMenu(null);
+  };
+  const editLinkText = () => {
+    if (!editor || !linkMenu) return;
+
+    const newText = prompt('Новий текст:', linkMenu.text);
+    if (!newText) return;
+
+    editor
+      .chain()
+      .focus()
+      .setTextSelection({ from: linkMenu.from, to: linkMenu.to })
+      .unsetMark('link')
+      .insertContent(
+        `<a href="${linkMenu.href}" target="_blank" rel="nofollow">${newText}</a>`,
+      )
+      .run();
+
+    setLinkMenu(null);
+  };
+
   const handleAddVideo = () => {
     if (!videoUrl.trim()) return;
 
@@ -163,7 +269,6 @@ const SeoTextEditor: React.FC<SeoTextEditorProps> = ({
 
   return (
     <div className="relative w-full max-w-[1200px] mx-auto border rounded-lg bg-white shadow-sm overflow-hidden">
-      {/* Toolbar */}
       <div className="flex flex-wrap gap-2 border-b px-3 py-2 bg-white sticky top-0 z-50 shadow-sm">
         <button
           onClick={() => editor.chain().focus().toggleBold().run()}
@@ -358,6 +463,32 @@ const SeoTextEditor: React.FC<SeoTextEditorProps> = ({
               </button>
             </div>
           </div>
+        </div>
+      )}
+      {linkMenu && (
+        <div
+          className="absolute bg-white shadow-lg border rounded-md z-50 link-context-menu"
+          style={{ top: linkMenu.y-15, left: linkMenu.x+10 }}
+        >
+          <button
+            onClick={convertToText}
+            className="block w-full text-left px-4 py-2 hover:bg-gray-100"
+          >
+            Перетворити на текст
+          </button>
+
+          <button
+            onClick={() => {
+              setLinkUrl(linkMenu.href);
+              setLinkText(linkMenu.text);
+              setLinkEditMode('edit');
+              setShowLinkModal(true);
+              setLinkMenu(null);
+            }}
+            className="block w-full text-left px-4 py-2 hover:bg-gray-100"
+          >
+            Редагувати
+          </button>
         </div>
       )}
     </div>

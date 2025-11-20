@@ -74,7 +74,6 @@ export default function ChooseDate({
     }
   };
 
-  // 🔹 коли всі три поля альтернативної дати заповнені — обчислюємо реальну дату
   useEffect(() => {
     if (dayOfWeek && week && month && !alternativeDate) {
       const d = getNthWeekdayOfMonth({
@@ -86,7 +85,6 @@ export default function ChooseDate({
     }
   }, [dayOfWeek, week, month, onChangeDate, alternativeDate]);
 
-  // 🔹 коли заповнено день року — конвертуємо в дату
   useEffect(() => {
     if (dayOfYear) {
       const num = parseInt(dayOfYear);
@@ -172,7 +170,6 @@ export default function ChooseDate({
             ''
           )}
 
-          {/* 🔹 Новий блок: день року */}
           {!dayOfWeek.trim().length &&
           !week.trim().length &&
           !month.trim().length ? (
@@ -195,7 +192,6 @@ export default function ChooseDate({
         </div>
       )}
 
-      {/* Кнопка перемикання режимів */}
       {!alternativeDate ? (
         <Button onClick={() => setAlternativeDate(true)} type="default">
           Немає точної дати?

@@ -70,12 +70,13 @@ export default function Input({
       />
 
       {maxLength && (
-        <div
-          className={`text-xs self-end ${
-            isOverLimit ? 'text-red-500' : 'text-secondary'
-          }`}
-        >
-          {currentLength} / {maxLength}
+        <div className="flex justify-between items-center">
+          {error && <span className="text-sm text-red-500">{error}</span>}
+          <span
+            className={`text-sm ${isOverLimit ? 'text-red-500' : 'text-muted'}`}
+          >
+            {currentLength}/{maxLength}
+          </span>
         </div>
       )}
 

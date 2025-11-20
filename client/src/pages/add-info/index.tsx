@@ -5,6 +5,7 @@ import Button from '@/components/ui/Button';
 import CheckBox from '@/components/ui/CheckBox';
 import ChooseDate from '@/components/ui/ChooseDate/ChooseDate';
 import DayRulesSection from '@/components/ui/DayRules/DayRulesSection';
+import InlineTextEditor from '@/components/ui/editor/InlineTextEditor';
 import SeoTextEditor from '@/components/ui/editor/SeoTextEditor';
 import FaqBlock from '@/components/ui/FAQ/FaqBlock';
 import HeaderEditSviato from '@/components/ui/Header/HeaderEditSviato';
@@ -60,7 +61,7 @@ export default function AddInfo() {
       year: string;
       html: string;
     }[],
-    related: [] as {_id:string, name:string}[],
+    related: [] as { _id: string; name: string }[],
     moreIdeas: [] as string[],
     greetings: [] as string[],
     ideas: [] as string[],
@@ -178,7 +179,9 @@ export default function AddInfo() {
         setFilled(json.status === 'FILLED' ? true : false);
         setCelebrateWhen(json.celebrate.when);
         setCelebrateDate(json.celebrate.date);
-        setCelebrateDayoff(json.celebrate.isDayoff ? json.celebrate.isDayoff : 'ні');
+        setCelebrateDayoff(
+          json.celebrate.isDayoff ? json.celebrate.isDayoff : 'ні',
+        );
       } catch (error) {
         console.log(error);
       } finally {
@@ -209,7 +212,7 @@ export default function AddInfo() {
     setSviato((prev) => ({ ...prev, [field]: value }));
   };
 
-  const handleRemoveRelated = (related: {_id:string, name:string}) => {
+  const handleRemoveRelated = (related: { _id: string; name: string }) => {
     setSviato((prev) => ({
       ...prev,
       related: prev.related.filter((t) => t.name !== related.name),
@@ -530,13 +533,17 @@ export default function AddInfo() {
                   <Typography type="text">Джерела</Typography>
 
                   <div className="flex gap-2">
-                    <Input
+                    <InlineTextEditor
+                      onChange={(val) => setNewSourceTitle(val)}
+                      value={newSourceTitle}
+                    />
+                    {/* <Input
                       id="newSourceTitle"
                       label=""
                       placeholder="Назва джерела"
                       value={newSourceTitle}
                       onChange={(e) => setNewSourceTitle(e.target.value)}
-                    />
+                    /> */}
                     <Input
                       id="newSourceLink"
                       label=""
@@ -568,14 +575,10 @@ export default function AddInfo() {
                         key={idx}
                         className="flex items-center gap-2 bg-border text-primary px-3 py-1 rounded-full text-sm"
                       >
-                        <a
-                          href={source.link}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="underline hover:text-blue-600"
-                        >
-                          {source.title}
-                        </a>
+                        <span onClick={()=>{
+                          setNewSourceTitle(source.title);
+                          setNewSourceLink(source.link);
+                        }}>{source.title}</span>
                         <button
                           onClick={() =>
                             setSviato((prev) => ({

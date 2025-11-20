@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
 import Button from '@/components/ui/Button';
-import Input from '@/components/ui/Input';
 import Typography from '@/components/ui/Typography';
+import React, { useState } from 'react';
+import InlineTextEditor from '../editor/InlineTextEditor';
 
 interface EditableStringListProps {
   items: string[];
@@ -48,12 +48,10 @@ const EditableStringList: React.FC<EditableStringListProps> = ({
     <div className="flex flex-col gap-2">
       <Typography type="text">{label}</Typography>
       <div className="flex items-end gap-2">
-        <Input
-          id={label}
-          label=""
-          placeholder={`Додайте ${label.toLowerCase()}`}
+        <InlineTextEditor
+          // placeholder={`Додайте ${label.toLowerCase()}`}
           value={value}
-          onChange={(e) => setValue(e.target.value)}
+          onChange={(val) => setValue(val)}
         />
         <Button onClick={handleAddOrUpdate}>
           {editingIndex !== null ? 'Оновити' : '+'}

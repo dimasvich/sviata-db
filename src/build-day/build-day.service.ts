@@ -13,6 +13,7 @@ import { DayRules, DayRulesDocument } from 'src/crud/schema/dayrules.schema';
 import { Day, DayDocument } from 'src/day/schema/day.schema';
 import { DayRulesEnum } from 'src/types';
 import { removeBisSkinChecked } from 'src/utils';
+import { formatDateForSlug } from 'src/utils/transliterator';
 
 @Injectable()
 export class BuildDayService {
@@ -27,8 +28,6 @@ export class BuildDayService {
       if (!day) {
         throw new Error(`День із датою ${date} не знайдено`);
       }
-      console.log(day.date, date);
-      console.log(day.description);
       const dayrules = await this.dayRulesModel.find({ date });
       const host = process.env.HOST || '/wp-content/uploads';
 
@@ -517,7 +516,7 @@ export class BuildDayService {
       { dir: mainDir, label: 'main' },
     ];
 
-    const results = await this.uploadImages(dirsToUpload);
+    const results = await this.uploadImages(dirsToUpload, date);
     return results;
   }
 
@@ -567,16 +566,22 @@ export class BuildDayService {
     console.log(`📁 ${mainImageName} створено з ${randomImage}`);
   }
 
-  private async uploadImages(dirs: { dir: string; label: string }[]): Promise<
+  private async uploadImages(
+    dirs: { dir: string; label: string }[],
+    date: string,
+  ): Promise<
     {
       folder: string;
       file: string;
+      sentAs: string;
       status: string;
       response?: any;
       error?: string;
     }[]
   > {
     const results = [];
+
+    const dateSlug = formatDateForSlug(date); 
 
     for (const { dir, label } of dirs) {
       if (!fs.existsSync(dir)) {
@@ -590,8 +595,9 @@ export class BuildDayService {
         continue;
       }
 
+      let imgIndex = 1;
+
       for (const imageName of files) {
-        const safeImageName = imageName.replaceAll(' ', '_');
         const fullImagePath = path.join(dir, imageName);
 
         if (!fs.existsSync(fullImagePath)) {
@@ -599,11 +605,14 @@ export class BuildDayService {
           continue;
         }
 
+        const newImageName = `gosta-${dateSlug}-${imgIndex}.webp`;
+        imgIndex++;
+
         const formData = new FormData();
         formData.append(
           'file',
           fs.createReadStream(fullImagePath),
-          safeImageName,
+          newImageName, 
         );
 
         try {
@@ -617,7 +626,7 @@ export class BuildDayService {
               },
               headers: {
                 ...formData.getHeaders(),
-                'Content-Disposition': `attachment; filename="${safeImageName}"`,
+                'Content-Disposition': `attachment; filename="${newImageName}"`,
               },
             },
           );
@@ -625,11 +634,12 @@ export class BuildDayService {
           results.push({
             folder: label,
             file: imageName,
+            sentAs: newImageName, 
             status: 'ok',
             response: mediaResponse.data,
           });
 
-          console.log(`✅ ${label}/${imageName} завантажено успішно`);
+          console.log(`✅ ${label}/${imageName} → ${newImageName} успішно`);
         } catch (error) {
           console.error(
             `❌ Помилка при завантаженні ${label}/${imageName}:`,
@@ -638,6 +648,7 @@ export class BuildDayService {
           results.push({
             folder: label,
             file: imageName,
+            sentAs: newImageName,
             status: 'error',
             error: error.message,
           });
@@ -738,3 +749,4 @@ export class BuildDayService {
     }
   }
 }
+

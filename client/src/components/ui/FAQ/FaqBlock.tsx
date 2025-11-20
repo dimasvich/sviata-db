@@ -1,9 +1,10 @@
 'use client';
 
-import { useState } from 'react';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import Typography from '@/components/ui/Typography';
+import { useState } from 'react';
+import InlineTextEditor from '../editor/InlineTextEditor';
 
 type FaqItem = {
   question: string;
@@ -25,7 +26,7 @@ export default function FaqBlock({ faqs, setFaqs }: FaqBlockProps) {
     const answer = newAnswer.trim();
     if (!question || !answer) return;
 
-    setFaqs([...faqs,{ question, answer }]);
+    setFaqs([...faqs, { question, answer }]);
 
     setNewQuestion('');
     setNewAnswer('');
@@ -50,20 +51,20 @@ export default function FaqBlock({ faqs, setFaqs }: FaqBlockProps) {
         <Typography type="text">Блок FAQ</Typography>
         <Button onClick={handleAddOrUpdateFaq}>+</Button>
       </div>
-      <Input
-        id="question"
-        label="Питання"
-        placeholder="Введіть питання"
-        onChange={(e) => setNewQuestion(e.target.value)}
-        value={newQuestion}
-      />
-      <Input
-        id="answer"
-        label="Відповідь"
-        placeholder="Введіть відповідь"
-        onChange={(e) => setNewAnswer(e.target.value)}
-        value={newAnswer}
-      />
+      <div className="flex flex-col gap-1">
+        <Typography type="text">Питання</Typography>
+        <InlineTextEditor
+          onChange={(val) => setNewQuestion(val)}
+          value={newQuestion}
+        />
+      </div>
+      <div className="flex flex-col gap-1">
+        <Typography type="text">Відповідь</Typography>
+        <InlineTextEditor
+          onChange={(val) => setNewAnswer(val)}
+          value={newAnswer}
+        />
+      </div>
 
       <div className="flex flex-wrap gap-2 mt-1">
         {faqs.map((faq, idx) => (

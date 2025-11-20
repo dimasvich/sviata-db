@@ -15,7 +15,9 @@ import { Sviato, SviatoDocument } from 'src/crud/schema/sviato.schema';
 import { SviatoImages } from 'src/crud/schema/sviatoimages.schema';
 import { DayRulesEnum, SviatoTagToIdMap } from 'src/types';
 import {
+  addNoFollow,
   capitalizeFirstLetter,
+  convertImagesToFigure,
   convertYouTubeLinks,
   getNext5YearsForecast,
   groupSequentialImages,
@@ -24,6 +26,7 @@ import {
 
 import axios from 'axios';
 import * as dayjs from 'dayjs';
+import { transliterate } from 'src/utils/transliterator';
 
 @Injectable()
 export class BuildService {
@@ -102,12 +105,13 @@ export class BuildService {
           return;
         }
       });
-      $('img').each((_, el) => {
+      const imagesNames = await this.getImagesPath(id);
+      $('img').each((i, el) => {
         const $el = $(el);
         const src = $el.attr('src');
 
         if (src && !src.startsWith('http')) {
-          const newSrc = `${host}/${new Date().getFullYear()}/${new Date().getMonth() + 1}/${src.replaceAll(' ', '_').replaceAll(',', '')}`;
+          const newSrc = `${host}/${new Date().getFullYear()}/${new Date().getMonth() + 1}/${imagesNames[i]}}`;
           $el.attr('src', newSrc.replace('wepb', 'webp'));
         }
 
@@ -119,6 +123,9 @@ export class BuildService {
       content = $.html();
       content = groupSequentialImages(content);
       content = convertYouTubeLinks(content);
+      content = convertImagesToFigure(content);
+      content = addNoFollow(content);
+      const leaflets = await this.getLeafletsPath(id);
       const postcardPath =
         'https://gosta.ua/wp-content/themes/gosta/img/holiday/postcard/';
 
@@ -164,8 +171,9 @@ export class BuildService {
                               .join('')}
                 </tbody>
             </table>
+             <figcaption class="wp-element-caption">В який день будемо відзначати ${sviato.name} у найближчі 5 років</figcaption>
             </figure>
-            <figcaption class="wp-element-caption">В який день будемо відзначати ${sviato.name} у найближчі 5 років</figcaption>
+           
             `,
         'timeline-section': `
             ${
@@ -296,7 +304,7 @@ export class BuildService {
           ? `<div class="related" data-id="[${related.map((item) => item)}]"></div>`
           : '',
         'moreIdeas-section': `<div class="moreIdeas"></div>`,
-        'leaflets-section': sviato?.leaflets
+        'leaflets-section': leaflets
           ? `
           <div class="postcard-block" bis_skin_checked="1">
           ${sviato.leaflets
@@ -405,6 +413,75 @@ export class BuildService {
       throw error;
     }
   }
+  private async getLeafletsPath(id: string): Promise<string[]> {
+    const sviato = await this.sviatoModel.findById(id).lean();
+    if (!sviato || !sviato.seoText) {
+      throw new Error('Стаття не знайдена або відсутній seoText');
+    }
+    try {
+      const imageDir2 = path.join(
+        __dirname,
+        '..',
+        '..',
+        'uploads',
+        sviato._id.toString(),
+        'leaflets',
+      );
+
+      if (!fs.existsSync(imageDir2)) {
+        throw new Error(`Папка ${imageDir2} не існує`);
+      }
+      const imageFiles = fs
+        .readdirSync(imageDir2)
+        .filter((f) => /\.(webp)$/i.test(f));
+
+      if (imageFiles.length > 0) {
+        const results = [];
+
+        for (const imageName of imageFiles) {
+          const newImageName = `gosta-${transliterate(sviato.name)}-postcard-${imageFiles.indexOf(imageName)}.webp`;
+          results.push(newImageName);
+        }
+        return results;
+      }
+    } catch (error) {
+      throw error;
+    }
+  }
+  private async getImagesPath(id: string): Promise<string[]> {
+    const sviato = await this.sviatoModel.findById(id).lean();
+    if (!sviato) {
+      throw new Error('Стаття не знайдена');
+    }
+    try {
+      const imageDir2 = path.join(
+        __dirname,
+        '..',
+        '..',
+        'uploads',
+        sviato._id.toString(),
+      );
+
+      if (!fs.existsSync(imageDir2)) {
+        throw new Error(`Папка ${imageDir2} не існує`);
+      }
+      const imageFiles = fs
+        .readdirSync(imageDir2)
+        .filter((f) => /\.(webp)$/i.test(f));
+
+      if (imageFiles.length > 0) {
+        const results = [];
+
+        for (const imageName of imageFiles) {
+          const newImageName = `gosta-${transliterate(sviato.name)}-${imageFiles.indexOf(imageName)}.webp`;
+          results.push(newImageName);
+        }
+        return results;
+      }
+    } catch (error) {
+      throw error;
+    }
+  }
   async uploadLeaflets(id: string) {
     const sviato = await this.sviatoModel.findById(id).lean();
     if (!sviato || !sviato.seoText) {
@@ -434,11 +511,13 @@ export class BuildService {
           const safeImageName = imageName.replaceAll(' ', '_');
           const fullImagePath2 = path.join(imageDir2, imageName);
 
+          const newImageName = `gosta-${transliterate(sviato.name)}-postcard-${imageFiles.indexOf(imageName)}.webp`;
+
           const formData = new FormData();
           formData.append(
             'file',
             fs.createReadStream(fullImagePath2),
-            safeImageName,
+            newImageName,
           );
 
           try {
@@ -452,7 +531,7 @@ export class BuildService {
                 },
                 headers: {
                   ...formData.getHeaders(),
-                  'Content-Disposition': `attachment; filename="${safeImageName}"`,
+                  'Content-Disposition': `attachment; filename="${newImageName}"`,
                 },
               },
             );
@@ -492,8 +571,14 @@ export class BuildService {
       const imageName1 = mainImage;
       const fullImagePath1 = path.join(imageDir1, imageName1);
 
+      const newImageName = `gosta-${transliterate(sviato.name)}.webp`;
+
       const formData = new FormData();
-      formData.append('file', fs.createReadStream(fullImagePath1), imageName1);
+      formData.append(
+        'file',
+        fs.createReadStream(fullImagePath1),
+        newImageName,
+      );
 
       const mediaResponse = await axios.post(
         `${process.env.BASE_URL}/media`,
@@ -505,7 +590,7 @@ export class BuildService {
           },
           headers: {
             ...formData.getHeaders(),
-            'Content-Disposition': `attachment; filename="${imageName1}"`,
+            'Content-Disposition': `attachment; filename="${newImageName}"`,
           },
         },
       );
@@ -535,11 +620,12 @@ export class BuildService {
           const safeImageName = imageName.replaceAll(' ', '_');
           const fullImagePath2 = path.join(imageDir2, imageName);
 
+          const newImageName = `gosta-${transliterate(sviato.name)}-${imageFiles.indexOf(imageName)}.webp`;
           const formData = new FormData();
           formData.append(
             'file',
             fs.createReadStream(fullImagePath2),
-            safeImageName,
+            newImageName,
           );
 
           try {
@@ -553,7 +639,7 @@ export class BuildService {
                 },
                 headers: {
                   ...formData.getHeaders(),
-                  'Content-Disposition': `attachment; filename="${safeImageName}"`,
+                  'Content-Disposition': `attachment; filename="${newImageName}"`,
                 },
               },
             );
@@ -644,8 +730,14 @@ export class BuildService {
       const imageName1 = mainImage;
       const fullImagePath1 = path.join(imageDir1, imageName1);
 
+      const newImageName = `gosta-${transliterate(sviato.name)}.webp`;
+
       const formData = new FormData();
-      formData.append('file', fs.createReadStream(fullImagePath1), imageName1);
+      formData.append(
+        'file',
+        fs.createReadStream(fullImagePath1),
+        newImageName,
+      );
 
       const mediaResponse = await axios.post(
         `${process.env.BASE_URL}/media`,
@@ -657,7 +749,7 @@ export class BuildService {
           },
           headers: {
             ...formData.getHeaders(),
-            'Content-Disposition': `attachment; filename="${imageName1}"`,
+            'Content-Disposition': `attachment; filename="${newImageName}"`,
           },
         },
       );
@@ -704,11 +796,12 @@ export class BuildService {
           const safeImageName = imageName.replaceAll(' ', '_');
           const fullImagePath2 = path.join(imageDir2, imageName);
 
+          const newImageName = `gosta-${transliterate(sviato.name)}-${imageFiles.indexOf(imageName)}.webp`;
           const formData = new FormData();
           formData.append(
             'file',
             fs.createReadStream(fullImagePath2),
-            safeImageName,
+            newImageName,
           );
 
           try {
@@ -722,7 +815,7 @@ export class BuildService {
                 },
                 headers: {
                   ...formData.getHeaders(),
-                  'Content-Disposition': `attachment; filename="${safeImageName}"`,
+                  'Content-Disposition': `attachment; filename="${newImageName}"`,
                 },
               },
             );
@@ -821,7 +914,6 @@ export class BuildService {
         }
       });
 
-      // Очікуємо всі запити
       const results = await Promise.all(updatePromises);
 
       return results;

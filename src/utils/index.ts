@@ -1,7 +1,6 @@
 import * as cheerio from 'cheerio';
 import * as dayjs from 'dayjs';
 import 'dayjs/locale/uk';
-import type { Element } from 'domhandler';
 
 dayjs.locale('uk');
 
@@ -44,7 +43,6 @@ export function removeBisSkinChecked(html: string): string {
 export function groupSequentialImages(html: string): string {
   console.log('=== Початок групування ===');
 
-  // 1️⃣ Знаходимо всі <figure> елементи (допускаємо будь-які атрибути/пробіли)
   const figureRegex = /<figure[\s\S]*?<\/figure>/g;
   const matches = [...html.matchAll(figureRegex)];
 
@@ -52,14 +50,12 @@ export function groupSequentialImages(html: string): string {
 
   if (matches.length === 0) return html;
 
-  // 2️⃣ Масив усіх знайдених фігур з їх позиціями
   const positions = matches.map((m) => ({
     html: m[0],
     start: m.index ?? 0,
     end: (m.index ?? 0) + m[0].length,
   }));
 
-  // 3️⃣ Знайдемо групи послідовних фігур (ті, між якими лише пробіли або пустий текст)
   const groups: (typeof positions)[] = [];
   let currentGroup: typeof positions = [];
 
@@ -84,7 +80,6 @@ export function groupSequentialImages(html: string): string {
 
   console.log(`Знайдено ${groups.length} груп(и)`);
 
-  // 4️⃣ Замінюємо групи (з кінця, щоб не зсунути індекси)
   let output = html;
   for (let g = groups.length - 1; g >= 0; g--) {
     const group = groups[g];
@@ -125,14 +120,56 @@ export function convertYouTubeLinks(html: string): string {
         : '';
 
       return `
-          <iframe 
-            src="${hrefLink}"  
-            title="YouTube video" 
-            frameborder="0" 
-            allowfullscreen
-          ></iframe>
-          ${figcaption}
+          <figure class="wp-block-embed">
+            <iframe 
+              src="${hrefLink}"  
+              title="YouTube video" 
+              frameborder="0" 
+              allowfullscreen
+            ></iframe>
+            ${figcaption}
+          </figure>
       `;
     },
   );
+}
+export function convertImagesToFigure(html: string): string {
+  const $ = require('cheerio').load(html, { decodeEntities: false });
+
+  $('img').each((_, el) => {
+    const $el = $(el);
+
+    if ($el.parents('figure.wp-block-gallery').length > 0) {
+      return;
+    }
+
+    const altText = $el.attr('alt')?.trim() || '';
+    const figcaption = altText
+      ? `<figcaption class="wp-element-caption">${altText}</figcaption>`
+      : '';
+
+    $el.replaceWith(`
+      <figure class="wp-block-embed">
+        ${$.html($el)}
+        ${figcaption}
+      </figure>
+    `);
+  });
+
+  return $.html();
+}
+export function addNoFollow(html: string): string {
+  return html.replace(/<a\s+([^>]*?)>/gi, (match, attrs) => {
+    if (/rel\s*=\s*["'][^"']*["']/i.test(attrs)) {
+      return match.replace(/rel\s*=\s*["']([^"']*)["']/i, (_full, relValue) => {
+        const values = relValue.split(/\s+/);
+        if (!values.includes('nofollow')) {
+          values.push('nofollow');
+        }
+        return `rel="${values.join(' ')}"`;
+      });
+    } else {
+      return `<a ${attrs} rel="nofollow">`;
+    }
+  });
 }

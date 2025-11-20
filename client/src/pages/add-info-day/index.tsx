@@ -3,11 +3,12 @@
 import Button from '@/components/ui/Button';
 import Calendar from '@/components/ui/Calendar';
 import HeaderEditSviato from '@/components/ui/Header/HeaderEditSviato';
+import EditableTimeline from '@/components/ui/HistoryBlock/HistoryBlock';
 import ImageUpload from '@/components/ui/ImageUpload';
 import Input from '@/components/ui/Input';
 import Layout from '@/components/ui/Layout';
 import Loader from '@/components/ui/Loader';
-import Textarea from '@/components/ui/Textarea';
+import EditableStringList from '@/components/ui/StringList/StringList';
 import Typography from '@/components/ui/Typography';
 import WhoWasBornTodaySection from '@/components/ui/WhoWasBornToday/WhoWasBornTodaySection';
 import DaySeoTextEditor from '@/components/ui/editor/DaySeoTextEditor';
@@ -15,7 +16,7 @@ import DefaultTextEditor from '@/components/ui/editor/DefaultTextEditor';
 import { useNotification } from '@/hooks/Notification';
 import { baseUrl } from '@/http';
 import { apiFetch } from '@/http/api';
-import { DayRulesEnum, WhoWasBornTodayItem } from '@/types';
+import { WhoWasBornTodayItem } from '@/types';
 import { getNthWeekdayOfMonth } from '@/utils';
 import Head from 'next/head';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -316,72 +317,24 @@ export default function AddInfoDay() {
                   onChange={(val) => handleChange('description', val)}
                 />
               </div>
-
-              <div className="flex flex-col gap-2">
-                <div className="flex items-center justify-between">
-                  <Typography type="text">Історичні події</Typography>
-                  <Button
-                    onClick={() => {
-                      const year = newTimeBlockYear.trim();
-                      const html = newTimeBlockHtml.trim();
-                      if (year && html) {
-                        setDay((prev) => ({
-                          ...prev,
-                          timeline: [...prev.timeline, { year, html }],
-                        }));
-                        setNewTimeBlockYear('');
-                        setNewTimeBlockHtml('');
-                      }
-                    }}
-                  >
-                    +
-                  </Button>
-                </div>
-                <div className="flex flex-col gap-2">
-                  <Input
-                    id="newTimeBlockYear"
-                    label=""
-                    placeholder="Рік"
-                    value={newTimeBlockYear}
-                    onChange={(e) => setNewTimeBlockYear(e.target.value)}
-                  />
-                  <Textarea
-                    id="newTimeBlockHtml"
-                    label=""
-                    maxLength={500}
-                    placeholder="Текст (HTML)"
-                    value={newTimeBlockHtml}
-                    onChange={(e) => setNewTimeBlockHtml(e.target.value)}
-                  />
-                </div>
-
-                <div className="flex flex-wrap gap-2 mt-1">
-                  {day.timeline.map((timeblock, idx) => (
-                    <div
-                      key={idx}
-                      className="flex items-center gap-2 bg-border text-primary px-3 py-1 rounded-full text-sm"
-                    >
-                      <p>{timeblock.html}</p>
-                      <button
-                        onClick={() =>
-                          setDay((prev) => ({
-                            ...prev,
-                            timeline: prev.timeline.filter((_, i) => i !== idx),
-                          }))
-                        }
-                        className="text-red-500 hover:text-red-700"
-                      >
-                        ✕
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              </div>
+              <EditableTimeline
+                timeline={day.timeline}
+                setTimeline={(timeline) =>
+                  setDay((prev) => ({ ...prev, timeline }))
+                }
+                label="Історичні події"
+              />
 
               <div className="flex flex-col gap-2">
                 <WhoWasBornTodaySection day={day} handleChange={handleChange} />
-
-                <div className="flex flex-col gap-2">
+                <EditableStringList
+                  items={day.bornNames}
+                  setItems={(bornNames) =>
+                    setDay((prev) => ({ ...prev, bornNames }))
+                  }
+                  label="Іменини на цей день"
+                />
+                {/* <div className="flex flex-col gap-2">
                   <Typography type="text">Іменини на цей день</Typography>
                   <div className="flex items-end gap-2">
                     <Input
@@ -409,7 +362,7 @@ export default function AddInfoDay() {
                       </div>
                     ))}
                   </div>
-                </div>
+                </div> */}
               </div>
 
               <div className="flex gap-2 items-end flex-col">
@@ -421,7 +374,14 @@ export default function AddInfoDay() {
                   error={''}
                 />
               </div>
-              <div className="flex flex-col gap-2">
+              <EditableStringList
+                items={day.omens}
+                setItems={(omens) =>
+                  setDay((prev) => ({ ...prev, omens }))
+                }
+                label="Прикмети"
+              />
+              {/* <div className="flex flex-col gap-2">
                 <Typography type="text">Прикмети</Typography>
                 <div className="flex items-end gap-2">
                   <Input
@@ -449,7 +409,7 @@ export default function AddInfoDay() {
                     </div>
                   ))}
                 </div>
-              </div>
+              </div> */}
               <div className="w-full">
                 <Typography type="title">Що не/можна робити</Typography>
                 <div className="flex flex-col gap-2 w-full">

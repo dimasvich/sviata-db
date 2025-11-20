@@ -3,6 +3,7 @@ import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import Textarea from '@/components/ui/Textarea';
 import Typography from '@/components/ui/Typography';
+import DefaultTextEditor from '../editor/DefaultTextEditor';
 
 export interface TimelineItem {
   year: string;
@@ -12,11 +13,13 @@ export interface TimelineItem {
 interface EditableTimelineProps {
   timeline: TimelineItem[];
   setTimeline: (timeline: TimelineItem[]) => void;
+  label?: string;
 }
 
 const EditableTimeline: React.FC<EditableTimelineProps> = ({
   timeline,
   setTimeline,
+  label = 'Таймлайн',
 }) => {
   const [year, setYear] = useState('');
   const [html, setHtml] = useState('');
@@ -58,7 +61,7 @@ const EditableTimeline: React.FC<EditableTimelineProps> = ({
   return (
     <div className="flex flex-col gap-2">
       <div className="flex items-center justify-between">
-        <Typography type="text">Таймлайн</Typography>
+        <Typography type="text">{label}</Typography>
         <Button onClick={handleAddOrUpdate}>
           {editingIndex !== null ? 'Оновити' : '+'}
         </Button>
@@ -71,14 +74,15 @@ const EditableTimeline: React.FC<EditableTimelineProps> = ({
           value={year}
           onChange={(e) => setYear(e.target.value)}
         />
-        <Textarea
+        <DefaultTextEditor value={html} onChange={(val) => setHtml(val)} />
+        {/* <Textarea
           id="timelineHtml"
           label=""
           maxLength={500}
           placeholder="Текст (HTML)"
           value={html}
           onChange={(e) => setHtml(e.target.value)}
-        />
+        /> */}
       </div>
       <div className="flex flex-wrap gap-2 mt-1">
         {timeline.map((item, idx) => (

@@ -163,6 +163,7 @@ export default function DashboardMonth({
                             key={index}
                             href={`/add-info?id=${item.id}`}
                             target="_blank"
+                            onClick={(e) => e.stopPropagation()}
                           >
                             <div className="bg-[#dde2ef] p-2 flex justify-between gap-2 rounded-[4px] w-full cursor-pointer hover:bg-[#cfd6e8] flex-1">
                               <Typography type="text">{index + 1}.</Typography>
@@ -171,13 +172,14 @@ export default function DashboardMonth({
                                   {item.name} |
                                 </Typography>
                                 <Typography type="text">
-                                  #{item.tags.map((item) => item)} | 
+                                  #{item.tags.map((item) => item)} |
                                 </Typography>
                                 <Typography type="text">
-                                  <TrueFalseMark value={item.hasDescription} /> | 
+                                  <TrueFalseMark value={item.hasDescription} />{' '}
+                                  |
                                 </Typography>
                                 <Typography type="text">
-                                  {item.images} фото | 
+                                  {item.images} фото |
                                 </Typography>
                                 <Typography type="text">
                                   <TrueFalseMark value={item.hasLeaflets} />
