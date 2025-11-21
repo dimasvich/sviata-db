@@ -45,7 +45,7 @@ export default function AddImages() {
   return (
     <>
       <Head>
-        <title>Sviato-db | Додати зображення</title>
+        <title>Svyato-db | Додати зображення</title>
       </Head>
       <Layout>
         <div className="max-w-4xl mx-auto py-6">

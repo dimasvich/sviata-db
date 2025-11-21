@@ -72,3 +72,8 @@ export interface RelatedSviato {
   _id: string;
   name: string;
 }
+export interface ImageWP {
+  original?: string;
+  publishName?: string;
+  mediaId?: number;
+}

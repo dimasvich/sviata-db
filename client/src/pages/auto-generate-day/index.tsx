@@ -52,7 +52,7 @@ export default function AutoGeneratePage() {
   return (
     <>
       <Head>
-        <title>Sviato-db | Генерувати день по даті</title>
+        <title>Svyato-db | Генерувати день по даті</title>
         <meta name="description" content="Генерувати день по даті" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link rel="icon" href="/favicon.ico" />

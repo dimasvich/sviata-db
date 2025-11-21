@@ -8,7 +8,7 @@ import DayRulesSection from '@/components/ui/DayRules/DayRulesSection';
 import InlineTextEditor from '@/components/ui/editor/InlineTextEditor';
 import SeoTextEditor from '@/components/ui/editor/SeoTextEditor';
 import FaqBlock from '@/components/ui/FAQ/FaqBlock';
-import HeaderEditSviato from '@/components/ui/Header/HeaderEditSviato';
+import HeaderEditSvyato from '@/components/ui/Header/HeaderEditSvyato';
 import EditableTimeline from '@/components/ui/HistoryBlock/HistoryBlock';
 import Input from '@/components/ui/Input';
 import Layout from '@/components/ui/Layout';
@@ -16,7 +16,7 @@ import Loader from '@/components/ui/Loader';
 import MoreGallery from '@/components/ui/MoreGallery';
 import Select from '@/components/ui/Select';
 import EditableStringList from '@/components/ui/StringList/StringList';
-import SviatoDeleteModal from '@/components/ui/sviato/SviatoDeleteModal';
+import SvyatoDeleteModal from '@/components/ui/Svyato/SvyatoDeleteModal';
 import Textarea from '@/components/ui/Textarea';
 import Typography from '@/components/ui/Typography';
 import { useNotification } from '@/hooks/Notification';
@@ -40,7 +40,7 @@ export default function AddInfo() {
   const notify = useNotification();
   const [alternativeDate, setAlternativeDate] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [sviato, setSviato] = useState({
+  const [svyato, setSvyato] = useState({
     title: '',
     description: '',
     name: '',
@@ -102,7 +102,7 @@ export default function AddInfo() {
   const [filled, setFilled] = useState<boolean>(false);
 
   const selectRelated = (item: { _id: string; name: string }) => {
-    setSviato((prev) => ({
+    setSvyato((prev) => ({
       ...prev,
       related: [...prev.related, item],
     }));
@@ -126,7 +126,7 @@ export default function AddInfo() {
     if (!id) return;
     setLoading(true);
     try {
-      if (!sviato.articleId) {
+      if (!svyato.articleId) {
         const res = await apiFetch(`${baseUrl}/api/build/${id}`, {
           method: 'Post',
           headers: { 'Content-Type': 'application/json' },
@@ -146,15 +146,15 @@ export default function AddInfo() {
     }
   };
   useEffect(() => {
-    if (sviato.mainImage) {
-      const imgs = Array.isArray(sviato.mainImage)
-        ? sviato.mainImage
-        : [sviato.mainImage];
+    if (svyato.mainImage) {
+      const imgs = Array.isArray(svyato.mainImage)
+        ? svyato.mainImage
+        : [svyato.mainImage];
       setMainExisting(
         imgs.map((img) => `${baseUrl}/uploads/${id}/main/${img}`),
       );
     }
-  }, [sviato]);
+  }, [svyato]);
 
   useEffect(() => {
     if (!id) return;
@@ -170,7 +170,7 @@ export default function AddInfo() {
         const json = await res.json();
         const jsonTags = await resTags.json();
         setTags(jsonTags);
-        setSviato({
+        setSvyato({
           ...json,
           omens: json.omens || [],
           sources: json.sources || [],
@@ -209,19 +209,19 @@ export default function AddInfo() {
     field: string,
     value: string | boolean | { question: string; answer: string },
   ) => {
-    setSviato((prev) => ({ ...prev, [field]: value }));
+    setSvyato((prev) => ({ ...prev, [field]: value }));
   };
 
   const handleRemoveRelated = (related: { _id: string; name: string }) => {
-    setSviato((prev) => ({
+    setSvyato((prev) => ({
       ...prev,
       related: prev.related.filter((t) => t.name !== related.name),
     }));
   };
 
   const handleAddTag = () => {
-    if (newTag.trim() && !sviato.tags.includes(newTag.trim())) {
-      setSviato((prev) => ({
+    if (newTag.trim() && !svyato.tags.includes(newTag.trim())) {
+      setSvyato((prev) => ({
         ...prev,
         tags: [...prev.tags, newTag.trim()],
       }));
@@ -229,7 +229,7 @@ export default function AddInfo() {
     }
   };
   const handleRemoveTag = (tag: string) => {
-    setSviato((prev) => ({
+    setSvyato((prev) => ({
       ...prev,
       tags: prev.tags.filter((t) => t !== tag),
     }));
@@ -240,7 +240,7 @@ export default function AddInfo() {
   >(async () => {});
   useEffect(() => {
     if (celebrateWhen && celebrateDate && celebrateDayoff)
-      setSviato((prev) => ({
+      setSvyato((prev) => ({
         ...prev,
         celebrate: {
           when: celebrateWhen,
@@ -258,15 +258,14 @@ export default function AddInfo() {
 
     setLoading(true);
     try {
-      // 🔹 Викликаємо handleSubmitRules з дочірнього компонента
       await handleSubmitRulesFn();
 
       const formData = new FormData();
       formData.append(
-        'sviatoData',
+        'svyatoData',
         JSON.stringify({
-          ...sviato,
-          status: filled ? 'FILLED' : sviato.status,
+          ...svyato,
+          status: filled ? 'FILLED' : svyato.status,
         }),
       );
 
@@ -283,7 +282,11 @@ export default function AddInfo() {
         notify('Помилка при оновленні даних', true);
         return;
       }
-      if (res.ok) notify('Зміни збережено');
+      if (res.ok) {
+        notify('Зміни збережено');
+        const json = await res.json();
+        setSvyato(json);
+      }
     } catch (e) {
       notify('Помилка при відправленні запиту', true);
     } finally {
@@ -294,11 +297,11 @@ export default function AddInfo() {
   return (
     <>
       <Head>
-        <title>Sviato-db | Редагування свята</title>
+        <title>Svyato-db | Редагування свята</title>
       </Head>
       {!loading ? (
         <>
-          <HeaderEditSviato>
+          <HeaderEditSvyato>
             <Button
               onClick={() => {
                 router.push('/');
@@ -308,7 +311,7 @@ export default function AddInfo() {
             </Button>
             <div className="flex gap-1 items-center">
               <Typography type="text">
-                Останнє редагування: {sviato.dateUpdate}
+                Останнє редагування: {svyato.dateUpdate}
               </Typography>
               <Button onClick={handleSubmit}>
                 {loading ? 'Оновлюється...' : 'Зберегти зміни'}
@@ -316,14 +319,14 @@ export default function AddInfo() {
             </div>
             <div className="flex gap-1 items-center">
               <Typography type="text">
-                Останнє вивантаження: {sviato.dateUpload}
+                Останнє вивантаження: {svyato.dateUpload}
               </Typography>
               <Button onClick={handleUpload}>Вивантажити статтю</Button>
             </div>
             <Button onClick={() => setIsOpenModal(true)} type="danger">
               Видалити свято
             </Button>
-          </HeaderEditSviato>
+          </HeaderEditSvyato>
           <Layout>
             <div className="flex justify-between">
               <Typography type="title">Редагування свята</Typography>
@@ -336,7 +339,7 @@ export default function AddInfo() {
                   setValue={setFilled}
                 />
                 <ChooseDate
-                  sviatoDate={sviato.date}
+                  sviatoDate={svyato.date}
                   onChangeDate={(d) => handleChange('date', d)}
                   onChangeAlternative={(altData) => {
                     console.log('Вибрана альтернатива:', altData);
@@ -348,19 +351,19 @@ export default function AddInfo() {
                   id="title"
                   label="Title"
                   maxLength={65}
-                  value={sviato.title || ''}
+                  value={svyato.title || ''}
                   onChange={(e) => handleChange('title', e.target.value)}
                 />
                 <Textarea
                   id="description"
                   label="Description"
-                  value={sviato.description || ''}
+                  value={svyato.description || ''}
                   onChange={(e) => handleChange('description', e.target.value)}
                 />
                 <Textarea
                   id="teaser"
                   label="Короткий опис (teaser)"
-                  value={sviato.teaser || ''}
+                  value={svyato.teaser || ''}
                   onChange={(e) => handleChange('teaser', e.target.value)}
                 />
                 <div className="flex flex-col gap-2">
@@ -389,7 +392,7 @@ export default function AddInfo() {
                   </div>
 
                   <div className="flex flex-wrap gap-2 mt-1">
-                    {sviato.tags.map((tag) => (
+                    {svyato.tags.map((tag) => (
                       <div
                         key={tag}
                         className="flex items-center gap-1 bg-border text-primary px-3 py-1 rounded-full text-sm"
@@ -408,7 +411,7 @@ export default function AddInfo() {
                 <Input
                   id="name"
                   label="Офіційна назва свята (Н1)"
-                  value={sviato.name || ''}
+                  value={svyato.name || ''}
                   onChange={(e) => handleChange('name', e.target.value)}
                 />
                 <div className="flex flex-col gap-2">
@@ -439,7 +442,7 @@ export default function AddInfo() {
                   </div>
                 </div>
                 <SeoTextEditor
-                  value={sviato.seoText || '<p></p>'}
+                  value={svyato.seoText || '<p></p>'}
                   onChange={(html) => handleChange('seoText', html)}
                   newFiles={newFiles}
                   setNewFiles={setNewFiles}
@@ -447,29 +450,30 @@ export default function AddInfo() {
               </div>
               <div className="border-l-[2px] p-2 flex flex-col gap-2 w-1/2">
                 <EditableTimeline
-                  timeline={sviato.timeline}
+                  timeline={svyato.timeline}
                   setTimeline={(timeline) =>
-                    setSviato((prev) => ({ ...prev, timeline }))
+                    setSvyato((prev) => ({ ...prev, timeline }))
                   }
+                  label = 'Таймлайн'
                 />
                 <EditableStringList
-                  items={sviato.greetings}
+                  items={svyato.greetings}
                   setItems={(greetings) =>
-                    setSviato((prev) => ({ ...prev, greetings }))
+                    setSvyato((prev) => ({ ...prev, greetings }))
                   }
                   label="Короткі привітання"
                 />
                 <EditableStringList
-                  items={sviato.ideas}
+                  items={svyato.ideas}
                   setItems={(ideas) =>
-                    setSviato((prev) => ({ ...prev, ideas }))
+                    setSvyato((prev) => ({ ...prev, ideas }))
                   }
                   label="Цитати для інстаграму"
                 />
                 <div className="flex flex-col gap-2">
                   <Typography type="text">Листівки</Typography>
                   <MoreGallery
-                    existingImages={sviato.leaflets.map(
+                    existingImages={svyato.leaflets.map(
                       (img) => `${baseUrl}/uploads/${id}/leaflets/${img}`,
                     )}
                     onImagesChange={setLeaflets}
@@ -477,22 +481,22 @@ export default function AddInfo() {
                   />
                 </div>
                 <FaqBlock
-                  faqs={sviato.faq}
+                  faqs={svyato.faq}
                   setFaqs={(updatedFaqs) =>
-                    setSviato((prev) => ({ ...prev, faq: updatedFaqs }))
+                    setSvyato((prev) => ({ ...prev, faq: updatedFaqs }))
                   }
                 />
 
                 <DayRulesSection
-                  date={sviato.date}
+                  date={svyato.date}
                   baseUrl={baseUrl}
                   onInit={(fn) => setHandleSubmitRulesFn(() => fn)}
                 />
 
                 <EditableStringList
-                  items={sviato.facts}
+                  items={svyato.facts}
                   setItems={(facts) =>
-                    setSviato((prev) => ({ ...prev, facts }))
+                    setSvyato((prev) => ({ ...prev, facts }))
                   }
                   label="Цікаві факти"
                 />
@@ -513,7 +517,7 @@ export default function AddInfo() {
                   </div>
 
                   <div className="flex flex-wrap gap-2 mt-1">
-                    {sviato.related.map((related) => (
+                    {svyato.related.map((related) => (
                       <div
                         key={related._id}
                         className="flex items-center gap-1 bg-border text-primary px-3 py-1 rounded-full text-sm"
@@ -556,7 +560,7 @@ export default function AddInfo() {
                         const title = newSourceTitle.trim();
                         const link = newSourceLink.trim();
                         if (title && link) {
-                          setSviato((prev) => ({
+                          setSvyato((prev) => ({
                             ...prev,
                             sources: [...prev.sources, { title, link }],
                           }));
@@ -570,18 +574,22 @@ export default function AddInfo() {
                   </div>
 
                   <div className="flex flex-wrap gap-2 mt-1">
-                    {sviato.sources.map((source, idx) => (
+                    {svyato.sources.map((source, idx) => (
                       <div
                         key={idx}
                         className="flex items-center gap-2 bg-border text-primary px-3 py-1 rounded-full text-sm"
                       >
-                        <span onClick={()=>{
-                          setNewSourceTitle(source.title);
-                          setNewSourceLink(source.link);
-                        }}>{source.title}</span>
+                        <span
+                          onClick={() => {
+                            setNewSourceTitle(source.title);
+                            setNewSourceLink(source.link);
+                          }}
+                        >
+                          {source.title}
+                        </span>
                         <button
                           onClick={() =>
-                            setSviato((prev) => ({
+                            setSvyato((prev) => ({
                               ...prev,
                               sources: prev.sources.filter((_, i) => i !== idx),
                             }))
@@ -601,7 +609,7 @@ export default function AddInfo() {
       ) : (
         <Loader />
       )}
-      <SviatoDeleteModal
+      <SvyatoDeleteModal
         onDelete={onDelete}
         isOpen={isOpenModal}
         onClose={() => setIsOpenModal(false)}

@@ -2,7 +2,7 @@
 
 import Button from '@/components/ui/Button';
 import Calendar from '@/components/ui/Calendar';
-import HeaderEditSviato from '@/components/ui/Header/HeaderEditSviato';
+import HeaderEditSvyato from '@/components/ui/Header/HeaderEditSvyato';
 import EditableTimeline from '@/components/ui/HistoryBlock/HistoryBlock';
 import ImageUpload from '@/components/ui/ImageUpload';
 import Input from '@/components/ui/Input';
@@ -271,7 +271,7 @@ export default function AddInfoDay() {
   return (
     <>
       <Head>
-        <title>Sviato-db | Яке сьогодні свято?</title>
+        <title>Svyato-db | Яке сьогодні свято?</title>
         <meta name="description" content="Яке сьогодні свято?" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link rel="icon" href="/favicon.ico" />
@@ -279,7 +279,7 @@ export default function AddInfoDay() {
 
       {!loading ? (
         <>
-          <HeaderEditSviato>
+          <HeaderEditSvyato>
             <Button onClick={() => router.push('/')}>Назад</Button>
             <div className="flex gap-1 items-center">
               <Typography type="text">
@@ -297,7 +297,7 @@ export default function AddInfoDay() {
                 Вивантажити статтю
               </Button>
             </div>
-          </HeaderEditSviato>
+          </HeaderEditSvyato>
           <Layout>
             <div className="flex flex-col gap-6 w-full max-w-3xl mx-auto">
               <div className="flex justify-between">

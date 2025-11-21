@@ -42,7 +42,7 @@ export default function AutoSearch({
 
   const [modalOpen, setModalOpen] = useState(false);
   const [modalOpenGenerate, setModalOpenGenerate] = useState(false);
-  const [sviatoId, setSviatoId] = useState<string | null>(null);
+  const [svyatoId, setSviatoId] = useState<string | null>(null);
   const [sviatoName, setSviatoName] = useState<string | null>(null);
 
   const createNew = async (sviatoName: string) => {
@@ -67,9 +67,9 @@ export default function AutoSearch({
 
   async function startGeneration(data: { date: string; tags: string[] }) {
     setLoader(true);
-    if (sviatoId && data) {
+    if (svyatoId && data) {
       const res = await apiFetch(
-        `${baseUrl}/api/generate-from-csv/read/${sviatoId}`,
+        `${baseUrl}/api/generate-from-csv/read/${svyatoId}`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },

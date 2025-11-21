@@ -111,7 +111,7 @@ export default function AddRules() {
   return (
     <>
       <Head>
-        <title>Sviato-db | Додати правила дня</title>
+        <title>Svyato-db | Додати правила дня</title>
       </Head>
 
       <Layout>

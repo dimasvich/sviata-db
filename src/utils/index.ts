@@ -113,26 +113,29 @@ export function groupSequentialImages(html: string): string {
 }
 export function convertYouTubeLinks(html: string): string {
   return html.replace(
-    /<p>\s*<a[^>]*class=["'][^"']*youtube-video[^"']*["'][^>]*href=["']([^"']+)["'][^>]*>.*?<\/a>\s*<\/p>\s*(?:<p>(.*?)<\/p>)?/g,
-    (_, hrefLink, captionText = '') => {
-      const figcaption = captionText
-        ? `<figcaption class="wp-element-caption">${captionText.trim()}</figcaption>`
+    /<p>\s*<a\b([^>]*?)href=(["'])(https?:\/\/(?:www\.)?(?:youtube\.com|youtu\.be)[^"']+)\2([^>]*)>([\s\S]*?)<\/a>\s*<\/p>/gi,
+    (_match, _before, _q, href, _after, innerHtml) => {
+      const innerText = innerHtml.replace(/<[^>]+>/g, '').trim();
+      const caption = innerText && innerText !== href ? innerText : '';
+
+      const figcaption = caption
+        ? `<figcaption class="wp-element-caption">${caption}</figcaption>`
         : '';
 
       return `
-          <figure class="wp-block-embed">
-            <iframe 
-              src="${hrefLink}"  
-              title="YouTube video" 
-              frameborder="0" 
-              allowfullscreen
-            ></iframe>
-            ${figcaption}
-          </figure>
-      `;
+<figure class="wp-block-embed">
+  <iframe 
+    src="${href}"  
+    title="YouTube video" 
+    frameborder="0" 
+    allowfullscreen
+  ></iframe>
+  ${figcaption}
+</figure>`;
     },
   );
 }
+
 export function convertImagesToFigure(html: string): string {
   const $ = require('cheerio').load(html, { decodeEntities: false });
 
@@ -149,10 +152,8 @@ export function convertImagesToFigure(html: string): string {
       : '';
 
     $el.replaceWith(`
-      <figure class="wp-block-embed">
         ${$.html($el)}
         ${figcaption}
-      </figure>
     `);
   });
 
@@ -172,4 +173,7 @@ export function addNoFollow(html: string): string {
       return `<a ${attrs} rel="nofollow">`;
     }
   });
+}
+export function escapeRegex(str) {
+  return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }

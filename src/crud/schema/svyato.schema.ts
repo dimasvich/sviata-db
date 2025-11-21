@@ -5,16 +5,17 @@ import {
   Celebrate,
   CompleteStatus,
   Faq,
+  ImageWP,
   RelatedSviato,
   Source,
   SviatoTag,
   SviatoType,
   TimeBlock,
 } from 'src/types';
-export type SviatoDocument = Sviato & Document;
+export type SviatoDocument = Svyato & Document;
 
-@Schema({ collection: 'sviata' })
-export class Sviato {
+@Schema({ collection: 'svyata' })
+export class Svyato {
   @Prop({ type: String, required: false })
   articleId: string;
 
@@ -75,8 +76,14 @@ export class Sviato {
   @Prop({ type: [String], default: [] })
   images: string[];
 
+  @Prop({ type: [], default: [] })
+  imagesMap: ImageWP[];
+
   @Prop({ type: [String], default: [] })
   leaflets: string[];
+
+  @Prop({ type: [], default: [] })
+  leafletsMap: ImageWP[];
 
   @Prop({ type: String, enum: CompleteStatus, default: CompleteStatus.EMPTY })
   status: CompleteStatus;
@@ -124,4 +131,4 @@ export class Sviato {
   year: number;
 }
 
-export const SviatoSchema = SchemaFactory.createForClass(Sviato);
+export const SviatoSchema = SchemaFactory.createForClass(Svyato);

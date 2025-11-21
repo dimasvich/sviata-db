@@ -1,5 +1,5 @@
 {
-  "name": "sviata-db",
+  "name": "svyata-db",
   "version": "0.0.1",
   "description": "",
   "author": "",
@@ -33,6 +33,7 @@
     "axios": "^1.12.2",
     "cheerio": "^1.1.0",
     "class-validator": "^0.14.2",
+    "cookie-parser": "^1.4.7",
     "csv-parser": "^3.2.0",
     "dayjs": "^1.11.18",
     "dotenv": "^17.2.2",

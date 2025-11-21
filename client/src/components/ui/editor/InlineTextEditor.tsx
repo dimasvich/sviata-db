@@ -75,7 +75,6 @@ const InlineTextEditor: React.FC<InlineTextEditorProps> = ({
     },
   });
 
-  // ❗ ГОЛОВНЕ ВИПРАВЛЕННЯ ❗
   React.useEffect(() => {
     if (!editor) return;
     if (value !== editor.getHTML()) {

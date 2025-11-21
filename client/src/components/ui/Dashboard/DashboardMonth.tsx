@@ -8,11 +8,11 @@ import { useEffect, useState } from 'react';
 import Typography from '../Typography';
 import TrueFalseMark from '../Marks/TrueFalseMark';
 
-interface Sviato {
+interface Svyato {
   date: string;
   description: string;
   dateUpload: string;
-  sviata: {
+  svyata: {
     id: string;
     name: string;
     hasDescription: boolean;
@@ -32,7 +32,7 @@ export default function DashboardMonth({
   date: string;
 }) {
   const router = useRouter();
-  const [data, setData] = useState<Sviato[]>([]);
+  const [data, setData] = useState<Svyato[]>([]);
   const [loading, setLoading] = useState(true);
 
   dayjs.locale('uk');
@@ -50,7 +50,7 @@ export default function DashboardMonth({
         const res = await apiFetch(
           `${baseUrl}/api/day/by-month?month=${month}`,
         );
-        const json: Sviato[] = await res.json();
+        const json: Svyato[] = await res.json();
         setData(json || []);
       } catch (err) {
         console.error('Помилка завантаження:', err);
@@ -108,9 +108,9 @@ export default function DashboardMonth({
               const dateStr = `${currentYear}-${month
                 .toString()
                 .padStart(2, '0')}-${currentDay.toString().padStart(2, '0')}`;
-              const sviato = data.find((item) => item.date === dateStr);
+              const svyato = data.find((item) => item.date === dateStr);
 
-              const isEmpty = !sviato || !sviato.description;
+              const isEmpty = !svyato || !svyato.description;
               const isSelected = currentDay === day;
 
               return (
@@ -138,15 +138,15 @@ export default function DashboardMonth({
                     {getDayOfWeek(currentDay)}
                   </td>
                   <td className="py-2 px-4 border-b border-border text-center font-medium align-top">
-                    {sviato?.dateUpload || ''}
+                    {svyato?.dateUpload || ''}
                   </td>
 
                   <td className="py-2 px-4 border-b border-border max-w-md h-auto text-left align-top">
                     {(() => {
-                      if (!sviato?.description) return '-';
+                      if (!svyato?.description) return '-';
 
                       const match =
-                        sviato.description.match(/<p[^>]*>(.*?)<\/p>/i);
+                        svyato.description.match(/<p[^>]*>(.*?)<\/p>/i);
                       return match ? (
                         <span dangerouslySetInnerHTML={{ __html: match[0] }} />
                       ) : (
@@ -156,9 +156,9 @@ export default function DashboardMonth({
                   </td>
 
                   <td className="py-2 px-4 border-b border-border text-center align-top">
-                    {sviato?.sviata && sviato.sviata.length > 0 ? (
+                    {svyato?.svyata && svyato.svyata.length > 0 ? (
                       <div className="flex flex-col items-start gap-2">
-                        {sviato.sviata.map((item, index) => (
+                        {svyato.svyata.map((item, index) => (
                           <Link
                             key={index}
                             href={`/add-info?id=${item.id}`}

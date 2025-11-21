@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { Sviato, SviatoDocument } from 'src/crud/schema/sviato.schema';
+import { Svyato, SviatoDocument } from 'src/crud/schema/svyato.schema';
 import { Day, DayDocument } from './schema/day.schema';
 import { CompleteStatus } from 'src/types';
 import * as dayjs from 'dayjs';
@@ -12,7 +12,7 @@ import * as path from 'path';
 export class DayService {
   constructor(
     @InjectModel(Day.name) private dayModel: Model<DayDocument>,
-    @InjectModel(Sviato.name) private sviatoModel: Model<SviatoDocument>,
+    @InjectModel(Svyato.name) private sviatoModel: Model<SviatoDocument>,
   ) {}
 
   async update(date: string, dayData: Partial<Day>): Promise<Day> {
@@ -47,7 +47,7 @@ export class DayService {
       .sort({ date: 1 })
       .lean();
 
-    const sviata = await this.sviatoModel
+    const svyata = await this.sviatoModel
       .find(
         { date: regex },
         { date: 1, name: 1, description: 1, leaflets: 1, tags: 1 },
@@ -67,7 +67,7 @@ export class DayService {
       }[]
     > = {};
 
-    for (const item of sviata) {
+    for (const item of svyata) {
       const date = item.date?.trim?.();
       if (!date) continue;
 
@@ -98,7 +98,7 @@ export class DayService {
         date,
         description: day?.description || '',
         dateUpload: day?.dateUpload || '',
-        sviata: sviataByDate[date] || [],
+        svyata: sviataByDate[date] || [],
       };
     });
   }

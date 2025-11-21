@@ -28,6 +28,9 @@ export class Day {
   @Prop({ type: String, required: false })
   mainImage: string;
 
+  @Prop({ type: String, required: false })
+  mainImageUpload: string;
+
   @Prop({ type: [String], required: false })
   keywords: string[];
 

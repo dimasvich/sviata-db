@@ -7,7 +7,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import * as csv from 'csv-parser';
 import { Model, Types } from 'mongoose';
 import OpenAI from 'openai';
-import { Sviato, SviatoDocument } from 'src/crud/schema/sviato.schema';
+import { Svyato, SviatoDocument } from 'src/crud/schema/svyato.schema';
 import { Readable } from 'stream';
 import * as cheerio from 'cheerio';
 import * as dayjs from 'dayjs';
@@ -20,7 +20,7 @@ export class GenerateFromCsvService {
   private openai: OpenAI;
 
   constructor(
-    @InjectModel(Sviato.name) private sviatoModel: Model<SviatoDocument>,
+    @InjectModel(Svyato.name) private sviatoModel: Model<SviatoDocument>,
     @InjectModel(Day.name) private dayModel: Model<DayDocument>,
   ) {
     this.openai = new OpenAI({
@@ -254,15 +254,15 @@ export class GenerateFromCsvService {
   }
   public async generateDay(date: string) {
     try {
-      const sviata = await this.sviatoModel.find({ date });
-      if (!sviata) throw new NotFoundException('Date dismatch');
+      const svyata = await this.sviatoModel.find({ date });
+      if (!svyata) throw new NotFoundException('Date dismatch');
 
       const prompt = `
         Створи короткий опис до статті.
 
         Мета: дати користувачу лаконічну відповідь на питання "Яке сьогодні свято?".
 
-        Список свят: ${sviata.map((item) => item.name)}.
+        Список свят: ${svyata.map((item) => item.name)}.
         Дата: ${date}.
 
         Структура опису:

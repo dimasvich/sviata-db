@@ -5,51 +5,48 @@ import * as dayjs from 'dayjs';
 import { Model } from 'mongoose';
 import { DayInfo, SviatoTag } from 'src/types';
 import { DayRules, DayRulesDocument } from './schema/dayrules.schema';
-import { Sviato, SviatoDocument } from './schema/sviato.schema';
-import { SviatoImages } from './schema/sviatoimages.schema';
+import { SviatoDocument, Svyato } from './schema/svyato.schema';
 
 @Injectable()
 @Injectable()
 export class CrudService {
   constructor(
-    @InjectModel(Sviato.name) private sviatoModel: Model<SviatoDocument>,
-    @InjectModel(SviatoImages.name)
-    private sviatoImagesModel: Model<SviatoImages>,
+    @InjectModel(Svyato.name) private sviatoModel: Model<SviatoDocument>,
     @InjectModel(DayRules.name) private dayRulesModel: Model<DayRulesDocument>,
   ) {}
 
-  async create(sviatoData: Partial<Sviato>): Promise<Sviato> {
-    const sviato = new this.sviatoModel(sviatoData);
+  async create(sviatoData: Partial<Svyato>): Promise<Svyato> {
+    const svyato = new this.sviatoModel(sviatoData);
 
     if (
-      sviato.date &&
-      typeof sviato.date === 'string' &&
-      sviato.date.includes('-')
+      svyato.date &&
+      typeof svyato.date === 'string' &&
+      svyato.date.includes('-')
     ) {
       try {
-        const date = LocalDate.parse(sviato.date);
-        sviato.dayOfMonth = date.dayOfMonth();
-        sviato.dayOfYear = date.dayOfYear();
-        sviato.dayOfWeek = date.dayOfWeek().toString();
-        sviato.month = date.monthValue();
+        const date = LocalDate.parse(svyato.date);
+        svyato.dayOfMonth = date.dayOfMonth();
+        svyato.dayOfYear = date.dayOfYear();
+        svyato.dayOfWeek = date.dayOfWeek().toString();
+        svyato.month = date.monthValue();
       } catch (e) {
-        console.warn('Invalid date, skipping date parsing:', sviato.date);
+        console.warn('Invalid date, skipping date parsing:', svyato.date);
       }
     }
-    sviato.dateUpdate = dayjs().format('YYYY-MM-DD');
-    return sviato.save();
+    svyato.dateUpdate = dayjs().format('YYYY-MM-DD');
+    return svyato.save();
   }
 
   async getById(id: string) {
     try {
-      const sviato = await this.sviatoModel.findOne({ _id: id });
-      return sviato;
+      const svyato = await this.sviatoModel.findOne({ _id: id });
+      return svyato;
     } catch (error) {
       throw error;
     }
   }
 
-  async update(id: string, sviatoData: Partial<Sviato>): Promise<Sviato> {
+  async update(id: string, sviatoData: Partial<Svyato>): Promise<Svyato> {
     const updated = await this.sviatoModel.findOneAndUpdate(
       { _id: id },
       { $set: { ...sviatoData, dateUpdate: dayjs().format('YYYY-MM-DD') } },
@@ -76,12 +73,12 @@ export class CrudService {
     return { modifiedCount: result.modifiedCount };
   }
 
-  async addImagesToSviato(id: string, paths: string[]): Promise<Sviato> {
-    const sviato = await this.sviatoModel.findById(id);
-    if (!sviato) throw new NotFoundException('Свято не знайдено');
+  async addImagesToSviato(id: string, paths: string[]): Promise<Svyato> {
+    const svyato = await this.sviatoModel.findById(id);
+    if (!svyato) throw new NotFoundException('Свято не знайдено');
 
-    sviato.images = [...sviato.images, ...paths];
-    return sviato.save();
+    // svyato.images = [...svyato.images, ...paths];
+    return svyato.save();
   }
 
   async delete(id: string): Promise<{ deleted: boolean }> {
@@ -89,28 +86,18 @@ export class CrudService {
     return { deleted: !!res };
   }
 
-  async getByDate(date: string): Promise<Sviato[]> {
+  async getByDate(date: string): Promise<Svyato[]> {
     return this.sviatoModel.find({ date }).exec();
   }
 
-  async getImagesByDate(date: string): Promise<string[]> {
-    const record = await this.sviatoImagesModel.findOne({ date }).exec();
-    return record ? record.images : [];
-  }
-
   async setImagesForDate(id: string, images: string[]) {
-    const sviato = await this.sviatoModel.findOne({ _id: id });
-    if (!sviato) throw new Error('Sviato was not found');
+    const svyato = await this.sviatoModel.findOne({ _id: id });
+    if (!svyato) throw new Error('Svyato was not found');
 
-    const start = new Date(sviato.date);
+    const start = new Date(svyato.date);
     start.setHours(0, 0, 0, 0);
-    const end = new Date(sviato.date);
+    const end = new Date(svyato.date);
     end.setHours(23, 59, 59, 999);
-
-    return await this.sviatoImagesModel.create({
-      date: sviato.date,
-      images,
-    });
   }
 
   async createDayRule(
@@ -126,10 +113,7 @@ export class CrudService {
     try {
       if (!query) return [];
 
-      const normalized = query
-        .trim()
-        .replace(/\s+/g, ' ') 
-        .toLowerCase();
+      const normalized = query.trim().replace(/\s+/g, ' ').toLowerCase();
 
       const words = normalized.split(' ');
 
@@ -162,10 +146,10 @@ export class CrudService {
   // }) {
   //   try {
   //     const { id, related } = body;
-  //     const sviato = await this.sviatoModel.findOne({ _id: new Types.ObjectId(id) });
+  //     const svyato = await this.sviatoModel.findOne({ _id: new Types.ObjectId(id) });
   //     await this.sviatoModel.findOneAndUpdate(
   //       { _id: new Types.ObjectId(id) },
-  //       { related: [...sviato?.related || [],related] },
+  //       { related: [...svyato?.related || [],related] },
   //     );
   //     return { success: true };
   //   } catch (error) {
@@ -192,7 +176,7 @@ export class CrudService {
     {
       date: string;
       description: string;
-      sviata: {
+      svyata: {
         id: string;
         name: string;
         document: string;
@@ -200,7 +184,7 @@ export class CrudService {
       }[];
     }[]
   > {
-    const sviata = await this.sviatoModel
+    const svyata = await this.sviatoModel
       .find({ month })
       .sort({ date: 1 })
       .exec();
@@ -209,7 +193,7 @@ export class CrudService {
       string,
       {
         description: string;
-        sviata: {
+        svyata: {
           name: string;
           document: string;
           tag: SviatoTag | '';
@@ -218,18 +202,18 @@ export class CrudService {
       }
     > = {};
 
-    sviata.forEach((item) => {
+    svyata.forEach((item) => {
       const dateKey = item.date;
 
       if (!grouped[dateKey]) {
         grouped[dateKey] = {
           description: item.description || '-',
-          sviata: [],
+          svyata: [],
         };
       }
 
       if (item.name) {
-        grouped[dateKey].sviata.push({
+        grouped[dateKey].svyata.push({
           name: item.name,
           document: item.doc || '',
           tag: (item.tags.map((item) => item).join(',') as SviatoTag) || '',
@@ -241,7 +225,7 @@ export class CrudService {
     return Object.entries(grouped).map(([date, value]) => ({
       date,
       description: value.description,
-      sviata: value.sviata,
+      svyata: value.svyata,
     }));
   }
   async getDayInfo(
@@ -249,14 +233,14 @@ export class CrudService {
     end: string,
     year: number,
   ): Promise<DayInfo[]> {
-    const sviata = await this.sviatoModel
+    const svyata = await this.sviatoModel
       .find({
         date: { $gte: start, $lte: end },
       })
       .exec();
 
     const filledDates = new Set(
-      sviata
+      svyata
         .filter(
           (s) =>
             s.description &&

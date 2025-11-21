@@ -1,4 +1,4 @@
-import { baseUrlAuth } from "@/http";
+import { baseUrl } from '@/http';
 
 const ACCESS_KEY = 'accessToken';
 const REFRESH_KEY = 'refreshToken';
@@ -44,7 +44,7 @@ export async function getValidAccessToken() {
   }
 
   try {
-    const res = await fetch(`${baseUrlAuth}/auth/refresh`, {
+    const res = await fetch(`${baseUrl}/api/auth/refresh`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

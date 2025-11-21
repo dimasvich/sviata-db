@@ -4,7 +4,7 @@ import { useState } from 'react';
 import Modal from '../Modal';
 import Button from '../Button';
 
-export default function SviatoDeleteModal({
+export default function SvyatoDeleteModal({
   isOpen,
   onClose,
   onDelete,

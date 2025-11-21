@@ -17,19 +17,19 @@ if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
 const upload = multer({ storage: multer.memoryStorage() });
 
 @Injectable()
-export class SviatoImageProcessingMiddleware implements NestMiddleware {
+export class SvyatoImageProcessingMiddleware implements NestMiddleware {
   use(req: Request, res: Response, next: NextFunction) {
     upload.array('images', 20)(req, res, async (err) => {
       if (err) throw new BadRequestException('Помилка при завантаженні файлів');
       if (!req.files) return next();
 
       try {
-        const sviatoId = req.params['id'];
-        if (!sviatoId) {
+        const svyatoId = req.params['id'];
+        if (!svyatoId) {
           throw new BadRequestException('Відсутній ID свята у маршруті');
         }
 
-        const targetDir = path.join(uploadDir, sviatoId);
+        const targetDir = path.join(uploadDir, svyatoId);
         if (!fs.existsSync(targetDir))
           fs.mkdirSync(targetDir, { recursive: true });
 

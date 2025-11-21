@@ -11,8 +11,7 @@ import { html as beautifyHtml } from 'js-beautify';
 import { Model, Types } from 'mongoose';
 import * as path from 'path';
 import { DayRules, DayRulesDocument } from 'src/crud/schema/dayrules.schema';
-import { Sviato, SviatoDocument } from 'src/crud/schema/sviato.schema';
-import { SviatoImages } from 'src/crud/schema/sviatoimages.schema';
+import { SviatoDocument, Svyato } from 'src/crud/schema/svyato.schema';
 import { DayRulesEnum, SviatoTagToIdMap } from 'src/types';
 import {
   addNoFollow,
@@ -31,43 +30,42 @@ import { transliterate } from 'src/utils/transliterator';
 @Injectable()
 export class BuildService {
   constructor(
-    @InjectModel(Sviato.name) private sviatoModel: Model<SviatoDocument>,
-    @InjectModel(SviatoImages.name)
-    private sviatoImagesModel: Model<SviatoImages>,
+    @InjectModel(Svyato.name) private sviatoModel: Model<SviatoDocument>,
+
     @InjectModel(DayRules.name) private dayRulesModel: Model<DayRulesDocument>,
   ) {}
 
   async buildArticle(id: string): Promise<string> {
     try {
-      const sviato = await this.sviatoModel.findById(id).lean();
-      if (!sviato || !sviato.seoText) {
+      const svyato = await this.sviatoModel.findById(id).lean();
+      if (!svyato || !svyato.seoText) {
         throw new Error('Стаття не знайдена або відсутній seoText');
       }
-      const dayrules = await this.dayRulesModel.find({ date: sviato.date });
-      let content = sviato.seoText;
-      const next5 = getNext5YearsForecast(sviato.date);
-      const celebrateBlock = sviato?.celebrate
+      const dayrules = await this.dayRulesModel.find({ date: svyato.date });
+      let content = svyato.seoText;
+      const next5 = getNext5YearsForecast(svyato.date);
+      const celebrateBlock = svyato?.celebrate
         ? `<div class="holiday-date" bis_skin_checked="1">
                             <div class="holiday-date__block" bis_skin_checked="1">
                                 <div class="holiday-date__head" bis_skin_checked="1">
                                     <img src="/wp-content/themes/gosta/img/holiday/icon__holiday-date-1.svg" alt="Icon" width="20" height="20" loading="lazy" decoding="async">
                                     Коли святкують:
                                 </div>
-                                <div class="holiday-date__content" bis_skin_checked="1">${sviato.celebrate.when}</div>
+                                <div class="holiday-date__content" bis_skin_checked="1">${svyato.celebrate.when}</div>
                             </div>
                             <div class="holiday-date__block" bis_skin_checked="1">
                                 <div class="holiday-date__head" bis_skin_checked="1">
                                     <img src="/wp-content/themes/gosta/img/holiday/icon__holiday-date-2.svg" alt="Icon" width="20" height="20" loading="lazy" decoding="async">
                                     Започатковане:
                                 </div>
-                                <div class="holiday-date__content" bis_skin_checked="1">${sviato.celebrate.date}</div>
+                                <div class="holiday-date__content" bis_skin_checked="1">${svyato.celebrate.date}</div>
                             </div>
                             <div class="holiday-date__block" bis_skin_checked="1">
                                 <div class="holiday-date__head" bis_skin_checked="1">
                                     <img src="/wp-content/themes/gosta/img/holiday/icon__holiday-date-3.svg" alt="Icon" width="20" height="20" loading="lazy" decoding="async">
                                     Чи є вихідний:
                                 </div>
-                                <div class="holiday-date__content" bis_skin_checked="1">${sviato.celebrate.isDayoff ? 'Так' : 'Ні'}</div>
+                                <div class="holiday-date__content" bis_skin_checked="1">${svyato.celebrate.isDayoff ? 'Так' : 'Ні'}</div>
                             </div>
                         </div>`
         : '';
@@ -111,7 +109,7 @@ export class BuildService {
         const src = $el.attr('src');
 
         if (src && !src.startsWith('http')) {
-          const newSrc = `${host}/${new Date().getFullYear()}/${new Date().getMonth() + 1}/${imagesNames[i]}}`;
+          const newSrc = `${host}/${new Date().getFullYear()}/${new Date().getMonth() + 1}/${imagesNames[i]}`;
           $el.attr('src', newSrc.replace('wepb', 'webp'));
         }
 
@@ -131,7 +129,7 @@ export class BuildService {
 
       const getRelatedIds = async () => {
         const results = await Promise.all(
-          sviato.related.map(async (item) => {
+          svyato.related.map(async (item) => {
             const doc = await this.sviatoModel
               .findOne({ _id: new Types.ObjectId(item._id) })
               .select('articleId')
@@ -147,7 +145,7 @@ export class BuildService {
       const related = await getRelatedIds();
 
       const blockTemplates: Record<string, string> = {
-        'when-section-title': `<h1>В який день будемо відзначати ${sviato.name} в наступні 5 років</h1>`,
+        'when-section-title': `<h1>В який день будемо відзначати ${svyato.name} в наступні 5 років</h1>`,
         'when-section': `<figure class="wp-block-table">
             <table class="has-fixed-layout">
                 <thead>
@@ -171,16 +169,16 @@ export class BuildService {
                               .join('')}
                 </tbody>
             </table>
-             <figcaption class="wp-element-caption">В який день будемо відзначати ${sviato.name} у найближчі 5 років</figcaption>
+             <figcaption class="wp-element-caption">В який день будемо відзначати ${svyato.name} у найближчі 5 років</figcaption>
             </figure>
            
             `,
         'timeline-section': `
             ${
-              sviato?.timeline
+              svyato?.timeline
                 ? `<div class="timeline-block__wrapper" bis_skin_checked="1">
             <div class="timeline-block" bis_skin_checked="1">
-                ${sviato.timeline
+                ${svyato.timeline
                   .map(
                     (item) => `
                     <div class="item-block" bis_skin_checked="1">
@@ -197,10 +195,10 @@ export class BuildService {
                 : ''
             }
         `,
-        'greetings-section': sviato?.greetings
+        'greetings-section': svyato?.greetings
           ? `
         <div class="greetings-list" bis_skin_checked="1">
-                  ${sviato.greetings
+                  ${svyato.greetings
                     .map(
                       (item) => `  <div class="item" bis_skin_checked="1">
                     ${item}
@@ -214,10 +212,10 @@ export class BuildService {
                     .join('')}
         </div>`
           : '',
-        'ideas-section': sviato?.ideas
+        'ideas-section': svyato?.ideas
           ? `
         <div class="greetings-list" bis_skin_checked="1">
-                  ${sviato.ideas
+                  ${svyato.ideas
                     .map(
                       (item) => `  <div class="item" bis_skin_checked="1">
                     ${item}
@@ -266,9 +264,9 @@ export class BuildService {
 </div>
 `
           : '',
-        'facts-section': sviato.facts
+        'facts-section': svyato.facts
           ? `<div class="facts-list" bis_skin_checked="1">
-      ${sviato.facts
+      ${svyato.facts
         .map(
           (item) => `  
             <div class="item" bis_skin_checked="1">
@@ -290,10 +288,10 @@ export class BuildService {
 </div>
 `
           : '',
-        'sources-section': sviato?.sources
+        'sources-section': svyato?.sources
           ? `
         <div class="sources" bis_skin_checked="1">
-        ${sviato.sources
+        ${svyato.sources
           .map(
             (item) => `<a href="${item.link}"><span>${item.title}</span></a>`,
           )
@@ -307,7 +305,7 @@ export class BuildService {
         'leaflets-section': leaflets
           ? `
           <div class="postcard-block" bis_skin_checked="1">
-          ${sviato.leaflets
+          ${leaflets
             .map(
               (item) => `
             <figure class="wp-block-image size-full">
@@ -368,6 +366,25 @@ export class BuildService {
         </div>
         `
           : '',
+        'faq-section': svyato.faq
+          ? `
+          <div class="wp-block-op-faq-block faq-block__list">
+            ${svyato.faq
+              .map(
+                (item) => `
+                            <div class="wp-block-op-faq-item faq-item">
+              <div class="faq-question">
+                <span><strong>${item.question}</strong></span
+                ><i></i>
+              </div>
+              <div class="faq-answer">
+                <p>${item.answer}</p>
+              </div>
+            </div>`,
+              )
+              .join('')}
+          `
+          : '',
       };
 
       const placeholderRegex =
@@ -414,86 +431,33 @@ export class BuildService {
     }
   }
   private async getLeafletsPath(id: string): Promise<string[]> {
-    const sviato = await this.sviatoModel.findById(id).lean();
-    if (!sviato || !sviato.seoText) {
-      throw new Error('Стаття не знайдена або відсутній seoText');
-    }
-    try {
-      const imageDir2 = path.join(
-        __dirname,
-        '..',
-        '..',
-        'uploads',
-        sviato._id.toString(),
-        'leaflets',
-      );
+    const svyato = await this.sviatoModel.findById(id).lean();
 
-      if (!fs.existsSync(imageDir2)) {
-        throw new Error(`Папка ${imageDir2} не існує`);
-      }
-      const imageFiles = fs
-        .readdirSync(imageDir2)
-        .filter((f) => /\.(webp)$/i.test(f));
+    if (!svyato || !svyato.leafletsMap) return [];
 
-      if (imageFiles.length > 0) {
-        const results = [];
-
-        for (const imageName of imageFiles) {
-          const newImageName = `gosta-${transliterate(sviato.name)}-postcard-${imageFiles.indexOf(imageName)}.webp`;
-          results.push(newImageName);
-        }
-        return results;
-      }
-    } catch (error) {
-      throw error;
-    }
+    return svyato.leafletsMap.map((img) => img.publishName);
   }
   private async getImagesPath(id: string): Promise<string[]> {
-    const sviato = await this.sviatoModel.findById(id).lean();
-    if (!sviato) {
-      throw new Error('Стаття не знайдена');
-    }
-    try {
-      const imageDir2 = path.join(
-        __dirname,
-        '..',
-        '..',
-        'uploads',
-        sviato._id.toString(),
-      );
+    const svyato = await this.sviatoModel.findById(id).lean();
 
-      if (!fs.existsSync(imageDir2)) {
-        throw new Error(`Папка ${imageDir2} не існує`);
-      }
-      const imageFiles = fs
-        .readdirSync(imageDir2)
-        .filter((f) => /\.(webp)$/i.test(f));
+    if (!svyato || !svyato.imagesMap) return [];
 
-      if (imageFiles.length > 0) {
-        const results = [];
-
-        for (const imageName of imageFiles) {
-          const newImageName = `gosta-${transliterate(sviato.name)}-${imageFiles.indexOf(imageName)}.webp`;
-          results.push(newImageName);
-        }
-        return results;
-      }
-    } catch (error) {
-      throw error;
-    }
+    return svyato.imagesMap.map((img) => img.publishName);
   }
+
   async uploadLeaflets(id: string) {
-    const sviato = await this.sviatoModel.findById(id).lean();
-    if (!sviato || !sviato.seoText) {
+    const svyato = await this.sviatoModel.findById(id).lean();
+    if (!svyato || !svyato.seoText) {
       throw new Error('Стаття не знайдена або відсутній seoText');
     }
+    const leafletsMap = svyato.leafletsMap || [];
     try {
       const imageDir2 = path.join(
         __dirname,
         '..',
         '..',
         'uploads',
-        sviato._id.toString(),
+        svyato._id.toString(),
         'leaflets',
       );
 
@@ -504,14 +468,15 @@ export class BuildService {
         .readdirSync(imageDir2)
         .filter((f) => /\.(webp)$/i.test(f));
 
-      if (imageFiles.length > 0) {
-        const results = [];
+      const existing = leafletsMap?.map((img) => img.original);
+      const newFiles = imageFiles.filter((f) => !existing.includes(f));
 
-        for (const imageName of imageFiles) {
-          const safeImageName = imageName.replaceAll(' ', '_');
+      if (newFiles.length > 0) {
+        const results = [];
+        for (const imageName of newFiles) {
           const fullImagePath2 = path.join(imageDir2, imageName);
 
-          const newImageName = `gosta-${transliterate(sviato.name)}-postcard-${imageFiles.indexOf(imageName)}.webp`;
+          const newImageName = `gosta-${transliterate(svyato.name)}-postcard-${imageName.replaceAll('.webp', '')}.webp`;
 
           const formData = new FormData();
           formData.append(
@@ -535,7 +500,11 @@ export class BuildService {
                 },
               },
             );
-
+            leafletsMap.push({
+              original: imageName,
+              publishName: newImageName,
+              mediaId: mediaResponse2.data.id,
+            });
             results.push({
               file: imageName,
               status: 'ok',
@@ -555,6 +524,9 @@ export class BuildService {
             });
           }
         }
+        await this.sviatoModel.findByIdAndUpdate(id, {
+          leafletsMap,
+        });
       }
     } catch (error) {
       throw error;
@@ -562,16 +534,16 @@ export class BuildService {
   }
   async publish(id: string) {
     try {
-      const sviato = await this.sviatoModel.findById(id).lean();
-      if (!sviato) throw new Error('Стаття не знайдена');
+      const svyato = await this.sviatoModel.findById(id).lean();
+      if (!svyato) throw new Error('Стаття не знайдена');
 
-      const mainImage = sviato.mainImage;
+      const mainImage = svyato.mainImage;
 
       const imageDir1 = path.join(__dirname, '..', '..', 'uploads', id, 'main');
       const imageName1 = mainImage;
       const fullImagePath1 = path.join(imageDir1, imageName1);
 
-      const newImageName = `gosta-${transliterate(sviato.name)}.webp`;
+      const newImageName = `gosta-${transliterate(svyato.name)}.webp`;
 
       const formData = new FormData();
       formData.append(
@@ -603,16 +575,17 @@ export class BuildService {
         '..',
         '..',
         'uploads',
-        sviato._id.toString(),
+        svyato._id.toString(),
       );
 
       if (!fs.existsSync(imageDir2)) {
         throw new Error(`Папка ${imageDir2} не існує`);
       }
-      const imageFiles = fs
-        .readdirSync(imageDir2)
-        .filter((f) => /\.(webp)$/i.test(f));
-
+      const imageFiles = fs.readdirSync(imageDir2).filter((file) => {
+        const fullPath = path.join(imageDir2, file);
+        return fs.statSync(fullPath).isFile() && /\.(webp)$/i.test(file);
+      });
+      const imagesMap = [];
       if (imageFiles.length > 0) {
         const results = [];
 
@@ -620,7 +593,7 @@ export class BuildService {
           const safeImageName = imageName.replaceAll(' ', '_');
           const fullImagePath2 = path.join(imageDir2, imageName);
 
-          const newImageName = `gosta-${transliterate(sviato.name)}-${imageFiles.indexOf(imageName)}.webp`;
+          const newImageName = `gosta-${transliterate(svyato.name)}-${imageName.replaceAll('.webp', '')}.webp`;
           const formData = new FormData();
           formData.append(
             'file',
@@ -644,10 +617,10 @@ export class BuildService {
               },
             );
 
-            results.push({
-              file: imageName,
-              status: 'ok',
-              response: mediaResponse2.data,
+            imagesMap.push({
+              original: imageName,
+              publishName: newImageName,
+              mediaId: mediaResponse2.data.id,
             });
 
             console.log(`✅ ${imageName} завантажено успішно`);
@@ -664,28 +637,31 @@ export class BuildService {
           }
         }
       }
-      if (sviato?.leaflets.length) await this.uploadLeaflets(id);
-      const tags = sviato.tags.map((item) => SviatoTagToIdMap[item]);
+      await this.sviatoModel.findByIdAndUpdate(id, {
+        imagesMap,
+      });
+      if (svyato?.leaflets.length) await this.uploadLeaflets(id);
+      const tags = svyato.tags.map((item) => SviatoTagToIdMap[item]);
       const holiday_date = [
-        sviato.date,
-        `${new Date(sviato.date).getFullYear() + 1}-${dayjs(sviato.date).format('MM-DD')}`,
-        `${new Date(sviato.date).getFullYear() + 2}-${dayjs(sviato.date).format('MM-DD')}`,
+        svyato.date,
+        `${new Date(svyato.date).getFullYear() + 1}-${dayjs(svyato.date).format('MM-DD')}`,
+        `${new Date(svyato.date).getFullYear() + 2}-${dayjs(svyato.date).format('MM-DD')}`,
       ];
       const content = await this.buildArticle(id);
       const postData = {
-        title: sviato.name,
+        title: svyato.name,
         content,
-        excerpt: sviato.teaser,
+        excerpt: svyato.teaser,
         status: 'publish',
         featured_media: mediaId,
         categories: [12771],
         tags,
         meta: {
           holiday_date,
-          isAlternative: sviato.checkedAlternative,
+          isAlternative: svyato.checkedAlternative,
         },
-        seofo_title: sviato.title,
-        seofo_description: sviato.description
+        seofo_title: svyato.title,
+        seofo_description: svyato.description
           .replaceAll('<p>', '')
           .replaceAll('</p>', '')
           .replaceAll('<strong>', '')
@@ -721,19 +697,21 @@ export class BuildService {
   }
   async update(id: string) {
     try {
-      const sviato = await this.sviatoModel.findById(id).lean();
-      if (!sviato) throw new Error('Стаття не знайдена');
-      const content = await this.buildArticle(id);
-      const mainImage = sviato.mainImage;
+      const svyato = await this.sviatoModel.findById(id).lean();
+      if (!svyato) throw new Error('Стаття не знайдена');
+
+      const mainImage = svyato.mainImage;
 
       const imageDir1 = path.join(__dirname, '..', '..', 'uploads', id, 'main');
-      const imageName1 = mainImage;
-      const fullImagePath1 = path.join(imageDir1, imageName1);
+      const fullImagePath1 = path.join(imageDir1, mainImage);
+      const newImageName = `gosta-${transliterate(svyato.name)}.webp`;
 
-      const newImageName = `gosta-${transliterate(sviato.name)}.webp`;
+      if (!fs.existsSync(fullImagePath1)) {
+        throw new Error(`Main image не знайдено: ${fullImagePath1}`);
+      }
 
-      const formData = new FormData();
-      formData.append(
+      const formDataMain = new FormData();
+      formDataMain.append(
         'file',
         fs.createReadStream(fullImagePath1),
         newImageName,
@@ -741,62 +719,64 @@ export class BuildService {
 
       const mediaResponse = await axios.post(
         `${process.env.BASE_URL}/media`,
-        formData,
+        formDataMain,
         {
           auth: {
             username: process.env.APP_USER,
             password: process.env.APP_PASSWORD,
           },
           headers: {
-            ...formData.getHeaders(),
+            ...formDataMain.getHeaders(),
             'Content-Disposition': `attachment; filename="${newImageName}"`,
           },
         },
       );
 
       const mediaId = mediaResponse.data.id;
-      console.log('Media uploaded, ID:', mediaId);
-      if (sviato?.leaflets.length) await this.uploadLeaflets(id);
-      const tags = sviato.tags.map((item) => SviatoTagToIdMap[item]);
+      console.log('✅ Main media uploaded, ID:', mediaId);
+
+      if (svyato?.leaflets.length) await this.uploadLeaflets(id);
+
+      const tags = svyato.tags.map((item) => SviatoTagToIdMap[item]);
       const holiday_date = [
-        sviato.date,
-        `${new Date(sviato.date).getFullYear() + 1}-${dayjs(sviato.date).format('MM-DD')}`,
-        `${new Date(sviato.date).getFullYear() + 2}-${dayjs(sviato.date).format('MM-DD')}`,
+        svyato.date,
+        `${new Date(svyato.date).getFullYear() + 1}-${dayjs(svyato.date).format('MM-DD')}`,
+        `${new Date(svyato.date).getFullYear() + 2}-${dayjs(svyato.date).format('MM-DD')}`,
       ];
-      const postData = {
-        content,
-        categories: [12771],
-        featured_media: mediaId,
-        title: sviato.name,
-        meta: {
-          isAlternative: sviato.checkedAlternative,
-          holiday_date,
-        },
-        tags,
-      };
+
       const imageDir2 = path.join(
         __dirname,
         '..',
         '..',
         'uploads',
-        sviato._id.toString(),
+        svyato._id.toString(),
       );
 
       if (!fs.existsSync(imageDir2)) {
-        throw new Error(`Папка ${imageDir2} не існує`);
+        throw new Error(
+          `Папка для додаткових зображень не існує: ${imageDir2}`,
+        );
       }
-      const imageFiles = fs
-        .readdirSync(imageDir2)
-        .filter((f) => /\.(webp)$/i.test(f));
 
-      if (imageFiles.length > 0) {
+      const imageFiles = fs.readdirSync(imageDir2).filter((file) => {
+        const fullPath = path.join(imageDir2, file);
+        const isFile =
+          fs.existsSync(fullPath) && fs.statSync(fullPath).isFile();
+        return isFile && /\.(webp)$/i.test(file);
+      });
+
+      const imagesMap = svyato.imagesMap || [];
+      const existing = imagesMap?.map((img) => img.original);
+      const newFiles = imageFiles.filter((f) => !existing.includes(f));
+
+      if (newFiles.length > 0) {
         const results = [];
-
-        for (const imageName of imageFiles) {
-          const safeImageName = imageName.replaceAll(' ', '_');
+        for (const imageName of newFiles) {
           const fullImagePath2 = path.join(imageDir2, imageName);
+          const newImageName = `gosta-${transliterate(svyato.name)}-${imageName.replaceAll('.webp', '')}.webp`;
 
-          const newImageName = `gosta-${transliterate(sviato.name)}-${imageFiles.indexOf(imageName)}.webp`;
+          console.log('📤 Uploading additional image:', fullImagePath2);
+
           const formData = new FormData();
           formData.append(
             'file',
@@ -819,19 +799,19 @@ export class BuildService {
                 },
               },
             );
+            imagesMap.push({
+              original: imageName,
+              publishName: newImageName,
+              mediaId: mediaResponse2?.data.id,
+            });
 
             results.push({
               file: imageName,
               status: 'ok',
               response: mediaResponse2.data,
             });
-
-            console.log(`✅ ${imageName} завантажено успішно`);
           } catch (error) {
-            console.error(
-              `❌ Помилка при завантаженні ${imageName}:`,
-              error.message,
-            );
+            console.error(`❌ Error uploading ${imageName}:`, error.message);
             results.push({
               file: imageName,
               status: 'error',
@@ -839,22 +819,36 @@ export class BuildService {
             });
           }
         }
+      } else {
+        console.log('⚠️ No additional images found to upload');
       }
+      await this.sviatoModel.findByIdAndUpdate(id, {
+        imagesMap,
+      });
+      const content = await this.buildArticle(id);
+      const postData = {
+        content,
+        categories: [12771],
+        featured_media: mediaId,
+        title: svyato.name,
+        meta: {
+          isAlternative: svyato.checkedAlternative,
+          holiday_date,
+        },
+        tags,
+      };
       const postResponse = await axios.post(
-        `${process.env.BASE_URL}/posts/${sviato.articleId}`,
+        `${process.env.BASE_URL}/posts/${svyato.articleId}`,
         postData,
         {
           auth: {
             username: process.env.APP_USER,
             password: process.env.APP_PASSWORD,
           },
-          headers: {
-            'Content-Type': 'application/json',
-          },
+          headers: { 'Content-Type': 'application/json' },
         },
       );
 
-      console.log('Post updated:', postResponse.data);
       await this.sviatoModel.findByIdAndUpdate(id, {
         articleId: postResponse.data.id,
         link: postResponse.data.link,
@@ -863,9 +857,11 @@ export class BuildService {
 
       return postResponse.data;
     } catch (error) {
+      console.error('Error updating:', error);
       throw error;
     }
   }
+
   async updateMany(fromDate: string, toDate: string) {
     try {
       const toUpdate = await this.sviatoModel.find(
@@ -881,7 +877,7 @@ export class BuildService {
       );
 
       if (!toUpdate || toUpdate.length === 0) {
-        throw new NotFoundException('No sviato found in given date range');
+        throw new NotFoundException('No svyato found in given date range');
       }
 
       const updatePromises = toUpdate.map(async (item) => {
@@ -925,10 +921,10 @@ export class BuildService {
 
   async delete(id: string) {
     try {
-      const sviato = await this.sviatoModel.findById(id).lean();
-      if (!sviato) throw new Error('Стаття не знайдена');
+      const svyato = await this.sviatoModel.findById(id).lean();
+      if (!svyato) throw new Error('Стаття не знайдена');
       const postResponse = await axios.delete(
-        `${process.env.BASE_URL}/posts/${sviato.articleId}`,
+        `${process.env.BASE_URL}/posts/${svyato.articleId}`,
         {
           auth: {
             username: process.env.APP_USER,

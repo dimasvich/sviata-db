@@ -42,7 +42,7 @@ export default function AutoGeneratePage() {
   return (
     <>
       <Head>
-        <title>Sviato-db | Автогенерація</title>
+        <title>Svyato-db | Автогенерація</title>
         <meta name="description" content="Автоматична генерація CSV файлів" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link rel="icon" href="/favicon.ico" />

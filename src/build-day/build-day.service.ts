@@ -304,7 +304,7 @@ export class BuildDayService {
               day?.timeline
                 .map(
                   (item) => `
-            <li><span>${item.year}</span> - ${item.html}</li>
+            <li><span>${item.year}</span> ${item.html}</li>
             `,
                 )
                 .join('') || ''
@@ -428,7 +428,7 @@ export class BuildDayService {
       <div class="top-block__top">
         <div class="img-block">
             <img src="${host}/${new Date().getFullYear()}/${new Date().getMonth() + 1}/${(
-              day.mainImage || 'main.webp'
+              day?.mainImageUpload || day.mainImage
             )
               .replaceAll(' ', '_')
               .replaceAll(',', '')}" 
@@ -581,7 +581,10 @@ export class BuildDayService {
   > {
     const results = [];
 
-    const dateSlug = formatDateForSlug(date); 
+    const dateSlug = formatDateForSlug(date);
+
+    const day = await this.dayModel.findOne({ date }).lean();
+    if (!day) throw new Error('Стаття не знайдена');
 
     for (const { dir, label } of dirs) {
       if (!fs.existsSync(dir)) {
@@ -612,7 +615,7 @@ export class BuildDayService {
         formData.append(
           'file',
           fs.createReadStream(fullImagePath),
-          newImageName, 
+          newImageName,
         );
 
         try {
@@ -630,11 +633,18 @@ export class BuildDayService {
               },
             },
           );
-
+          if (imageName === day.mainImage) {
+            await this.dayModel.findOneAndUpdate(
+              { date },
+              {
+                mainImageUpload: newImageName,
+              },
+            );
+          }
           results.push({
             folder: label,
             file: imageName,
-            sentAs: newImageName, 
+            sentAs: newImageName,
             status: 'ok',
             response: mediaResponse.data,
           });
@@ -714,12 +724,12 @@ export class BuildDayService {
     try {
       const day = await this.dayModel.findOne({ date }).lean();
       if (!day) throw new Error('Стаття не знайдена');
+      await this.handleUpload(date);
       const content = await this.buildArticle(date);
       const postData = {
         isAlternative: day.checkedAlternative,
         content,
       };
-      await this.handleUpload(date);
 
       const postResponse = await axios.post(
         `${process.env.BASE_URL}/pages/${day.articleId}`,
@@ -749,4 +759,3 @@ export class BuildDayService {
     }
   }
 }
-

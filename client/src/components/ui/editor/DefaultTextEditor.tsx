@@ -15,7 +15,7 @@ const DefaultTextEditor: React.FC<DefaultTextEditorProps> = ({
 }) => {
   const editor = useEditor({
     extensions: [StarterKit.configure({ heading: false })],
-    content: value || '', 
+    content: value || '',
     editorProps: {
       attributes: {
         class: 'editor-content focus:outline-none min-h-[200px]',
@@ -26,7 +26,14 @@ const DefaultTextEditor: React.FC<DefaultTextEditorProps> = ({
     },
   });
 
-  if (!editor) return <div>Loading editor...</div>;
+  React.useEffect(() => {
+    if (!editor) return;
+    if (value !== editor.getHTML()) {
+      editor.commands.setContent(value || '');
+    }
+  }, [value, editor]);
+
+  if (!editor) return null;
 
   return (
     <div className="border rounded-lg p-3 bg-white shadow-sm">

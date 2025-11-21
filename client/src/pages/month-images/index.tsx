@@ -46,7 +46,7 @@ export default function AutoGeneratePage() {
   return (
     <>
       <Head>
-        <title>Sviato-db | Зображення на місяць</title>
+        <title>Svyato-db | Зображення на місяць</title>
         <meta name="description" content="Зображення на місяць" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link rel="icon" href="/favicon.ico" />

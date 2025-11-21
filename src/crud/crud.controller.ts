@@ -14,7 +14,7 @@ import {
 import { DayInfo } from 'src/types';
 import { CrudService } from './crud.service';
 import { DayRules } from './schema/dayrules.schema';
-import { Sviato } from './schema/sviato.schema';
+import { Svyato } from './schema/svyato.schema';
 
 @Controller('crud')
 export class CrudController {
@@ -54,13 +54,8 @@ export class CrudController {
   }
 
   @Get('date/:date')
-  async getByDate(@Param('date') date: string): Promise<Sviato[]> {
+  async getByDate(@Param('date') date: string): Promise<Svyato[]> {
     return this.sviatoService.getByDate(date);
-  }
-
-  @Get('sviato-images/:date')
-  async getImages(@Param('date') date: string) {
-    return this.sviatoService.getImagesByDate(date);
   }
 
   @Post('images/:id')
@@ -74,11 +69,11 @@ export class CrudController {
   }
 
   @Post()
-  async create(@Body() sviatoData: Partial<Sviato>): Promise<Sviato> {
+  async create(@Body() sviatoData: Partial<Svyato>): Promise<Svyato> {
     return this.sviatoService.create(sviatoData);
   }
 
-  @Post('sviato-images/:id')
+  @Post('svyato-images/:id')
   async uploadSviatoImage(@Param('id') id: string, @Req() req: Request) {
     const images = req['processedImages'];
     if (!images || images.length === 0) {
@@ -99,22 +94,25 @@ export class CrudController {
     @Param('id') id: string,
     @Req() req,
     @Res() res,
-  ): Promise<Sviato> {
-    const { processedImages, mainImagesPath, leafletsPath } = req;
-    const sviatoData = JSON.parse(req.body.sviatoData);
+  ): Promise<Svyato> {
+    const { processedImages, mainImagesPath, leafletsPath, newSeoText } = req;
+    const svyatoData = JSON.parse(req.body.svyatoData);
 
     if (processedImages?.length) {
-      sviatoData.images = processedImages.map((item) => item.filename);
+      svyatoData.images = processedImages.map((img) => img.filename);
     }
 
     if (leafletsPath?.length) {
-      sviatoData.leaflets = leafletsPath.map((item) => item.outputFilename);
+      svyatoData.leaflets = leafletsPath
     }
 
     if (mainImagesPath?.length) {
-      sviatoData.mainImage = mainImagesPath[0];
+      svyatoData.mainImage = mainImagesPath[0];
     }
-    const updated = await this.sviatoService.update(id, sviatoData);
+    if (newSeoText) {
+      svyatoData.seoText = newSeoText;
+    }
+    const updated = await this.sviatoService.update(id, svyatoData);
     return res.json(updated);
   }
 

@@ -1,17 +1,17 @@
 import { Module } from '@nestjs/common';
-import { CrudModule } from './crud/crud.module';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { APP_GUARD } from '@nestjs/core';
 import { MongooseModule } from '@nestjs/mongoose';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
-import { RelatedArticlesModule } from './related-articles/related-articles.module';
-import { BuildModule } from './build/build.module';
-import { GenerateFromCsvModule } from './generate-from-csv/generate-from-csv.module';
-import { DayModule } from './day/day.module';
+import { AuthGuard } from './auth/auth.guard';
+import { AuthModule } from './auth/auth.module';
 import { BuildDayModule } from './build-day/build-day.module';
-import { JwtModule } from './jwt/jwt.module';
-import { APP_GUARD } from '@nestjs/core';
-import { JwtGuard } from './jwt/jwt.guard';
+import { BuildModule } from './build/build.module';
+import { CrudModule } from './crud/crud.module';
+import { DayModule } from './day/day.module';
+import { GenerateFromCsvModule } from './generate-from-csv/generate-from-csv.module';
+import { RelatedArticlesModule } from './related-articles/related-articles.module';
 
 @Module({
   imports: [
@@ -22,7 +22,7 @@ import { JwtGuard } from './jwt/jwt.guard';
         const uri = configService.get('MONGO_LINK');
         return {
           uri,
-          dbName: 'sviata-db',
+          dbName: 'svyata-db',
         };
       },
     }),
@@ -36,14 +36,14 @@ import { JwtGuard } from './jwt/jwt.guard';
     GenerateFromCsvModule,
     DayModule,
     BuildDayModule,
-    JwtModule,
+    AuthModule,
   ],
   controllers: [],
-  providers: [
-    {
-      provide: APP_GUARD,
-      useClass: JwtGuard,
-    },
-  ],
+  // providers: [
+  //   {
+  //     provide: APP_GUARD,
+  //     useClass: AuthGuard,
+  //   },
+  // ],
 })
 export class AppModule {}

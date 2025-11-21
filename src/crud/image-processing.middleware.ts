@@ -20,12 +20,12 @@ export class ImageProcessingMiddleware implements NestMiddleware {
       if (err) throw new BadRequestException('Помилка при завантаженні файлів');
       if (!req.files) return next();
 
-      const sviatoId = req.params['id'];
-      if (!sviatoId) {
+      const svyatoId = req.params['id'];
+      if (!svyatoId) {
         throw new BadRequestException('Відсутній ID свята у маршруті');
       }
 
-      const sviatoDir = path.join(__dirname, '..', '..', 'uploads', sviatoId, 'main');
+      const sviatoDir = path.join(__dirname, '..', '..', 'uploads', svyatoId, 'main');
       if (!fs.existsSync(sviatoDir)) {
         fs.mkdirSync(sviatoDir, { recursive: true });
       }

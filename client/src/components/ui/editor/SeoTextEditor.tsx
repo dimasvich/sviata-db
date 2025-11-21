@@ -21,6 +21,7 @@ const BLOCKS = [
   { name: 'Пов`язані події', insert: 'related-section' },
   { name: 'Більше ідей для привітання', insert: 'moreIdeas-section' },
   { name: 'Листівки', insert: 'leaflets-section' },
+  { name: 'Блок FAQ', insert: 'faq-section' },
 ];
 
 export const CustomBlock = Node.create({
@@ -256,8 +257,7 @@ const SeoTextEditor: React.FC<SeoTextEditorProps> = ({
     if (!videoUrl.trim()) return;
 
     const videoHTML = `
-    <a class="youtube-video" href="${videoUrl}" target="_blank" rel="nofollow">${videoUrl}</a>
-    ${videoCaption ? `<p class="video-caption">${videoCaption}</p>` : ''}
+    <a class="youtube-video" href="${videoUrl}" target="_blank" rel="nofollow">${videoCaption}</a>}
   `;
 
     editor.chain().focus().insertContent(videoHTML).run();
