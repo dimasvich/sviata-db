@@ -428,10 +428,8 @@ export class BuildDayService {
       <div class="top-block__top">
         <div class="img-block">
             <img src="${host}/${new Date().getFullYear()}/${new Date().getMonth() + 1}/${(
-              day?.mainImageUpload || day.mainImage
-            )
-              .replaceAll(' ', '_')
-              .replaceAll(',', '')}" 
+              day?.mainImageUpload
+            )}" 
               alt="Img" width="447" height="224" loading="eager" decoding="async">
               <div class="date-block-info"></div>
         </div>
@@ -485,8 +483,7 @@ export class BuildDayService {
       return content;
     } catch (error) {
       console.error('❌ Помилка збірки статті:', error);
-
-      return `<section class="error"><p>Помилка збірки сторінки за ${date}: ${error.message}</p></section>`;
+      throw error;
     }
   }
 
