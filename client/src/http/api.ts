@@ -1,7 +1,7 @@
 import { getValidAccessToken } from '@/utils/token';
 
 export async function apiFetch(input: RequestInfo, init: RequestInit = {}) {
-  const token = await getValidAccessToken();
+  const token = await getValidAccessToken() || ''; // remove || ''
 
   const headers = new Headers(init.headers || {});
 
